@@ -1,196 +1,267 @@
-# CrewAI + MCP Integration Project
+# CrewAI MCP Integration Examples
 
-A comprehensive setup for experimenting with CrewAI agents using Model Context Protocol (MCP) servers.
+This project demonstrates how to integrate Model Context Protocol (MCP) servers with CrewAI agents, providing powerful capabilities for file operations, version control, web content fetching, and more.
+
+## 🌟 Features
+
+- **Multiple MCP Server Integration**: Filesystem, Git, and Web content fetching
+- **Comprehensive Examples**: From simple single-server demos to complex multi-agent workflows
+- **Production Ready**: Proper error handling, logging, and configuration management
+- **Easy Setup**: Automated installation and configuration scripts
+
+## 📋 Prerequisites
+
+- **Python 3.8+**
+- **Node.js 18+** (for NPM-based MCP servers)
+- **Git** (for version control and Git MCP server)
+- **OpenAI API Key** (or other compatible LLM provider)
 
 ## 🚀 Quick Start
 
-1. **Setup the project:**
-   ```bash
-   python setup.py
-   ```
+### 1. Clone and Setup
 
-2. **Configure environment:**
-   ```bash
-   cp .env.template .env
-   # Edit .env and add your OpenAI API key
-   ```
+```bash
+# Navigate to the project directory
+cd /Users/balajiv/Documents/coderepos/agentic_mesh/setup_1
 
-3. **Run the main application:**
-   ```bash
-   python crew_runner.py
-   ```
+# Run the automated setup
+python setup.py
+```
+
+The setup script will:
+- ✅ Check prerequisites
+- ✅ Install Python dependencies
+- ✅ Install MCP servers (filesystem, git, fetch)
+- ✅ Test server installations
+- ✅ Initialize git repository
+- ✅ Create convenient run scripts
+
+### 2. Configure Environment
+
+Edit `.env` file and ensure your OpenAI API key is set:
+
+```bash
+OPENAI_API_KEY=your_openai_api_key_here
+```
+
+### 3. Run Examples
+
+```bash
+# Simple filesystem operations
+python run_simple.py
+
+# Git repository analysis
+python run_git.py
+
+# Web content research  
+python run_web.py
+
+# Full multi-server example
+python run_main.py
+```
 
 ## 📁 Project Structure
 
 ```
-setup_1/
-├── crew_runner.py          # Main interactive runner
-├── setup.py               # Automated setup script
-├── requirements.txt       # Python dependencies
-├── .env.template         # Environment template
-├── servers/
-│   └── sample_mcp_server.py  # Sample MCP server with tools
-├── agents/
-│   └── agent_templates.py    # Reusable agent templates
-├── examples/
-│   ├── basic_example.py      # Simple single-agent example
-│   └── advanced_example.py   # Multi-agent collaboration
-└── logs/                     # Application logs
+agentic_mesh/setup_1/
+├── docs/                          # Documentation
+│   └── crewai_mcp_documentation.md
+├── src/                           # Main source code
+│   └── main_example.py            # Comprehensive multi-server example
+├── examples/                      # Individual examples
+│   ├── simple_filesystem_example.py
+│   ├── git_analysis_example.py
+│   └── web_research_example.py
+├── logs/                          # Log files and results
+├── requirements.txt               # Python dependencies
+├── setup.py                      # Automated setup script
+├── .env                          # Environment configuration
+└── README.md                     # This file
 ```
 
-## 🛠 Available Tools (MCP Server)
+## 🔧 MCP Servers Included
 
-The sample MCP server provides these tools:
+### 1. Filesystem Server
+- **Purpose**: Secure file and directory operations
+- **Installation**: `npm install -g @modelcontextprotocol/server-filesystem`
+- **Capabilities**: Read, write, list, search files and directories
 
-- **web_search**: Search the web for information
-- **write_file**: Write content to files
-- **read_file**: Read content from files  
-- **calculate**: Perform mathematical calculations
-- **get_current_time**: Get current date/time
+### 2. Git Server  
+- **Purpose**: Git repository analysis and operations
+- **Installation**: `uvx install mcp-server-git`
+- **Capabilities**: Repository analysis, commit history, branch management
 
-## 👥 Agent Templates
+### 3. Fetch Server
+- **Purpose**: Web content fetching and analysis
+- **Installation**: `npm install -g @modelcontextprotocol/server-fetch`
+- **Capabilities**: Fetch web pages, extract content, analyze websites
 
-Pre-configured agent templates for quick experimentation:
+## 📖 Examples Overview
 
-- **Research Agent**: Specialized in gathering information
-- **Analyst Agent**: Focused on data analysis and insights
-- **Writer Agent**: Creates documentation and reports
-- **Problem Solver Agent**: Tackles complex challenges
-- **Coordinator Agent**: Manages multi-agent tasks
+### Simple Filesystem Example (`run_simple.py`)
+A basic example demonstrating:
+- Loading filesystem MCP tools
+- Creating a file analysis agent
+- Analyzing project structure
+- Generating project insights
 
-## 📝 Examples
+### Git Analysis Example (`run_git.py`)
+Repository analysis example featuring:
+- Git repository examination
+- Commit history analysis
+- Branch and contributor insights
+- Development pattern recognition
 
-### Basic Example
+### Web Research Example (`run_web.py`)
+Web content research demo showing:
+- Fetching documentation pages
+- Analyzing MCP ecosystem
+- Generating research reports
+- Synthesizing web information
+
+### Comprehensive Example (`run_main.py`)
+Full-featured multi-agent system with:
+- Multiple MCP servers integration
+- Specialized agents for different tasks
+- Coordinated workflow execution
+- Comprehensive project analysis
+
+## 🛠️ Manual Installation (Alternative)
+
+If the automated setup doesn't work, install manually:
+
+### Python Dependencies
 ```bash
-python examples/basic_example.py
+pip install -r requirements.txt
 ```
-Single agent performing simple tasks with MCP tools.
 
-### Advanced Example  
+### MCP Servers
 ```bash
-python examples/advanced_example.py
+# Filesystem server
+npm install -g @modelcontextprotocol/server-filesystem
+
+# Fetch server  
+npm install -g @modelcontextprotocol/server-fetch
+
+# Git server (requires uv)
+pip install uv
+uvx install mcp-server-git
 ```
-Multiple agents collaborating on a complex research and analysis task.
 
-### Interactive Runner
-```bash
-python crew_runner.py
-```
-Menu-driven interface to test different scenarios.
+## 🔍 Usage Patterns
 
-## 🔧 Requirements
-
-- **Python**: 3.10 or 3.11 only
-- **OS**: macOS/Linux recommended, Windows with WSL
-- **API Key**: OpenAI API key required
-
-## 📦 Dependencies
-
-Key packages installed:
-- `crewai >= 0.24.0`
-- `crewai-tools[mcp] >= 0.6.0` 
-- `mcp >= 1.0.0`
-- `pydantic == 1.10.13`
-- `python-dotenv`, `loguru`, `rich`
-
-## 🚦 Getting Started
-
-1. **Test your setup:**
-   ```bash
-   python setup.py
-   ```
-
-2. **Test MCP connection:**
-   ```bash
-   python crew_runner.py
-   # Choose option 1 to test MCP connection
-   ```
-
-3. **Run simple example:**
-   ```bash
-   python crew_runner.py  
-   # Choose option 2 for single agent example
-   ```
-
-4. **Try multi-agent collaboration:**
-   ```bash
-   python crew_runner.py
-   # Choose option 3 for multi-agent example
-   ```
-
-## 🎯 Creating Your Own Agents
-
-### Method 1: Use Templates
+### Basic MCP Integration
 ```python
-from agents.agent_templates import AgentTemplates
 from crewai_tools import MCPServerAdapter
-
-with MCPServerAdapter(server_params) as tools:
-    # Create specialized agents
-    researcher = AgentTemplates.research_agent(tools, "technology")
-    analyst = AgentTemplates.analyst_agent(tools, "financial")
-    
-    # Create tasks and crew...
-```
-
-### Method 2: Custom Agents
-```python
 from crewai import Agent, Task, Crew
 
-agent = Agent(
-    role="Your Custom Role",
-    goal="Your specific goal",
-    backstory="Agent's background and expertise",
-    tools=mcp_tools,
-    verbose=True
-)
+# Setup MCP server
+with MCPServerAdapter(
+    server_name="filesystem",
+    command="npx",
+    args=["-y", "@modelcontextprotocol/server-filesystem", "/path/to/files"]
+) as mcp_adapter:
+    tools = mcp_adapter.get_tools()
+    
+    # Create agent with MCP tools
+    agent = Agent(
+        role="File Manager",
+        goal="Manage files efficiently",
+        tools=tools
+    )
 ```
 
-## 🔍 Troubleshooting
+### Multiple Server Integration
+```python
+# Setup multiple servers
+servers = {}
+with MCPServerAdapter(...) as fs_adapter:
+    servers["filesystem"] = fs_adapter.get_tools()
+    
+    with MCPServerAdapter(...) as git_adapter:
+        servers["git"] = git_adapter.get_tools()
+        
+        # Create specialized agents
+        file_agent = Agent(tools=servers["filesystem"], ...)
+        git_agent = Agent(tools=servers["git"], ...)
+```
 
-### Common Issues:
+## 🐛 Troubleshooting
 
-1. **Import Errors**: Run `python setup.py` to check dependencies
-2. **MCP Connection Failed**: Ensure `servers/sample_mcp_server.py` is executable
-3. **API Errors**: Check your OpenAI API key in `.env` file
-4. **Python Version**: Ensure you're using Python 3.10 or 3.11
+### Common Issues
 
-### Debug Mode:
-Set `DEBUG=True` in your `.env` file for verbose logging.
+1. **"npx command not found"**
+   - Install Node.js from https://nodejs.org
+   - Verify: `node --version` and `npm --version`
 
-## 🧪 Extending the Project
+2. **"uvx command not found"**
+   - Install uv: `pip install uv`
+   - Verify: `uvx --help`
 
-### Add New MCP Tools:
-Edit `servers/sample_mcp_server.py` and add new tool definitions.
+3. **MCP Server Installation Fails**
+   - Check internet connection
+   - Try installing individually:
+     ```bash
+     npm install -g @modelcontextprotocol/server-filesystem
+     npm install -g @modelcontextprotocol/server-fetch
+     uvx install mcp-server-git
+     ```
 
-### Create New Agent Types:
-Add templates to `agents/agent_templates.py`.
+4. **OpenAI API Errors**
+   - Verify API key in `.env` file
+   - Check API key permissions and billing
 
-### Add New Examples:
-Create new scripts in the `examples/` directory.
+5. **Git Server Issues**
+   - Ensure the directory is a git repository: `git init`
+   - Check repository permissions
 
-## 📊 Monitoring
+### Debugging
 
-- Logs are saved to `logs/crewai_mcp.log`
-- Use the Rich console output for real-time feedback
-- Set log levels in the `.env` file
+Enable detailed logging by setting in `.env`:
+```bash
+LOG_LEVEL=DEBUG
+```
+
+Check logs in:
+- Console output (immediate feedback)
+- `logs/crewai_mcp.log` (detailed logging)
+- `logs/crew_results.txt` (execution results)
+
+## 📚 Documentation
+
+- **CrewAI MCP Integration**: [docs/crewai_mcp_documentation.md](docs/crewai_mcp_documentation.md)
+- **Official CrewAI Docs**: https://docs.crewai.com/mcp/crewai-mcp-integration
+- **Model Context Protocol**: https://modelcontextprotocol.io/introduction
+- **MCP Servers Repository**: https://github.com/modelcontextprotocol/servers
+
+## 🔐 Security Considerations
+
+- **Trust MCP Servers**: Only use MCP servers from trusted sources
+- **File Permissions**: Filesystem server respects directory restrictions
+- **API Keys**: Keep API keys secure and don't commit to version control
+- **Network Access**: Fetch server can access any URL (use responsibly)
+
+## 🚀 Next Steps
+
+1. **Experiment with Examples**: Run all provided examples to understand capabilities
+2. **Customize Agents**: Modify agent roles and goals for your specific use cases
+3. **Add More Servers**: Explore additional MCP servers from the ecosystem
+4. **Build Your Application**: Use this as a foundation for your own projects
 
 ## 🤝 Contributing
 
-This is a template project for experimentation. Feel free to:
-- Add new agent templates
-- Create additional MCP tools
-- Improve error handling
-- Add more examples
+This project serves as a reference implementation. Feel free to:
+- Report issues or bugs
+- Suggest improvements
+- Add new MCP server integrations
+- Share your use cases
 
-## 📞 Support
+## 📄 License
 
-If you encounter issues:
-1. Check the troubleshooting section
-2. Review the logs in `logs/`
-3. Ensure all requirements are properly installed
-4. Verify your API keys are correctly configured
+This project is open source and available under the MIT License.
 
----
+## 🙏 Acknowledgments
 
-**Happy experimenting with CrewAI and MCP! 🎉**
+- **Anthropic** for the Model Context Protocol specification
+- **CrewAI Team** for the excellent MCP integration
+- **MCP Community** for the diverse server ecosystem
