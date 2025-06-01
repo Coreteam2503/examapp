@@ -1,0 +1,285 @@
+# CodeQuiz Learning Platform - Product Requirements Document
+
+## Overview
+A web-based educational platform that allows students to upload code/documents and generate interactive, Duolingo-style quizzes using AI. The platform enables instructors to monitor student progress and performance through an admin dashboard, creating an engaging way for students to test their programming knowledge.
+
+**Problem**: Traditional programming education lacks interactive, gamified assessment tools that can automatically generate questions from any code snippet or document.
+
+**Solution**: An AI-powered quiz generation platform that transforms uploaded code into engaging, interactive quizzes with multiple question types.
+
+**Target Users**: 
+- Primary: Programming students
+- Secondary: Instructors/Educators
+- Tertiary: Educational institutions
+
+## Core Features
+
+### 1. User Authentication & Role Management
+- Student registration and login
+- Instructor/Admin accounts with elevated privileges
+- Role-based access control (Student, Instructor, Admin)
+- Profile management for all user types
+
+### 2. Document/Code Upload System
+- Support for multiple file formats (code files, text documents, markdown)
+- File validation and processing
+- Upload history and management
+- Preview functionality for uploaded content
+
+### 3. AI-Powered Quiz Generation
+- Integration with LLM APIs (OpenAI, Anthropic, etc.)
+- Multiple question types:
+  - Fill in the blanks
+  - Multiple choice
+  - True/False
+  - Matching pairs
+  - Code completion
+  - Debug/error identification
+- Customizable difficulty levels
+- Question pool management
+
+### 4. Duolingo-Style Quiz Interface
+- Progressive question flow
+- Immediate feedback on answers
+- Score tracking and streaks
+- Visual progress indicators
+- Gamification elements (points, badges, levels)
+- Mobile-responsive design
+
+### 5. Admin Dashboard & Analytics
+- Student progress overview
+- Performance analytics and reporting
+- Quiz completion rates
+- Detailed answer analysis
+- Class/group management
+- Export capabilities for reports
+
+### 6. Data Management
+- SQLite database for initial development
+- User data storage and management
+- Quiz history and results
+- File storage system
+- Database migration capabilities for future scaling
+
+## Technical Architecture
+
+### Frontend (React)
+- **Framework**: React 18 with functional components and hooks
+- **Routing**: React Router for navigation
+- **State Management**: Context API + useReducer for global state
+- **UI Components**: Material-UI or Tailwind CSS for consistent design
+- **Forms**: React Hook Form for form validation
+- **HTTP Client**: Axios for API communication
+- **Authentication**: JWT token-based auth with automatic refresh
+
+### Backend (Node.js)
+- **Framework**: Express.js with TypeScript
+- **Database**: SQLite3 with Knex.js query builder
+- **Authentication**: JWT with bcrypt for password hashing
+- **File Upload**: Multer for handling file uploads
+- **LLM Integration**: OpenAI SDK or Anthropic SDK
+- **API Design**: RESTful APIs with proper error handling
+- **Middleware**: CORS, helmet, rate limiting
+- **Validation**: Joi or Zod for input validation
+
+### Database Schema (SQLite)
+- Users table (id, email, password, role, created_at)
+- Uploads table (id, user_id, filename, content, upload_date)
+- Quizzes table (id, upload_id, title, difficulty, created_at)
+- Questions table (id, quiz_id, type, content, options, correct_answer)
+- Attempts table (id, user_id, quiz_id, started_at, completed_at)
+- Answers table (id, attempt_id, question_id, user_answer, is_correct)
+
+## User Experience
+
+### Student Journey
+1. **Onboarding**: Simple registration → email verification → profile setup
+2. **Upload**: Drag-and-drop interface for code/document upload
+3. **Quiz Generation**: Select upload → choose preferences → AI generates quiz
+4. **Quiz Taking**: Duolingo-style interface with progress tracking
+5. **Progress Tracking**: Dashboard showing completed quizzes, scores, streaks
+
+### Instructor Journey
+1. **Admin Access**: Enhanced login with instructor privileges
+2. **Student Management**: View enrolled students and their progress
+3. **Analytics**: Detailed reports on class performance
+4. **Content Management**: Review generated quizzes and uploaded content
+
+### Key User Flows
+- Upload → Generate → Take Quiz → View Results
+- Admin → View Analytics → Export Reports
+- Student → View Progress → Continue Learning
+
+## Development Roadmap
+
+### Phase 1: Foundation & MVP (Weeks 1-4)
+**Goal**: Basic working application with core functionality
+
+**Backend Foundation:**
+- Express server setup with TypeScript
+- SQLite database initialization with basic schema
+- User authentication system (register, login, JWT)
+- Basic API endpoints structure
+- File upload functionality
+
+**Frontend Foundation:**
+- React application setup with routing
+- Authentication pages (login, register)
+- Basic dashboard layouts
+- File upload interface
+- Basic navigation and layout components
+
+**MVP Features:**
+- User registration and login
+- Simple file upload (text/code files)
+- Basic quiz generation with OpenAI integration
+- Simple quiz interface (multiple choice only)
+- Basic results display
+
+### Phase 2: Enhanced Quiz System (Weeks 5-7)
+**Goal**: Rich quiz experience with multiple question types
+
+**Quiz Engine:**
+- Multiple question type support (fill-blanks, true/false, matching)
+- Question difficulty algorithms
+- Quiz customization options
+- Better LLM prompt engineering for question quality
+
+**UI/UX Enhancements:**
+- Duolingo-style quiz interface
+- Progress bars and feedback systems
+- Responsive design implementation
+- Improved file upload with preview
+
+**Database Enhancements:**
+- Complete quiz and attempt tracking
+- User progress storage
+- Answer history and analytics data
+
+### Phase 3: Analytics & Admin Features (Weeks 8-10)
+**Goal**: Comprehensive admin dashboard and analytics
+
+**Admin Dashboard:**
+- Student progress overview
+- Performance analytics with charts
+- Quiz management interface
+- User management tools
+
+**Analytics System:**
+- Detailed reporting system
+- Data visualization components
+- Export functionality
+- Performance metrics calculation
+
+**Enhanced Features:**
+- User roles and permissions
+- Bulk quiz generation
+- Advanced filtering and search
+
+### Phase 4: Gamification & Polish (Weeks 11-12)
+**Goal**: Engaging user experience with gamification
+
+**Gamification:**
+- Point system and streaks
+- Badges and achievements
+- Leaderboards
+- Progress visualization
+
+**Polish & Optimization:**
+- Performance optimization
+- Error handling improvements
+- Security enhancements
+- Mobile responsiveness
+- User experience refinements
+
+## Logical Dependency Chain
+
+### Critical Path Dependencies:
+1. **Database Setup** → User Authentication → File Upload → Quiz Generation
+2. **Basic API Structure** → Frontend Authentication → Dashboard Components
+3. **Quiz Generation** → Quiz Interface → Results Tracking → Analytics
+
+### Development Priority:
+1. **Week 1**: Database + Auth Backend → Auth Frontend
+2. **Week 2**: File Upload Backend → Upload Frontend → Basic Quiz API
+3. **Week 3**: Quiz Generation → Basic Quiz Interface
+4. **Week 4**: Results System → MVP Testing
+5. **Week 5-7**: Enhanced Quiz Types → Improved UI
+6. **Week 8-10**: Admin Dashboard → Analytics
+7. **Week 11-12**: Gamification → Polish
+
+### MVP Milestone:
+- Users can register, login, upload a text file, generate a basic multiple-choice quiz, take the quiz, and see results
+- Admin can see student list and basic analytics
+
+## Risks and Mitigations
+
+### Technical Challenges:
+- **LLM Integration Complexity**: Start with simple prompts, iterate based on results
+- **Quiz Quality**: Implement feedback system for question improvement
+- **File Processing**: Begin with simple text files, expand format support gradually
+
+### MVP Strategy:
+- Focus on single question type initially (multiple choice)
+- Use simple file formats (plain text, basic code files)
+- Implement basic analytics before complex reporting
+
+### Resource Constraints:
+- **LLM API Costs**: Implement usage limits and caching
+- **Development Time**: Prioritize core functionality over polish initially
+- **Scalability**: Design with SQLite but plan migration path to PostgreSQL/MySQL
+
+## Technical Specifications
+
+### API Endpoints:
+```
+Authentication:
+POST /api/auth/register
+POST /api/auth/login
+POST /api/auth/refresh
+
+File Management:
+POST /api/uploads
+GET /api/uploads/:id
+DELETE /api/uploads/:id
+
+Quiz System:
+POST /api/quizzes/generate
+GET /api/quizzes/:id
+POST /api/quizzes/:id/attempt
+GET /api/attempts/:id/results
+
+Admin:
+GET /api/admin/students
+GET /api/admin/analytics
+GET /api/admin/reports
+```
+
+### Environment Variables:
+- DATABASE_URL
+- JWT_SECRET
+- OPENAI_API_KEY
+- NODE_ENV
+- PORT
+
+### File Structure:
+```
+/backend
+  /src
+    /controllers
+    /models
+    /routes
+    /middleware
+    /services
+    /utils
+/frontend
+  /src
+    /components
+    /pages
+    /hooks
+    /services
+    /utils
+    /styles
+```
+
+This PRD provides a comprehensive roadmap for building your educational quiz platform with clear phases, dependencies, and technical specifications that can be easily broken down into manageable development tasks.

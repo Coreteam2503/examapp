@@ -1,0 +1,32 @@
+{
+  "name": "agentic-mesh-backend",
+  "version": "1.0.0",
+  "description": "Backend for agentic mesh quiz application",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "knex": "^3.1.0",
+    "sqlite3": "^5.1.6",
+    "joi": "^17.11.0",
+    "express-rate-limit": "^7.1.5",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3"
+  },
+  "keywords": ["quiz", "education", "ai", "learning"],
+  "author": "Your Name",
+  "license": "MIT"
+}
