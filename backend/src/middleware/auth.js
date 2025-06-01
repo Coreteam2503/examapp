@@ -6,6 +6,9 @@ const authenticateToken = async (req, res, next) => {
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
+    console.log('Auth middleware - Header:', authHeader ? 'Present' : 'Missing');
+    console.log('Auth middleware - Token:', token ? 'Present' : 'Missing');
+
     if (!token) {
       return res.status(401).json({
         success: false,
@@ -13,10 +16,16 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key');
+    const jwtSecret = process.env.JWT_SECRET || 'your-super-secret-jwt-key';
+    console.log('Auth middleware - JWT Secret:', jwtSecret.substring(0, 10) + '...');
+    
+    const decoded = jwt.verify(token, jwtSecret);
+    console.log('Auth middleware - Decoded token:', decoded);
     
     // Verify user still exists and is active
     const user = await User.findById(decoded.userId);
+    console.log('Auth middleware - User found:', user ? 'Yes' : 'No');
+    
     if (!user || !user.is_active) {
       return res.status(401).json({
         success: false,
@@ -28,6 +37,8 @@ const authenticateToken = async (req, res, next) => {
     next();
 
   } catch (error) {
+    console.error('Auth middleware error:', error.message, error.name);
+    
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({
         success: false,

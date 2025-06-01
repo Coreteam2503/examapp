@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { authService } from '../services/authService';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuthDispatch, authActions } from '../contexts/AuthContext';
 
-const RegisterForm = ({ onRegistrationSuccess, onSwitchToLogin }) => {
+const RegisterForm = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -12,6 +13,9 @@ const RegisterForm = ({ onRegistrationSuccess, onSwitchToLogin }) => {
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+
+  const dispatch = useAuthDispatch();
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -71,23 +75,19 @@ const RegisterForm = ({ onRegistrationSuccess, onSwitchToLogin }) => {
     setErrors({});
 
     try {
-      // Remove confirmPassword before sending to API
-      const { confirmPassword, ...registrationData } = formData;
+      const result = await authActions.register(dispatch)(
+        formData.email, 
+        formData.password, 
+        formData.confirmPassword
+      );
       
-      const response = await authService.register(registrationData);
-      
-      if (response.success) {
-        onRegistrationSuccess?.(response.data.user);
+      if (result.success) {
+        navigate('/dashboard');
+      } else {
+        setErrors({ general: result.error });
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Registration failed. Please try again.';
-      const validationErrors = error.response?.data?.errors;
-      
-      if (validationErrors && Array.isArray(validationErrors)) {
-        setErrors({ general: validationErrors.join(', ') });
-      } else {
-        setErrors({ general: errorMessage });
-      }
+      setErrors({ general: 'Registration failed. Please try again.' });
     } finally {
       setIsLoading(false);
     }
@@ -102,12 +102,12 @@ const RegisterForm = ({ onRegistrationSuccess, onSwitchToLogin }) => {
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Or{' '}
-            <button
-              onClick={onSwitchToLogin}
+            <Link
+              to="/login"
               className="font-medium text-indigo-600 hover:text-indigo-500"
             >
               sign in to existing account
-            </button>
+            </Link>
           </p>
         </div>
         

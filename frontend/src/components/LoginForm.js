@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
-import { authService } from '../services/authService';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuthDispatch, authActions } from '../contexts/AuthContext';
 
-const LoginForm = ({ onLoginSuccess, onSwitchToRegister }) => {
+const LoginForm = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  
+  const dispatch = useAuthDispatch();
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -51,14 +55,15 @@ const LoginForm = ({ onLoginSuccess, onSwitchToRegister }) => {
     setErrors({});
 
     try {
-      const response = await authService.login(formData);
+      const result = await authActions.login(dispatch)(formData.email, formData.password);
       
-      if (response.success) {
-        onLoginSuccess?.(response.data.user);
+      if (result.success) {
+        navigate('/dashboard');
+      } else {
+        setErrors({ general: result.error });
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Login failed. Please try again.';
-      setErrors({ general: errorMessage });
+      setErrors({ general: 'Login failed. Please try again.' });
     } finally {
       setIsLoading(false);
     }
@@ -73,12 +78,12 @@ const LoginForm = ({ onLoginSuccess, onSwitchToRegister }) => {
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Or{' '}
-            <button
-              onClick={onSwitchToRegister}
+            <Link
+              to="/register"
               className="font-medium text-indigo-600 hover:text-indigo-500"
             >
               create a new account
-            </button>
+            </Link>
           </p>
         </div>
         

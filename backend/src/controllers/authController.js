@@ -142,6 +142,50 @@ const authController = {
         message: 'Internal server error'
       });
     }
+  },
+
+  async refreshToken(req, res) {
+    try {
+      const user = await User.findById(req.user.userId);
+      
+      if (!user || !user.is_active) {
+        return res.status(401).json({
+          success: false,
+          message: 'User not found or inactive'
+        });
+      }
+
+      // Generate new JWT token
+      const token = jwt.sign(
+        { 
+          userId: user.id, 
+          email: user.email, 
+          role: user.role 
+        },
+        process.env.JWT_SECRET || 'your-super-secret-jwt-key',
+        { expiresIn: '24h' }
+      );
+
+      // Remove password from response
+      const { password: _, ...userResponse } = user;
+
+      res.json({
+        success: true,
+        message: 'Token refreshed successfully',
+        data: {
+          user: userResponse,
+          token,
+          expiresIn: '24h'
+        }
+      });
+
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
   }
 };
 
