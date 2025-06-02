@@ -20,11 +20,12 @@ node_modules/
 *.njsproj
 *.sln
 *.sw?
-
+.roo
+.cursor
 
 # OS specific
 .DS_Store
 
 # Task files
-tasks.json
-tasks/ 
+# tasks.json
+# tasks/ 

@@ -1,0 +1,11 @@
+# Task ID: 25
+# Title: True/False and Matching Question Types
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Add support for true/false and matching pair questions
+# Details:
+Implement true/false and matching question types in both generation and display components with appropriate UI interactions.
+
+# Test Strategy:
+Test new question types generation, display, and interaction

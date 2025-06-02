@@ -1,0 +1,11 @@
+# Task ID: 21
+# Title: Quiz Results Display Component
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Create component to display quiz results and performance metrics
+# Details:
+Build React component for displaying quiz results, score breakdown, correct/incorrect answers, and performance metrics.
+
+# Test Strategy:
+Test results display, score visualization, answer review functionality

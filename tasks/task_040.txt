@@ -1,0 +1,11 @@
+# Task ID: 40
+# Title: Quiz Difficulty Customization
+# Status: pending
+# Dependencies: None
+# Priority: low
+# Description: Allow users to select quiz difficulty and question parameters
+# Details:
+Create interface for customizing quiz difficulty, question count, time limits, and question type selection.
+
+# Test Strategy:
+Test customization options, parameter application, quiz generation with custom settings

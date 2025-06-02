@@ -1,0 +1,11 @@
+# Task ID: 13
+# Title: Basic File Upload Frontend Component
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Create simple file upload form with progress tracking
+# Details:
+Build React component for file selection and upload with progress bar, file type validation, and basic error handling.
+
+# Test Strategy:
+Test file selection, upload progress, basic validation, error display

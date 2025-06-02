@@ -1,0 +1,11 @@
+# Task ID: 41
+# Title: Question Type Selection
+# Status: pending
+# Dependencies: None
+# Priority: low
+# Description: Allow users to choose specific question types for their quizzes
+# Details:
+Implement question type selection interface and update LLM prompts to generate specific question types as requested.
+
+# Test Strategy:
+Test question type selection, prompt customization, generated question compliance

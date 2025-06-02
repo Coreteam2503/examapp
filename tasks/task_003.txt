@@ -1,0 +1,11 @@
+# Task ID: 3
+# Title: Core User Tables Creation
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Create users table with authentication fields and basic user management
+# Details:
+Create users table with fields for id, email, password, role, created_at, updated_at. Create migration files and test basic user CRUD operations.
+
+# Test Strategy:
+Test table creation, basic insert/select operations, verify constraints

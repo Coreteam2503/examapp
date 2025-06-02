@@ -1,0 +1,11 @@
+# Task ID: 20
+# Title: Quiz Results Backend API
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Create API endpoints for storing quiz attempts and calculating scores
+# Details:
+Implement APIs for storing quiz attempts, calculating scores, tracking progress, and retrieving results history.
+
+# Test Strategy:
+Test attempt storage, score calculation accuracy, results retrieval

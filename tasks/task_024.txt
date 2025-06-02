@@ -1,0 +1,11 @@
+# Task ID: 24
+# Title: Fill-in-the-Blank Question Type
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Add support for fill-in-the-blank questions in quiz generation and display
+# Details:
+Extend LLM prompts and frontend components to support fill-in-the-blank questions with proper input handling and validation.
+
+# Test Strategy:
+Test fill-in-the-blank generation, display, and answer validation

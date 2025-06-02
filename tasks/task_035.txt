@@ -1,0 +1,11 @@
+# Task ID: 35
+# Title: Points and Scoring System
+# Status: pending
+# Dependencies: None
+# Priority: low
+# Description: Implement point calculation and scoring system for gamification
+# Details:
+Create point calculation logic for quiz completion, implement scoring algorithms, and track user points history.
+
+# Test Strategy:
+Test point calculation accuracy, scoring logic, points history tracking

@@ -1,0 +1,11 @@
+# Task ID: 5
+# Title: Quiz System Tables Creation
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Create quizzes, questions, attempts, and answers tables for quiz functionality
+# Details:
+Create quizzes table (id, upload_id, title, difficulty), questions table (id, quiz_id, type, content, options, correct_answer), attempts table (id, user_id, quiz_id, started_at, completed_at), and answers table (id, attempt_id, question_id, user_answer, is_correct).
+
+# Test Strategy:
+Test all table creation, foreign key relationships, complex queries across tables

@@ -1,0 +1,11 @@
+# Task ID: 8
+# Title: Role-Based Access Control Backend
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Implement basic role management and authorization middleware
+# Details:
+Add role-based authorization middleware, implement role checking functions, and create basic admin/student role distinctions.
+
+# Test Strategy:
+Test role assignment, authorization middleware, role-based route protection
