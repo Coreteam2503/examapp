@@ -55,39 +55,85 @@ kill_by_pattern() {
     fi
 }
 
-# Function to stop PM2 processes
+# Function to stop PM2 processes (only specific ones)
 stop_pm2_processes() {
     if ! command -v pm2 >/dev/null 2>&1; then
         log "PM2 not installed, skipping"
         return 0
     fi
     
-    log "Stopping PM2 processes..."
+    log "Stopping specific PM2 processes..."
     
+    # Only stop our specific PM2 processes
     pm2 stop agentic-mesh-backend 2>/dev/null || true
     pm2 stop agentic-mesh-frontend 2>/dev/null || true
     pm2 delete agentic-mesh-backend 2>/dev/null || true
     pm2 delete agentic-mesh-frontend 2>/dev/null || true
     
-    success "PM2 processes cleaned up"
+    success "Specific PM2 processes cleaned up"
 }
 
-# Function to stop all application processes
+# Function to stop only PID-tracked processes from our logs
+stop_tracked_processes() {
+    local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    local project_root="$(dirname "$script_dir")"
+    local logs_dir="$project_root/logs"
+    
+    log "Stopping tracked processes from PID files..."
+    
+    # Stop backend if PID file exists
+    if [ -f "$logs_dir/backend.pid" ]; then
+        local backend_pid=$(cat "$logs_dir/backend.pid" 2>/dev/null || true)
+        if [ -n "$backend_pid" ] && kill -0 "$backend_pid" 2>/dev/null; then
+            log "Stopping tracked backend process (PID: $backend_pid)"
+            kill -TERM "$backend_pid" 2>/dev/null || true
+            sleep 2
+            if kill -0 "$backend_pid" 2>/dev/null; then
+                warning "Force killing backend process"
+                kill -KILL "$backend_pid" 2>/dev/null || true
+            fi
+            rm -f "$logs_dir/backend.pid"
+            success "Backend process stopped"
+        else
+            log "Backend PID file exists but process not running"
+            rm -f "$logs_dir/backend.pid"
+        fi
+    fi
+    
+    # Stop frontend if PID file exists
+    if [ -f "$logs_dir/frontend.pid" ]; then
+        local frontend_pid=$(cat "$logs_dir/frontend.pid" 2>/dev/null || true)
+        if [ -n "$frontend_pid" ] && kill -0 "$frontend_pid" 2>/dev/null; then
+            log "Stopping tracked frontend process (PID: $frontend_pid)"
+            kill -TERM "$frontend_pid" 2>/dev/null || true
+            sleep 2
+            if kill -0 "$frontend_pid" 2>/dev/null; then
+                warning "Force killing frontend process"
+                kill -KILL "$frontend_pid" 2>/dev/null || true
+            fi
+            rm -f "$logs_dir/frontend.pid"
+            success "Frontend process stopped"
+        else
+            log "Frontend PID file exists but process not running"
+            rm -f "$logs_dir/frontend.pid"
+        fi
+    fi
+}
+
+# Function to stop application processes - ONLY port-based killing now
 stop_app_processes() {
-    log "Stopping all application processes..."
+    log "Stopping application processes (port-based only)..."
     
-    # Kill specific process patterns
-    kill_by_pattern "react-scripts start" "React Dev Server"
-    kill_by_pattern "node.*server.js" "Node Backend"
-    kill_by_pattern "nodemon.*server.js" "Nodemon Backend"
-    kill_by_pattern "npm.*start" "NPM Start Processes"
-    kill_by_pattern "serve -s build" "Production Frontend"
-    kill_by_pattern "agentic.*mesh" "Agentic Mesh Processes"
+    # First try to stop tracked processes cleanly
+    stop_tracked_processes
     
-    # Stop PM2 processes
+    # Stop PM2 processes (only our specific ones)
     stop_pm2_processes
     
-    success "All application processes stopped"
+    # Note: We no longer kill by pattern to avoid affecting other services
+    # Port-specific killing is handled in the main scripts
+    
+    success "Application processes stop sequence completed"
 }
 
 # Main function when script is called directly
@@ -103,16 +149,20 @@ main() {
         pm2)
             stop_pm2_processes
             ;;
+        tracked)
+            stop_tracked_processes
+            ;;
         all)
             stop_app_processes
             ;;
         *)
-            echo "Usage: $0 {pattern|pm2|all} [options]"
+            echo "Usage: $0 {pattern|pm2|tracked|all} [options]"
             echo ""
             echo "Commands:"
             echo "  pattern <pattern> [name]  Kill processes matching pattern"
-            echo "  pm2                       Stop PM2 processes"
-            echo "  all                       Stop all application processes"
+            echo "  pm2                       Stop specific PM2 processes"
+            echo "  tracked                   Stop processes tracked in PID files"
+            echo "  all                       Stop application processes (safe mode)"
             exit 1
             ;;
     esac

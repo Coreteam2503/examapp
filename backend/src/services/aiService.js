@@ -128,6 +128,15 @@ class AIService {
   buildQuizPrompt(content, options) {
     const { numQuestions, difficulty, questionTypes, language } = options;
     
+    const questionTypeInstructions = {
+      'multiple-choice': 'Multiple choice questions with 4 options (A, B, C, D)',
+      'true-false': 'True or false questions about the content',
+      'fill-in-the-blank': 'Fill-in-the-blank questions with missing keywords or values',
+      'matching': 'Matching questions with pairs of related concepts'
+    };
+    
+    const instructions = questionTypes.map(type => questionTypeInstructions[type] || type).join(', ');
+    
     return `
 Please analyze the following code/content and generate ${numQuestions} high-quality quiz questions.
 
@@ -138,9 +147,10 @@ ${content.substring(0, 4000)} ${content.length > 4000 ? '...' : ''}
 
 REQUIREMENTS:
 - Difficulty: ${difficulty}
-- Question types: ${questionTypes.join(', ')}
+- Question types: ${instructions}
 - Language: ${language}
 - Generate exactly ${numQuestions} questions
+- Mix different question types if multiple types are specified
 - Focus on understanding concepts, not just memorization
 - Include varied difficulty within the specified level
 - Make questions practical and relevant
@@ -157,6 +167,28 @@ RESPONSE FORMAT (JSON):
       "explanation": "Detailed explanation of why this is correct",
       "difficulty": "medium",
       "concept": "Main concept being tested"
+    },
+    {
+      "id": 2,
+      "type": "true-false",
+      "question": "This function returns a boolean value.",
+      "correct_answer": true,
+      "explanation": "Explanation of the statement",
+      "difficulty": "easy",
+      "concept": "Function return types"
+    },
+    {
+      "id": 3,
+      "type": "matching",
+      "question": "Match the following concepts with their descriptions:",
+      "pairs": [
+        {"left": "Variable", "right": "Stores data values"},
+        {"left": "Function", "right": "Reusable code block"},
+        {"left": "Loop", "right": "Repeats code execution"}
+      ],
+      "explanation": "These are fundamental programming concepts",
+      "difficulty": "medium",
+      "concept": "Programming fundamentals"
     }
   ]
 }
@@ -230,7 +262,7 @@ Generate diverse, educational questions that test understanding of the content p
         errors.push(`Question ${index + 1}: Missing or invalid question text`);
       }
       
-      if (!question.type || !['multiple-choice', 'true-false', 'fill-blank'].includes(question.type)) {
+      if (!question.type || !['multiple-choice', 'true-false', 'fill-in-the-blank', 'matching'].includes(question.type)) {
         errors.push(`Question ${index + 1}: Invalid question type`);
       }
       
@@ -241,6 +273,30 @@ Generate diverse, educational questions that test understanding of the content p
         
         if (!question.correct_answer) {
           errors.push(`Question ${index + 1}: Missing correct answer`);
+        }
+      }
+      
+      if (question.type === 'true-false') {
+        if (typeof question.correct_answer !== 'boolean') {
+          errors.push(`Question ${index + 1}: True/false questions need a boolean correct_answer`);
+        }
+      }
+      
+      if (question.type === 'matching') {
+        if (!Array.isArray(question.pairs) || question.pairs.length < 2) {
+          errors.push(`Question ${index + 1}: Matching questions need at least 2 pairs`);
+        }
+        
+        question.pairs?.forEach((pair, pairIndex) => {
+          if (!pair.left || !pair.right) {
+            errors.push(`Question ${index + 1}, Pair ${pairIndex + 1}: Missing left or right value`);
+          }
+        });
+      }
+      
+      if (question.type === 'fill-in-the-blank') {
+        if (!question.blanks || !Array.isArray(question.blanks)) {
+          errors.push(`Question ${index + 1}: Fill-in-the-blank questions need blanks array`);
         }
       }
     });

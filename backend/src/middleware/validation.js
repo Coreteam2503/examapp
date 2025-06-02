@@ -10,6 +10,10 @@ const validateRegistration = (req, res, next) => {
       'string.min': 'Password must be at least 6 characters long',
       'any.required': 'Password is required'
     }),
+    confirmPassword: Joi.string().valid(Joi.ref('password')).required().messages({
+      'any.only': 'Password confirmation does not match password',
+      'any.required': 'Password confirmation is required'
+    }),
     first_name: Joi.string().min(2).max(50).optional(),
     last_name: Joi.string().min(2).max(50).optional(),
     role: Joi.string().valid('admin', 'student').default('student')

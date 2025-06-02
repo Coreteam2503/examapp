@@ -94,8 +94,19 @@ const USER_KEY = 'authUser';
 const saveTokenToStorage = (token, user) => {
   console.log('Saving token to storage:', token ? 'Token present' : 'Token missing');
   console.log('Saving user to storage:', user ? 'User present' : 'User missing');
-  localStorage.setItem(TOKEN_KEY, token);
-  localStorage.setItem(USER_KEY, JSON.stringify(user));
+  
+  if (token && token !== 'undefined') {
+    localStorage.setItem(TOKEN_KEY, token);
+  } else {
+    localStorage.removeItem(TOKEN_KEY);
+  }
+  
+  if (user && user !== 'undefined') {
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+  } else {
+    localStorage.removeItem(USER_KEY);
+  }
+  
   console.log('After saving - token in storage:', localStorage.getItem(TOKEN_KEY) ? 'Present' : 'Missing');
 };
 
@@ -104,8 +115,19 @@ const getTokenFromStorage = () => {
 };
 
 const getUserFromStorage = () => {
-  const user = localStorage.getItem(USER_KEY);
-  return user ? JSON.parse(user) : null;
+  try {
+    const user = localStorage.getItem(USER_KEY);
+    // Check if user exists and is not the string "undefined"
+    if (user && user !== 'undefined' && user !== 'null') {
+      return JSON.parse(user);
+    }
+    return null;
+  } catch (error) {
+    console.error('Error parsing user from storage:', error);
+    // Clear invalid data
+    localStorage.removeItem(USER_KEY);
+    return null;
+  }
 };
 
 const removeTokenFromStorage = () => {
@@ -172,14 +194,19 @@ export const authActions = {
       dispatch({ type: 'LOGIN_START' });
       
       const data = await authServiceFunctions.register(email, password, confirmPassword);
+      console.log('Register response data:', data);
       
-      saveTokenToStorage(data.token, data.user);
+      // Handle both data.data and direct data structures
+      const user = data.data?.user || data.user;
+      const token = data.data?.token || data.token;
+      
+      saveTokenToStorage(token, user);
       
       dispatch({
         type: 'LOGIN_SUCCESS',
         payload: {
-          user: data.user,
-          token: data.token
+          user: user,
+          token: token
         }
       });
       

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Agentic Mesh Quiz App - Stop Script
-# Stops all application processes and frees ports
+# Stops ONLY processes running on ports 3000 and 8000
 
 set -e
 
@@ -28,6 +28,10 @@ header() {
     echo -e "${PURPLE}$1${NC}"
 }
 
+warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
 # Source utility scripts
 source "$SCRIPT_DIR/port_manager.sh"
 source "$SCRIPT_DIR/process_manager.sh"
@@ -35,14 +39,17 @@ source "$SCRIPT_DIR/process_manager.sh"
 main() {
     header "=== Agentic Mesh Quiz App - Stop Script ==="
     
-    log "Stopping all application processes..."
+    log "Stopping ONLY services on ports 3000 and 8000..."
     
-    # Stop application processes
-    stop_app_processes
+    # First try to stop tracked processes cleanly (our own PID files)
+    stop_tracked_processes
     
-    # Kill processes on specific ports
+    # Then kill anything still running on our specific ports
     kill_port 3000 "Frontend"
     kill_port 8000 "Backend"
+    
+    # Stop only our specific PM2 processes if any
+    stop_pm2_processes
     
     # Final verification
     sleep 1
@@ -59,21 +66,23 @@ main() {
         [ -n "$remaining_3000" ] && echo "  kill -9 $remaining_3000"
         [ -n "$remaining_8000" ] && echo "  kill -9 $remaining_8000"
     else
-        success "All application services stopped successfully"
+        success "All target services stopped successfully"
     fi
     
     echo ""
-    success "Stop completed!"
+    success "Stop completed - only ports 3000 and 8000 were targeted!"
 }
 
 # Handle help
 if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo "Usage: $0"
     echo ""
-    echo "This script stops all Agentic Mesh Quiz App processes by:"
-    echo "  1. Stopping application-specific processes"
-    echo "  2. Freeing ports 3000 and 8000"
-    echo "  3. Cleaning up PM2 processes if any"
+    echo "This script stops ONLY Agentic Mesh Quiz App processes by:"
+    echo "  1. Stopping processes tracked in PID files (safe)"
+    echo "  2. Freeing ONLY ports 3000 and 8000"
+    echo "  3. Cleaning up specific PM2 processes (agentic-mesh-* only)"
+    echo ""
+    echo "This script will NOT affect other services or ports."
     echo ""
     exit 0
 fi

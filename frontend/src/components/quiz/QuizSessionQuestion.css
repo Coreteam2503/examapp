@@ -1,0 +1,287 @@
+/* Quiz Session Question Styles */
+.question-section {
+  background: var(--duo-white);
+  border: 3px solid var(--duo-gray-200);
+  border-radius: 20px;
+  padding: 32px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-heavy);
+  position: relative;
+  animation: questionAppear 0.6s ease-out 0.3s both;
+}
+
+@keyframes questionAppear {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.question-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--duo-gray-200);
+}
+
+.question-number {
+  background: linear-gradient(135deg, var(--duo-blue), var(--duo-blue-dark));
+  color: white;
+  padding: 10px 20px;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  box-shadow: 0 4px 15px rgba(28, 176, 246, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.question-number::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: numberShine 3s ease-in-out infinite;
+}
+
+@keyframes numberShine {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+.question-difficulty {
+  background: linear-gradient(135deg, var(--duo-gray-100), var(--duo-white));
+  color: var(--duo-gray-700);
+  padding: 6px 16px;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  border: 2px solid var(--duo-gray-200);
+}
+
+.question-content h3 {
+  color: var(--duo-gray-900);
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1.5;
+  margin-bottom: 24px;
+  position: relative;
+  padding-left: 40px;
+}
+
+.question-content h3::before {
+  content: '❓';
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-size: 1.3rem;
+  animation: questionBounce 2s ease-in-out infinite;
+}
+
+@keyframes questionBounce {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-5px) rotate(10deg); }
+}
+
+.code-snippet {
+  margin: 24px 0;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 3px solid var(--duo-gray-300);
+  box-shadow: var(--shadow-medium);
+}
+
+.code-header {
+  background: linear-gradient(135deg, var(--duo-gray-100), var(--duo-white));
+  padding: 12px 20px;
+  border-bottom: 2px solid var(--duo-gray-200);
+  font-weight: 700;
+  color: var(--duo-gray-700);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.code-header::before {
+  content: '💻';
+  font-size: 1rem;
+}
+
+.code-snippet pre {
+  background: linear-gradient(135deg, #1e293b, #334155);
+  color: #e2e8f0;
+  padding: 24px;
+  margin: 0;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+/* Options Section */
+.options-section {
+  margin-top: 32px;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  background: var(--duo-white);
+  border: 3px solid var(--duo-gray-200);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-light);
+}
+
+.option::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(28, 176, 246, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.option:hover {
+  border-color: var(--duo-blue);
+  background: linear-gradient(135deg, #f0f9ff, var(--duo-white));
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: var(--shadow-medium);
+}
+
+.option:hover::before {
+  left: 100%;
+}
+
+.option.selected {
+  border-color: var(--duo-green);
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(88, 204, 2, 0.2);
+  animation: optionSelect 0.6s ease-out;
+}
+
+@keyframes optionSelect {
+  0% { transform: translateY(-2px) scale(1.02); }
+  50% { transform: translateY(-4px) scale(1.05); }
+  100% { transform: translateY(-2px) scale(1.02); }
+}
+
+.option-marker {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--duo-gray-200), var(--duo-gray-100));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: var(--duo-gray-700);
+  margin-right: 20px;
+  flex-shrink: 0;
+  border: 2px solid var(--duo-gray-300);
+  transition: all 0.3s ease;
+  font-size: 1.1rem;
+}
+
+.option.selected .option-marker {
+  background: linear-gradient(135deg, var(--duo-green), var(--duo-green-light));
+  color: white;
+  border-color: var(--duo-green-dark);
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(88, 204, 2, 0.3);
+}
+
+.option-text {
+  flex: 1;
+  color: var(--duo-gray-900);
+  font-size: 1.05rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.option-check {
+  color: var(--duo-green);
+  font-weight: bold;
+  font-size: 1.3rem;
+  margin-left: 12px;
+  animation: checkAppear 0.4s ease-out;
+}
+
+@keyframes checkAppear {
+  from {
+    opacity: 0;
+    transform: scale(0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .question-section {
+    padding: 24px;
+    border-radius: 16px;
+  }
+  
+  .question-header {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+  
+  .question-content h3 {
+    font-size: 1.2rem;
+    padding-left: 35px;
+  }
+}
+
+@media (max-width: 480px) {
+  .question-section {
+    padding: 20px;
+  }
+  
+  .option {
+    padding: 16px 20px;
+  }
+  
+  .option-marker {
+    width: 35px;
+    height: 35px;
+    font-size: 1rem;
+  }
+  
+  .option-text {
+    font-size: 1rem;
+  }
+  
+  .question-content h3 {
+    font-size: 1.1rem;
+    padding-left: 32px;
+  }
+  
+  .code-snippet pre {
+    padding: 16px;
+    font-size: 0.85rem;
+  }
+}

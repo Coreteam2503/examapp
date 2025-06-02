@@ -31,7 +31,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/uploads', require('./routes/uploads'));
 app.use('/api/quizzes', require('./routes/quizzes'));
+app.use('/api/quiz-attempts', require('./routes/quizAttempts'));
 app.use('/api/ai', require('./routes/ai'));
+app.use('/api/users', require('./routes/users'));
+app.use('/api/analytics', require('./routes/analytics'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

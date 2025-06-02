@@ -80,17 +80,33 @@ export const apiService = {
 
   // Quiz endpoints
   quizzes: {
+    generate: (data) => api.post('/quizzes/generate', data),
     list: (params) => api.get('/quizzes', { params }),
     getById: (id) => api.get(`/quizzes/${id}`),
     create: (data) => api.post('/quizzes', data),
     update: (id, data) => api.put(`/quizzes/${id}`, data),
-    delete: (id) => api.delete(`/quizzes/${id}`),
-    
-    // Quiz attempts
-    startAttempt: (quizId) => api.post(`/quizzes/${quizId}/attempts`),
-    submitAnswer: (attemptId, data) => api.post(`/attempts/${attemptId}/answers`, data),
-    finishAttempt: (attemptId) => api.post(`/attempts/${attemptId}/finish`),
-    getResults: (attemptId) => api.get(`/attempts/${attemptId}/results`)
+    delete: (id) => api.delete(`/quizzes/${id}`)
+  },
+
+  // Quiz attempts endpoints
+  quizAttempts: {
+    submit: (data) => api.post('/quiz-attempts', data),
+    getById: (id) => api.get(`/quiz-attempts/${id}`),
+    getUserAttempts: (params) => api.get('/quiz-attempts', { params }),
+    getStatistics: () => api.get('/quiz-attempts/statistics'),
+    getDetailedResults: (id) => api.get(`/quiz-attempts/${id}/detailed`),
+    getRecent: (params) => api.get('/quiz-attempts/recent', { params }),
+    delete: (id) => api.delete(`/quiz-attempts/${id}`)
+  },
+
+  // User endpoints
+  users: {
+    getProgress: () => api.get('/users/progress')
+  },
+
+  // Analytics endpoints
+  analytics: {
+    getPerformance: (params) => api.get('/analytics/performance', { params })
   }
 };
 

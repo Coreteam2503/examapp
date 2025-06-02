@@ -17,7 +17,8 @@ const authenticateToken = async (req, res, next) => {
     }
 
     const jwtSecret = process.env.JWT_SECRET || 'your-super-secret-jwt-key';
-    console.log('Auth middleware - JWT Secret:', jwtSecret.substring(0, 10) + '...');
+    console.log('Auth middleware - JWT Secret being used:', jwtSecret);
+    console.log('Auth middleware - Env JWT_SECRET:', process.env.JWT_SECRET ? 'Present' : 'Missing');
     
     const decoded = jwt.verify(token, jwtSecret);
     console.log('Auth middleware - Decoded token:', decoded);

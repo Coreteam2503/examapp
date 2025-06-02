@@ -8,6 +8,7 @@ const FileManager = () => {
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState(null);
+  const [generatingQuiz, setGeneratingQuiz] = useState(null); // Track which file is generating
   const { token } = useAuth();
 
   const fetchUploads = async (pageNum = 1) => {
@@ -56,6 +57,35 @@ const FileManager = () => {
       console.error('Delete error:', error);
       const errorResponse = handleApiError(error);
       setError(errorResponse.message);
+    }
+  };
+
+  const generateQuiz = async (uploadId, filename) => {
+    setGeneratingQuiz(uploadId);
+    setError('');
+
+    try {
+      const response = await apiService.quizzes.generate({
+        uploadId: uploadId,
+        difficulty: 'medium',
+        numQuestions: 5
+      });
+
+      if (response.data && response.data.quiz) {
+        // Quiz generated successfully
+        alert(`Quiz generated successfully for "${filename}"!\nQuiz ID: ${response.data.quiz.id}\nQuestions: ${response.data.quiz.total_questions}`);
+        
+        // You can redirect to quiz page or show success message
+        // window.location.href = `/quiz/${response.data.quiz.id}`;
+      } else {
+        setError('Quiz generated but response format unexpected');
+      }
+    } catch (error) {
+      console.error('Quiz generation error:', error);
+      const errorResponse = handleApiError(error);
+      setError(`Failed to generate quiz for "${filename}": ${errorResponse.message}`);
+    } finally {
+      setGeneratingQuiz(null);
     }
   };
 
@@ -155,8 +185,19 @@ const FileManager = () => {
                 </div>
 
                 <div className="file-footer">
-                  <button className="generate-quiz-btn" disabled>
-                    Generate Quiz (Coming Soon)
+                  <button 
+                    className={`generate-quiz-btn ${generatingQuiz === upload.id ? 'generating' : ''}`}
+                    disabled={generatingQuiz === upload.id}
+                    onClick={() => generateQuiz(upload.id, upload.filename)}
+                  >
+                    {generatingQuiz === upload.id ? (
+                      <span>
+                        <span className="spinner-small"></span>
+                        Generating Quiz...
+                      </span>
+                    ) : (
+                      '🎯 Generate Quiz'
+                    )}
                   </button>
                 </div>
               </div>
@@ -217,6 +258,17 @@ const FileManager = () => {
           height: 50px;
           animation: spin 1s linear infinite;
           margin: 0 auto 20px;
+        }
+
+        .spinner-small {
+          display: inline-block;
+          border: 2px solid #f3f3f3;
+          border-top: 2px solid #fff;
+          border-radius: 50%;
+          width: 16px;
+          height: 16px;
+          animation: spin 1s linear infinite;
+          margin-right: 8px;
         }
 
         @keyframes spin {
@@ -358,13 +410,32 @@ const FileManager = () => {
 
         .generate-quiz-btn {
           width: 100%;
-          background: #bdc3c7;
+          background: #27ae60;
           color: white;
           border: none;
           padding: 0.75rem;
           border-radius: 4px;
-          cursor: not-allowed;
+          cursor: pointer;
           font-size: 0.9rem;
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .generate-quiz-btn:hover:not(:disabled) {
+          background: #219a52;
+          transform: translateY(-1px);
+        }
+
+        .generate-quiz-btn:disabled {
+          background: #bdc3c7;
+          cursor: not-allowed;
+          transform: none;
+        }
+
+        .generate-quiz-btn.generating {
+          background: #f39c12;
         }
 
         .pagination {

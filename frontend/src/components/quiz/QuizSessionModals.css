@@ -1,0 +1,410 @@
+/* Quiz Session Modals Styles */
+
+/* Pause Modal */
+.pause-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: modalFadeIn 0.4s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(8px);
+  }
+}
+
+.pause-content {
+  background: var(--duo-white);
+  padding: 40px;
+  border-radius: 24px;
+  max-width: 500px;
+  width: 90%;
+  text-align: center;
+  box-shadow: var(--shadow-heavy);
+  border: 3px solid var(--duo-gray-200);
+  position: relative;
+  animation: modalSlideIn 0.5s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.pause-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(90deg, var(--duo-orange), var(--duo-yellow), var(--duo-orange));
+  border-radius: 24px 24px 0 0;
+  animation: pauseShimmer 2s ease-in-out infinite;
+}
+
+@keyframes pauseShimmer {
+  0%, 100% { transform: translateX(-100%); }
+  50% { transform: translateX(100%); }
+}
+
+.pause-content h2 {
+  color: var(--duo-gray-900);
+  margin-bottom: 32px;
+  font-size: 2rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.pause-content h2::before {
+  content: '⏸️';
+  font-size: 1.8rem;
+  animation: pauseIcon 1s ease-in-out infinite;
+}
+
+@keyframes pauseIcon {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.pause-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 32px;
+  padding: 20px;
+  background: linear-gradient(135deg, var(--duo-gray-100), var(--duo-white));
+  border-radius: 16px;
+  border: 2px solid var(--duo-gray-200);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.stat-label {
+  color: var(--duo-gray-700);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  color: var(--duo-gray-900);
+  font-weight: 800;
+  font-size: 1.4rem;
+  background: linear-gradient(135deg, var(--duo-blue), var(--duo-purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.pause-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.resume-btn {
+  background: linear-gradient(135deg, var(--duo-green), var(--duo-green-light));
+  color: white;
+  border: none;
+  padding: 14px 32px;
+  border-radius: 50px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 15px rgba(88, 204, 2, 0.3);
+  position: relative;
+  overflow: hidden;
+  border: 3px solid var(--duo-green-dark);
+}
+
+.resume-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  transition: left 0.5s;
+}
+
+.resume-btn:hover {
+  background: linear-gradient(135deg, var(--duo-green-light), var(--duo-green));
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 20px rgba(88, 204, 2, 0.4);
+}
+
+.resume-btn:hover::before {
+  left: 100%;
+}
+
+.pause-note {
+  color: var(--duo-gray-700);
+  font-size: 0.95rem;
+  font-style: italic;
+  margin: 0;
+  opacity: 0.8;
+}
+
+/* Exit Confirmation Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: modalFadeIn 0.4s ease-out;
+}
+
+.modal-content {
+  background: var(--duo-white);
+  padding: 32px;
+  border-radius: 20px;
+  max-width: 450px;
+  width: 90%;
+  text-align: center;
+  box-shadow: var(--shadow-heavy);
+  border: 3px solid var(--duo-gray-200);
+  position: relative;
+  animation: modalSlideIn 0.5s ease-out;
+}
+
+.modal-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--duo-red), var(--duo-orange));
+  border-radius: 20px 20px 0 0;
+}
+
+.modal-content h3 {
+  color: var(--duo-gray-900);
+  margin-bottom: 16px;
+  font-size: 1.4rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.modal-content h3::before {
+  content: '⚠️';
+  font-size: 1.3rem;
+}
+
+.modal-content p {
+  color: var(--duo-gray-700);
+  margin-bottom: 28px;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.cancel-btn {
+  background: linear-gradient(135deg, var(--duo-gray-100), var(--duo-white));
+  color: var(--duo-gray-700);
+  border: 3px solid var(--duo-gray-300);
+  padding: 12px 24px;
+  border-radius: 50px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.cancel-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+  transition: left 0.5s;
+}
+
+.cancel-btn:hover {
+  background: linear-gradient(135deg, var(--duo-white), var(--duo-gray-100));
+  border-color: var(--duo-blue);
+  color: var(--duo-blue);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-medium);
+}
+
+.cancel-btn:hover::before {
+  left: 100%;
+}
+
+.confirm-exit-btn {
+  background: linear-gradient(135deg, var(--duo-red), #dc2626);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 50px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 3px solid #b91c1c;
+  position: relative;
+  overflow: hidden;
+}
+
+.confirm-exit-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  transition: left 0.5s;
+}
+
+.confirm-exit-btn:hover {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+}
+
+.confirm-exit-btn:hover::before {
+  left: 100%;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .pause-content {
+    padding: 32px 24px;
+    margin: 20px;
+  }
+  
+  .pause-stats {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 16px;
+  }
+  
+  .pause-content h2 {
+    font-size: 1.6rem;
+  }
+  
+  .modal-content {
+    padding: 24px;
+    margin: 20px;
+  }
+  
+  .modal-actions {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pause-content {
+    padding: 24px 20px;
+  }
+  
+  .pause-content h2 {
+    font-size: 1.4rem;
+  }
+  
+  .resume-btn {
+    padding: 12px 28px;
+    font-size: 1rem;
+  }
+  
+  .stat-value {
+    font-size: 1.2rem;
+  }
+  
+  .modal-content h3 {
+    font-size: 1.2rem;
+  }
+  
+  .cancel-btn, .confirm-exit-btn {
+    padding: 10px 20px;
+    font-size: 0.9rem;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .pause-content::before,
+  .modal-content::before {
+    display: none;
+  }
+  
+  .pause-content,
+  .modal-content {
+    border-width: 4px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .pause-modal,
+  .modal-overlay,
+  .pause-content,
+  .modal-content {
+    animation: none;
+  }
+  
+  .pause-content h2::before {
+    animation: none;
+  }
+  
+  .resume-btn:hover,
+  .cancel-btn:hover,
+  .confirm-exit-btn:hover {
+    transform: none;
+  }
+}

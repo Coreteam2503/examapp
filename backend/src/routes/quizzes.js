@@ -1,13 +1,21 @@
 const express = require('express');
 const router = express.Router();
+const QuizController = require('../controllers/quizController');
+const { authenticateToken } = require('../middleware/auth');
 
-// Placeholder routes for quizzes
-router.post('/generate', (req, res) => {
-  res.json({ message: 'Quiz generation endpoint - coming soon' });
-});
+// Generate basic quiz from uploaded content
+router.post('/generate', authenticateToken, QuizController.generateQuiz);
 
-router.get('/', (req, res) => {
-  res.json({ message: 'List quizzes endpoint - coming soon' });
-});
+// Generate enhanced quiz with specific question types
+router.post('/generate-enhanced', authenticateToken, QuizController.generateEnhancedQuiz);
+
+// Get all quizzes for current user
+router.get('/', authenticateToken, QuizController.getUserQuizzes);
+
+// Get specific quiz by ID
+router.get('/:id', authenticateToken, QuizController.getQuizById);
+
+// Delete quiz
+router.delete('/:id', authenticateToken, QuizController.deleteQuiz);
 
 module.exports = router;

@@ -107,12 +107,21 @@ main() {
     log "Project Root: $PROJECT_ROOT"
     echo ""
     
-    # Step 1: Stop all existing processes
+    # Step 1: Stop existing processes (ONLY ports 3000 and 8000)
     header "=== Step 1: Stopping Existing Processes ==="
-    stop_app_processes
+    log "Stopping ONLY processes on ports 3000 and 8000..."
+    
+    # First try to stop tracked processes cleanly
+    stop_tracked_processes
+    
+    # Then kill anything on our specific ports
     kill_port 3000 "Frontend"
     kill_port 8000 "Backend"
-    success "All processes stopped"
+    
+    # Stop only our specific PM2 processes
+    stop_pm2_processes
+    
+    success "Target processes stopped (ports 3000 and 8000 only)"
     
     # Step 2: Install dependencies (unless skipped)
     if [ "$SKIP_DEPS" != "true" ]; then
@@ -169,7 +178,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --help, -h       Show this help message"
             echo ""
             echo "This script will:"
-            echo "  1. Stop all existing processes on ports 3000 and 8000"
+            echo "  1. Stop existing processes ONLY on ports 3000 and 8000"
             echo "  2. Install dependencies (unless --skip-deps)"
             echo "  3. Initialize the database"
             echo "  4. Start backend and frontend servers"

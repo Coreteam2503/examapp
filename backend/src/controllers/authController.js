@@ -82,13 +82,16 @@ const authController = {
       }
 
       // Generate JWT token
+      const jwtSecret = process.env.JWT_SECRET || 'your-super-secret-jwt-key';
+      console.log('Login - JWT Secret being used:', jwtSecret);
+      
       const token = jwt.sign(
         { 
           userId: user.id, 
           email: user.email, 
           role: user.role 
         },
-        process.env.JWT_SECRET || 'your-super-secret-jwt-key',
+        jwtSecret,
         { expiresIn: '24h' }
       );
 
