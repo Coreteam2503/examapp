@@ -316,7 +316,7 @@
       "id": "27",
       "title": "Mobile Responsive Quiz Design",
       "description": "Ensure quiz interface works perfectly on mobile devices",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "dependencies": [],
       "complexity": 3,

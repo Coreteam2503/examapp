@@ -1,11 +1,11 @@
 /* Quiz Session Question Styles */
 .question-section {
-  background: var(--duo-white);
-  border: 3px solid var(--duo-gray-200);
+  background: var(--bg-white);
+  border: 3px solid var(--gray-200);
   border-radius: 20px;
   padding: 32px;
   margin-bottom: 24px;
-  box-shadow: var(--shadow-heavy);
+  box-shadow: var(--shadow-colored);
   position: relative;
   animation: questionAppear 0.6s ease-out 0.3s both;
 }
@@ -27,17 +27,17 @@
   align-items: center;
   margin-bottom: 24px;
   padding-bottom: 16px;
-  border-bottom: 2px solid var(--duo-gray-200);
+  border-bottom: 2px solid var(--gray-200);
 }
 
 .question-number {
-  background: linear-gradient(135deg, var(--duo-blue), var(--duo-blue-dark));
-  color: white;
+  background: linear-gradient(135deg, var(--primary-gradient-start), var(--primary-gradient-end));
+  color: var(--text-white);
   padding: 10px 20px;
   border-radius: 50px;
   font-weight: 700;
   font-size: 0.95rem;
-  box-shadow: 0 4px 15px rgba(28, 176, 246, 0.3);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
   position: relative;
   overflow: hidden;
 }
@@ -59,24 +59,27 @@
 }
 
 .question-difficulty {
-  background: linear-gradient(135deg, var(--duo-gray-100), var(--duo-white));
-  color: var(--duo-gray-700);
+  background: linear-gradient(135deg, var(--gray-100), var(--bg-white));
+  color: var(--text-secondary);
   padding: 6px 16px;
   border-radius: 50px;
   font-size: 0.85rem;
   font-weight: 600;
   text-transform: capitalize;
-  border: 2px solid var(--duo-gray-200);
+  border: 2px solid var(--gray-200);
 }
 
 .question-content h3 {
-  color: var(--duo-gray-900);
+  color: var(--text-dark);
   font-size: 1.4rem;
   font-weight: 700;
   line-height: 1.5;
   margin-bottom: 24px;
   position: relative;
   padding-left: 40px;
+  /* FIXED: ensure text is visible */
+  background: transparent;
+  text-shadow: none;
 }
 
 .question-content h3::before {
@@ -97,16 +100,16 @@
   margin: 24px 0;
   border-radius: 16px;
   overflow: hidden;
-  border: 3px solid var(--duo-gray-300);
+  border: 3px solid var(--gray-300);
   box-shadow: var(--shadow-medium);
 }
 
 .code-header {
-  background: linear-gradient(135deg, var(--duo-gray-100), var(--duo-white));
+  background: linear-gradient(135deg, var(--gray-100), var(--bg-white));
   padding: 12px 20px;
-  border-bottom: 2px solid var(--duo-gray-200);
+  border-bottom: 2px solid var(--gray-200);
   font-weight: 700;
-  color: var(--duo-gray-700);
+  color: var(--text-secondary);
   font-size: 0.9rem;
   display: flex;
   align-items: center;
@@ -139,8 +142,8 @@
   align-items: center;
   padding: 20px 24px;
   margin-bottom: 16px;
-  background: var(--duo-white);
-  border: 3px solid var(--duo-gray-200);
+  background: var(--bg-white);
+  border: 3px solid var(--gray-200);
   border-radius: 16px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -156,13 +159,13 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(28, 176, 246, 0.1), transparent);
+  background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
   transition: left 0.5s ease;
 }
 
 .option:hover {
-  border-color: var(--duo-blue);
-  background: linear-gradient(135deg, #f0f9ff, var(--duo-white));
+  border-color: var(--primary-blue);
+  background: linear-gradient(135deg, #f0f9ff, var(--bg-white));
   transform: translateY(-2px) scale(1.02);
   box-shadow: var(--shadow-medium);
 }
@@ -172,10 +175,10 @@
 }
 
 .option.selected {
-  border-color: var(--duo-green);
+  border-color: var(--success-green);
   background: linear-gradient(135deg, #f0fdf4, #dcfce7);
   transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 8px 25px rgba(88, 204, 2, 0.2);
+  box-shadow: 0 8px 25px rgba(39, 174, 96, 0.2);
   animation: optionSelect 0.6s ease-out;
 }
 
@@ -189,37 +192,39 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--duo-gray-200), var(--duo-gray-100));
+  background: linear-gradient(135deg, var(--gray-200), var(--gray-100));
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  color: var(--duo-gray-700);
+  color: var(--text-secondary);
   margin-right: 20px;
   flex-shrink: 0;
-  border: 2px solid var(--duo-gray-300);
+  border: 2px solid var(--gray-300);
   transition: all 0.3s ease;
   font-size: 1.1rem;
 }
 
 .option.selected .option-marker {
-  background: linear-gradient(135deg, var(--duo-green), var(--duo-green-light));
-  color: white;
-  border-color: var(--duo-green-dark);
+  background: linear-gradient(135deg, var(--success-green), var(--success-green-light));
+  color: var(--text-white);
+  border-color: var(--success-green-dark);
   transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(88, 204, 2, 0.3);
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
 }
 
 .option-text {
   flex: 1;
-  color: var(--duo-gray-900);
+  color: var(--text-dark);
   font-size: 1.05rem;
   font-weight: 500;
   line-height: 1.5;
+  /* FIXED: ensure option text is clearly visible */
+  background: transparent;
 }
 
 .option-check {
-  color: var(--duo-green);
+  color: var(--success-green);
   font-weight: bold;
   font-size: 1.3rem;
   margin-left: 12px;
