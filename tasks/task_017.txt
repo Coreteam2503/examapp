@@ -1,6 +1,6 @@
 # Task ID: 17
 # Title: Quiz Generation API Endpoint
-# Status: pending
+# Status: done
 # Dependencies: None
 # Priority: high
 # Description: Create API endpoint that processes uploads and generates quizzes using LLM

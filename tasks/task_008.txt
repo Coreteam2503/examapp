@@ -1,6 +1,6 @@
 # Task ID: 8
 # Title: Role-Based Access Control Backend
-# Status: pending
+# Status: done
 # Dependencies: None
 # Priority: medium
 # Description: Implement basic role management and authorization middleware

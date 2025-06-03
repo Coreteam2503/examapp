@@ -7,24 +7,48 @@
 @import './QuizSessionModals.css';
 
 :root {
-  --duo-green: #58cc02;
-  --duo-green-dark: #4caf02;
-  --duo-green-light: #7dd302;
-  --duo-blue: #1cb0f6;
-  --duo-blue-dark: #0b93d1;
-  --duo-orange: #ff9600;
-  --duo-red: #ff4b4b;
-  --duo-purple: #ce82ff;
-  --duo-yellow: #ffc800;
-  --duo-gray-100: #f7f7f7;
-  --duo-gray-200: #ececec;
-  --duo-gray-300: #d4d4d4;
-  --duo-gray-700: #777777;
-  --duo-gray-900: #3c3c3c;
-  --duo-white: #ffffff;
-  --shadow-light: 0 2px 8px rgba(0, 0, 0, 0.08);
-  --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.12);
-  --shadow-heavy: 0 8px 24px rgba(0, 0, 0, 0.15);
+  /* Main theme colors matching dashboard exactly */
+  --primary-gradient-start: #667eea;
+  --primary-gradient-end: #764ba2;
+  --primary-blue: #3498db;
+  --primary-blue-dark: #2980b9;
+  
+  /* Semantic colors */
+  --success-green: #27ae60;
+  --success-green-dark: #229954;
+  --success-green-light: #2ecc71;
+  --warning-orange: #f39c12;
+  --danger-red: #e74c3c;
+  --info-blue: #3498db;
+  
+  /* Neutral colors - matching dashboard exactly */
+  --gray-50: #f8f9fa;
+  --gray-100: #f1f3f4;
+  --gray-200: #e9ecef;
+  --gray-300: #dee2e6;
+  --gray-400: #ced4da;
+  --gray-500: #6c757d;
+  --gray-600: #495057;
+  --gray-700: #343a40;
+  --gray-800: #212529;
+  --gray-900: #2c3e50;
+  
+  /* Background colors - consistent with dashboard */
+  --bg-white: #ffffff;
+  --bg-light: #f8f9fa;
+  --bg-dark: #2c3e50;
+  
+  /* Text colors - FIXED: ensure proper contrast */
+  --text-primary: #2c3e50;
+  --text-secondary: #6c757d;
+  --text-white: #ffffff;
+  --text-dark: #212529;
+  
+  /* Shadows */
+  --shadow-light: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-heavy: 0 8px 24px rgba(0, 0, 0, 0.2);
+  --shadow-colored: 0 4px 16px rgba(102, 126, 234, 0.15);
 }
 
 .quiz-session-container {
@@ -32,7 +56,7 @@
   margin: 0 auto;
   padding: 20px;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: linear-gradient(135deg, #f7f9fc 0%, #eef2f7 100%);
+  background: linear-gradient(135deg, var(--bg-light) 0%, var(--gray-100) 100%);
   min-height: 100vh;
   position: relative;
 }
@@ -45,7 +69,7 @@
   right: -50px;
   width: 150px;
   height: 150px;
-  background: radial-gradient(circle, var(--duo-purple) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--primary-gradient-start) 0%, transparent 70%);
   opacity: 0.1;
   border-radius: 50%;
   pointer-events: none;
@@ -58,7 +82,7 @@
   left: -30px;
   width: 100px;
   height: 100px;
-  background: radial-gradient(circle, var(--duo-orange) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--warning-orange) 0%, transparent 70%);
   opacity: 0.1;
   border-radius: 50%;
   pointer-events: none;
@@ -71,24 +95,24 @@
   align-items: center;
   justify-content: center;
   padding: 80px 20px;
-  background: var(--duo-white);
+  background: var(--bg-white);
   border-radius: 24px;
-  border: 3px solid var(--duo-gray-200);
+  border: 3px solid var(--gray-200);
   box-shadow: var(--shadow-heavy);
 }
 
 .loading-quiz .spinner {
   width: 60px;
   height: 60px;
-  border: 6px solid var(--duo-gray-200);
-  border-top: 6px solid var(--duo-blue);
+  border: 6px solid var(--gray-200);
+  border-top: 6px solid var(--primary-gradient-start);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 24px;
 }
 
 .loading-quiz p {
-  color: var(--duo-gray-700);
+  color: var(--text-secondary);
   font-size: 1.2rem;
   font-weight: 600;
   animation: loadingPulse 1.5s ease-in-out infinite;

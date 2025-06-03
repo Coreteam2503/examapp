@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useQuiz } from '../../contexts/quiz/QuizContext';
 import './QuizSession.css';
+import './MobileResponsive.css';
+import './MobileQuestionTypes.css';
+import './MobileTouchInteractions.css';
+import './QuizThemeOverride.css';
 
 const QuizSession = ({ quiz, onComplete, onExit }) => {
   const { state, actions } = useQuiz();

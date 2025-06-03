@@ -1,6 +1,6 @@
 # Task ID: 24
 # Title: Fill-in-the-Blank Question Type
-# Status: pending
+# Status: done
 # Dependencies: None
 # Priority: medium
 # Description: Add support for fill-in-the-blank questions in quiz generation and display

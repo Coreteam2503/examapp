@@ -1,6 +1,6 @@
 # Task ID: 4
 # Title: File Upload Tables Creation
-# Status: pending
+# Status: done
 # Dependencies: None
 # Priority: high
 # Description: Create uploads table for tracking uploaded files and content

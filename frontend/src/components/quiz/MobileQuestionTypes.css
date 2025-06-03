@@ -1,0 +1,484 @@
+/* Mobile Responsive Question Types */
+
+/* True/False Questions Mobile Optimization */
+.true-false-question .tf-options {
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  margin: 24px 0;
+}
+
+.true-false-question .tf-option {
+  width: 100%;
+  max-width: 300px;
+  padding: 18px 24px;
+  min-height: var(--touch-target-comfort);
+  justify-content: center;
+  
+  /* Touch optimization */
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.true-false-question .tf-icon {
+  font-size: 1.4rem;
+  width: 28px;
+  height: 28px;
+}
+
+.true-false-question .tf-label {
+  font-size: var(--mobile-font-sm);
+}
+
+/* Fill-in-the-blank Mobile Optimization */
+.fill-blank-question .question-text {
+  font-size: var(--mobile-font-md);
+  line-height: 1.6;
+  padding: var(--mobile-padding-md);
+  margin-bottom: var(--mobile-padding-md);
+}
+
+.fill-blank-question .blank-container {
+  display: block;
+  margin: 8px 0;
+  text-align: center;
+}
+
+.fill-blank-question .blank-input {
+  width: 100%;
+  max-width: 250px;
+  min-width: 120px;
+  padding: 12px 16px;
+  font-size: var(--mobile-font-sm);
+  margin: 4px 0;
+  border-radius: 8px;
+  min-height: var(--touch-target-min);
+  
+  /* Touch optimization */
+  touch-action: manipulation;
+}
+
+.fill-blank-question .blank-feedback {
+  position: static;
+  transform: none;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  display: inline-flex;
+  font-size: var(--mobile-font-xs);
+  padding: 4px 8px;
+}
+
+.fill-blank-question .question-hint {
+  margin-top: 16px;
+  padding: 12px 16px;
+  border-radius: 8px;
+}
+
+.fill-blank-question .hint-text {
+  font-size: var(--mobile-font-xs);
+}
+
+.fill-blank-question .explanation {
+  margin-top: 20px;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+/* Matching Questions Mobile Optimization */
+.matching-question .matching-container {
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.matching-question .matching-column {
+  padding: 16px;
+  border-radius: 12px;
+}
+
+.matching-question .matching-column h4 {
+  font-size: var(--mobile-font-sm);
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.matching-question .matching-item {
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  min-height: var(--touch-target-min);
+  border-radius: 8px;
+  
+  /* Touch optimization */
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.matching-question .item-text {
+  font-size: var(--mobile-font-xs);
+  line-height: 1.4;
+}
+
+.matching-question .clear-match-btn {
+  width: 20px;
+  height: 20px;
+  font-size: 0.7rem;
+  margin-left: 8px;
+}
+
+.matching-question .match-display {
+  margin-top: 6px;
+  padding: 6px 10px;
+  font-size: var(--mobile-font-xs);
+  border-radius: 6px;
+}
+
+.matching-question .matching-instructions {
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+}
+
+.matching-question .matching-instructions p {
+  font-size: var(--mobile-font-xs);
+  margin: 0;
+  text-align: center;
+}
+
+.matching-question .matching-explanation {
+  margin-top: 20px;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.matching-question .correct-matches {
+  margin-top: 12px;
+}
+
+.matching-question .correct-match-item {
+  padding: 6px 10px;
+  margin-bottom: 4px;
+  font-size: var(--mobile-font-xs);
+  border-radius: 6px;
+}
+
+/* Multiple Choice Mobile Optimization */
+.quiz-display-container .option,
+.quiz-session-container .option {
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  min-height: var(--touch-target-comfort);
+  
+  /* Enhanced touch feedback */
+  position: relative;
+  overflow: hidden;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.quiz-display-container .option-marker,
+.quiz-session-container .option-marker {
+  width: 36px;
+  height: 36px;
+  font-size: var(--mobile-font-sm);
+  margin-right: 16px;
+  flex-shrink: 0;
+}
+
+.quiz-display-container .option-text,
+.quiz-session-container .option-text {
+  font-size: var(--mobile-font-sm);
+  line-height: 1.4;
+  flex: 1;
+}
+
+/* Touch feedback animations */
+.quiz-display-container .option:active,
+.quiz-session-container .option:active,
+.true-false-question .tf-option:active,
+.matching-question .matching-item:active {
+  transform: scale(0.98);
+  transition: transform 0.1s ease;
+}
+
+/* Tablet-specific adjustments */
+@media (min-width: 768px) {
+  .true-false-question .tf-options {
+    flex-direction: row;
+    gap: 20px;
+    justify-content: center;
+  }
+  
+  .true-false-question .tf-option {
+    width: auto;
+    min-width: 160px;
+    max-width: none;
+  }
+  
+  .true-false-question .tf-icon {
+    font-size: 1.6rem;
+    width: 32px;
+    height: 32px;
+  }
+  
+  .true-false-question .tf-label {
+    font-size: 1.1rem;
+  }
+  
+  .fill-blank-question .blank-container {
+    display: inline-block;
+    margin: 0 4px;
+    text-align: initial;
+  }
+  
+  .fill-blank-question .blank-input {
+    width: auto;
+    min-width: 120px;
+    margin: 0;
+  }
+  
+  .fill-blank-question .blank-feedback {
+    position: absolute;
+    transform: translateX(-50%);
+    margin: 0;
+    top: 100%;
+    left: 50%;
+    margin-top: 8px;
+  }
+  
+  .matching-question .matching-container {
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  
+  .matching-question .matching-column {
+    padding: 20px;
+  }
+  
+  .matching-question .matching-item {
+    padding: 16px 20px;
+  }
+  
+  .matching-question .item-text {
+    font-size: 1rem;
+  }
+  
+  .quiz-display-container .option,
+  .quiz-session-container .option {
+    padding: 20px 24px;
+  }
+  
+  .quiz-display-container .option-marker,
+  .quiz-session-container .option-marker {
+    width: 40px;
+    height: 40px;
+    font-size: 1.1rem;
+    margin-right: 20px;
+  }
+  
+  .quiz-display-container .option-text,
+  .quiz-session-container .option-text {
+    font-size: 1.05rem;
+  }
+}
+
+/* Large screen optimizations */
+@media (min-width: 1024px) {
+  .true-false-question .tf-option {
+    padding: 24px 32px;
+    min-width: 180px;
+  }
+  
+  .true-false-question .tf-icon {
+    font-size: 1.8rem;
+    width: 36px;
+    height: 36px;
+  }
+  
+  .true-false-question .tf-label {
+    font-size: 1.2rem;
+  }
+  
+  .fill-blank-question .blank-input {
+    padding: 8px 16px;
+    font-size: 1.1rem;
+  }
+  
+  .matching-question .matching-item {
+    padding: 16px 20px;
+  }
+  
+  .matching-question .item-text {
+    font-size: 1rem;
+  }
+}
+
+/* Specific mobile breakpoints */
+@media (max-width: 320px) {
+  .true-false-question .tf-option {
+    padding: 14px 20px;
+    max-width: 280px;
+  }
+  
+  .true-false-question .tf-icon {
+    font-size: 1.2rem;
+    width: 24px;
+    height: 24px;
+  }
+  
+  .true-false-question .tf-label {
+    font-size: 14px;
+  }
+  
+  .fill-blank-question .blank-input {
+    max-width: 200px;
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+  
+  .matching-question .matching-item {
+    padding: 10px 14px;
+  }
+  
+  .matching-question .item-text {
+    font-size: 13px;
+  }
+  
+  .quiz-display-container .option,
+  .quiz-session-container .option {
+    padding: 14px 18px;
+  }
+  
+  .quiz-display-container .option-marker,
+  .quiz-session-container .option-marker {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+    margin-right: 14px;
+  }
+  
+  .quiz-display-container .option-text,
+  .quiz-session-container .option-text {
+    font-size: 14px;
+  }
+}
+
+/* iOS-specific adjustments */
+@supports (-webkit-touch-callout: none) {
+  .option,
+  .tf-option,
+  .matching-item,
+  .blank-input,
+  .nav-btn,
+  .start-quiz-btn {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Fix for iOS zoom on input focus */
+  .blank-input {
+    font-size: 16px;
+  }
+}
+
+/* Android-specific adjustments */
+@media screen and (-webkit-min-device-pixel-ratio: 0) and (min-resolution: .001dpcm) {
+  .option,
+  .tf-option,
+  .matching-item {
+    /* Better touch feedback for Android */
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .option::after,
+  .tf-option::after,
+  .matching-item::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.3s, height 0.3s;
+  }
+  
+  .option:active::after,
+  .tf-option:active::after,
+  .matching-item:active::after {
+    width: 200px;
+    height: 200px;
+  }
+}
+
+/* Landscape orientation adjustments for mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  .true-false-question .tf-options {
+    flex-direction: row;
+    gap: 12px;
+    margin: 16px 0;
+  }
+  
+  .true-false-question .tf-option {
+    max-width: 140px;
+    padding: 12px 16px;
+  }
+  
+  .fill-blank-question .question-text {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  
+  .matching-question .matching-column {
+    padding: 12px;
+  }
+  
+  .quiz-display-container .option,
+  .quiz-session-container .option {
+    padding: 12px 16px;
+    margin-bottom: 8px;
+  }
+}
+
+/* Accessibility improvements for mobile */
+@media (prefers-reduced-motion: reduce) {
+  .option:active,
+  .tf-option:active,
+  .matching-item:active {
+    transform: none;
+  }
+  
+  .option::after,
+  .tf-option::after,
+  .matching-item::after {
+    display: none;
+  }
+}
+
+/* High contrast mode for mobile */
+@media (prefers-contrast: high) {
+  .option,
+  .tf-option,
+  .matching-item,
+  .blank-input {
+    border-width: 3px;
+    outline: 2px solid;
+    outline-offset: 2px;
+  }
+}
+
+/* Focus indicators for keyboard navigation on mobile */
+.option:focus-visible,
+.tf-option:focus-visible,
+.matching-item:focus-visible,
+.blank-input:focus-visible,
+.nav-btn:focus-visible {
+  outline: 3px solid var(--duo-blue);
+  outline-offset: 2px;
+}
