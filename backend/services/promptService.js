@@ -1,8 +1,20 @@
+/**
+ * PromptService - Enhanced with fallback quiz generator
+ * Handles LLM-based quiz generation with fallback support
+ */
 const { OpenAI } = require('openai');
+const MockQuizGenerator = require('./fallback/mockQuizGenerator');
 
 class PromptService {
   constructor() {
     this.openai = null;
+    this.mockGenerator = new MockQuizGenerator();
+    this.useOpenAI = !!process.env.OPENAI_API_KEY;
+    
+    if (!this.useOpenAI) {
+      console.log('⚠️  OpenAI API key not found. Using fallback quiz generator.');
+      console.log('   For better quiz quality, please set OPENAI_API_KEY in your .env file.');
+    }
   }
 
   /**
@@ -34,6 +46,17 @@ class PromptService {
       language = 'auto-detect'
     } = options;
 
+    // Use fallback if OpenAI is not available
+    if (!this.useOpenAI) {
+      console.log('🔄 Generating quiz using fallback generator...');
+      return this.mockGenerator.generateQuizFromContent(content, {
+        difficulty,
+        numQuestions,
+        questionTypes,
+        language
+      });
+    }
+
     const prompt = this.buildQuizGenerationPrompt(content, {
       difficulty,
       numQuestions,
@@ -62,8 +85,16 @@ class PromptService {
       const rawResponse = response.choices[0].message.content;
       return this.parseQuizResponse(rawResponse);
     } catch (error) {
-      console.error('Error generating quiz:', error);
-      throw new Error('Failed to generate quiz questions');
+      console.error('Error generating quiz with OpenAI:', error);
+      console.log('🔄 Falling back to pattern-based generator...');
+      
+      // Fallback to mock generator if OpenAI fails
+      return this.mockGenerator.generateQuizFromContent(content, {
+        difficulty,
+        numQuestions,
+        questionTypes,
+        language
+      });
     }
   }
 

@@ -1,3 +1,4 @@
+// Auto-restart trigger - Quiz generation fix applied
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -65,7 +66,11 @@ app.use((error, req, res, next) => {
 // Start server
 const startServer = async () => {
   try {
-    // Test database connection
+    // Initialize AI Service
+console.log('Initializing AI Service...');
+console.log('API Key present:', !!process.env.OPENAI_API_KEY ? 'Yes' : 'No');
+
+// Test database connection
     const dbConnected = await testConnection();
     if (!dbConnected) {
       console.error('❌ Failed to connect to database');

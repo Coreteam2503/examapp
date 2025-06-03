@@ -1,4 +1,4 @@
-const PromptService = require('../../services/promptService');
+const PromptService = require('../../services/promptService'); // Updated with fallback support
 const { db: knex } = require('../config/database');
 const fs = require('fs').promises;
 const path = require('path');
