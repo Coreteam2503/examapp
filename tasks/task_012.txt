@@ -1,6 +1,6 @@
 # Task ID: 12
 # Title: File Upload Backend API
-# Status: pending
+# Status: done
 # Dependencies: None
 # Priority: high
 # Description: Implement secure file upload endpoint with Multer and validation

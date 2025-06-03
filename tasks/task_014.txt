@@ -1,6 +1,6 @@
 # Task ID: 14
 # Title: Drag-and-Drop File Upload Enhancement
-# Status: pending
+# Status: done
 # Dependencies: None
 # Priority: medium
 # Description: Add drag-and-drop functionality and file preview to upload component

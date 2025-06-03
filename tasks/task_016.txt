@@ -1,6 +1,6 @@
 # Task ID: 16
 # Title: Quiz Generation Prompt Engineering
-# Status: pending
+# Status: done
 # Dependencies: None
 # Priority: high
 # Description: Design and test prompts for generating multiple-choice questions from code

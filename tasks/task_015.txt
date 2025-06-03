@@ -1,6 +1,6 @@
 # Task ID: 15
 # Title: OpenAI/Anthropic API Integration Setup
-# Status: pending
+# Status: done
 # Dependencies: None
 # Priority: high
 # Description: Set up LLM API client and basic connection testing

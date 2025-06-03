@@ -1,59 +1,64 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import './FillInTheBlankQuestion.css';
+
+// Parse the question text to find blanks (marked with ___BLANK_N___)
+const parseQuestionText = (text) => {
+  const parts = [];
+  const blankRegex = /___BLANK_(\d+)___/g;
+  let lastIndex = 0;
+  let match;
+  const blanks = [];
+
+  while ((match = blankRegex.exec(text)) !== null) {
+    // Add text before the blank
+    if (match.index > lastIndex) {
+      parts.push({
+        type: 'text',
+        content: text.slice(lastIndex, match.index)
+      });
+    }
+
+    // Add the blank
+    const blankNumber = parseInt(match[1]);
+    parts.push({
+      type: 'blank',
+      number: blankNumber
+    });
+    blanks.push(blankNumber);
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Add remaining text
+  if (lastIndex < text.length) {
+    parts.push({
+      type: 'text',
+      content: text.slice(lastIndex)
+    });
+  }
+
+  return { parts, blanks };
+};
 
 const FillInTheBlankQuestion = ({ question, onAnswer, disabled = false, showCorrect = false }) => {
   const [answers, setAnswers] = useState({});
   const [isAnswered, setIsAnswered] = useState(false);
 
-  // Parse the question text to find blanks (marked with ___BLANK_N___)
-  const parseQuestionText = (text) => {
-    const parts = [];
-    const blankRegex = /___BLANK_(\d+)___/g;
-    let lastIndex = 0;
-    let match;
-    const blanks = [];
+  // Memoize the parsed question to avoid re-parsing on every render
+  const { parts, blanks } = useMemo(() => {
+    const questionText = question.text || question.formatted_text || question.question_text || question.question;
+    return parseQuestionText(questionText || '');
+  }, [question.text, question.formatted_text, question.question_text, question.question]);
 
-    while ((match = blankRegex.exec(text)) !== null) {
-      // Add text before the blank
-      if (match.index > lastIndex) {
-        parts.push({
-          type: 'text',
-          content: text.slice(lastIndex, match.index)
-        });
-      }
-
-      // Add the blank
-      const blankNumber = parseInt(match[1]);
-      parts.push({
-        type: 'blank',
-        number: blankNumber
-      });
-      blanks.push(blankNumber);
-
-      lastIndex = match.index + match[0].length;
-    }
-
-    // Add remaining text
-    if (lastIndex < text.length) {
-      parts.push({
-        type: 'text',
-        content: text.slice(lastIndex)
-      });
-    }
-
-    return { parts, blanks };
-  };
-
-  const { parts, blanks } = parseQuestionText(question.text || question.question);
-
+  // Initialize answers only when question ID changes
   useEffect(() => {
-    // Initialize answers object
     const initialAnswers = {};
     blanks.forEach(blankNum => {
       initialAnswers[blankNum] = '';
     });
     setAnswers(initialAnswers);
-  }, [question]);
+    setIsAnswered(false);
+  }, [question.id, blanks.join(',')]); // Use blanks.join(',') as dependency
 
   const handleInputChange = (blankNumber, value) => {
     const newAnswers = {
@@ -62,12 +67,14 @@ const FillInTheBlankQuestion = ({ question, onAnswer, disabled = false, showCorr
     };
     setAnswers(newAnswers);
 
+    // Always notify parent of current answers
+    onAnswer(newAnswers);
+
     // Check if all blanks are filled
-    const allFilled = blanks.every(blankNum => newAnswers[blankNum].trim() !== '');
+    const allFilled = blanks.every(blankNum => newAnswers[blankNum] && newAnswers[blankNum].trim() !== '');
     
     if (allFilled && !isAnswered) {
       setIsAnswered(true);
-      onAnswer(newAnswers);
     }
   };
 

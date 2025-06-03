@@ -623,6 +623,17 @@
       "details": "Design migration strategy for PostgreSQL/MySQL, create migration scripts, and implement backup strategies.",
       "testStrategy": "Test migration scripts, data integrity verification, performance comparison",
       "subtasks": []
+    },
+    {
+      "id": 53,
+      "title": "Fix Quiz Interface Input Issues",
+      "description": "Fix critical bugs where fill-in-the-blank questions show no input fields and true/false questions have no selection interface",
+      "details": "Update QuizDisplay.js component to properly map database question data structure to component props. Fix naming mismatches between database fields and component expectations.",
+      "testStrategy": "",
+      "status": "done",
+      "dependencies": [],
+      "priority": "high",
+      "subtasks": []
     }
   ]
 }

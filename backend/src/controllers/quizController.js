@@ -392,7 +392,11 @@ class QuizController {
         concepts: JSON.parse(question.concepts || '[]'),
         correctAnswers: question.correct_answers_data ? JSON.parse(question.correct_answers_data) : null,
         pairs: question.pairs ? JSON.parse(question.pairs) : null,
-        text: question.formatted_text || question.question_text
+        text: question.formatted_text || question.question_text,
+        // Ensure consistent boolean handling for true/false questions
+        correct_answer: question.type === 'true_false' && typeof question.correct_answer === 'string' 
+          ? question.correct_answer === 'True' || question.correct_answer === 'true' || question.correct_answer === 'True'
+          : question.correct_answer
       }))
     };
   }

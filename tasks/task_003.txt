@@ -1,6 +1,6 @@
 # Task ID: 3
 # Title: Core User Tables Creation
-# Status: pending
+# Status: done
 # Dependencies: None
 # Priority: high
 # Description: Create users table with authentication fields and basic user management

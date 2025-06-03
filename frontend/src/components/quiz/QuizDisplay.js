@@ -83,8 +83,10 @@ const QuizDisplay = ({ quiz, onQuizComplete, onAnswerChange }) => {
   };
 
   const isAnswered = currentQuestion && answers[currentQuestion.id] && (
-    currentQuestion.type === 'fill-in-the-blank' 
+    (currentQuestion.type === 'fill-in-the-blank' || currentQuestion.type === 'fill_in_the_blank') 
       ? Object.values(answers[currentQuestion.id].answer || {}).some(answer => answer?.trim()) 
+      : (currentQuestion.type === 'true-false' || currentQuestion.type === 'true_false')
+      ? answers[currentQuestion.id].answer !== undefined && answers[currentQuestion.id].answer !== null
       : currentQuestion.type === 'matching'
       ? Object.keys(answers[currentQuestion.id].answer || {}).length > 0
       : answers[currentQuestion.id].answer !== undefined && answers[currentQuestion.id].answer !== null
@@ -163,29 +165,51 @@ const QuizDisplay = ({ quiz, onQuizComplete, onAnswerChange }) => {
       {/* Question Content */}
       <div className="quiz-content">
         <div className="question-container">
-          <div className="question-header">
-            <h3 className="question-text">
-              {currentQuestion.question_text}
-            </h3>
-            
-            {currentQuestion.code_snippet && (
+          {/* Only show question header for non-fill-in-the-blank questions */}
+          {!(currentQuestion.type === 'fill_in_the_blank' || currentQuestion.type === 'fill-in-the-blank') && (
+            <div className="question-header">
+              <h3 className="question-text">
+                {currentQuestion.question_text}
+              </h3>
+              
+              {currentQuestion.code_snippet && (
+                <div className="code-snippet">
+                  <pre><code>{currentQuestion.code_snippet}</code></pre>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Show code snippet separately for fill-in-the-blank if it exists */}
+          {(currentQuestion.type === 'fill_in_the_blank' || currentQuestion.type === 'fill-in-the-blank') && currentQuestion.code_snippet && (
+            <div className="question-header">
               <div className="code-snippet">
                 <pre><code>{currentQuestion.code_snippet}</code></pre>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           <div className="options-container">
-            {currentQuestion.type === 'fill-in-the-blank' ? (
+            {currentQuestion.type === 'fill_in_the_blank' || currentQuestion.type === 'fill-in-the-blank' ? (
               <FillInTheBlankQuestion
-                question={currentQuestion}
+                question={{
+                  ...currentQuestion,
+                  text: currentQuestion.formatted_text || currentQuestion.question_text,
+                  correctAnswers: currentQuestion.correct_answers_data ? 
+                    (typeof currentQuestion.correct_answers_data === 'string' ? 
+                      JSON.parse(currentQuestion.correct_answers_data) : 
+                      currentQuestion.correct_answers_data) : {}
+                }}
                 onAnswer={(answer) => handleAnswerSelect(answer)}
                 disabled={false}
                 showCorrect={false}
               />
-            ) : currentQuestion.type === 'true-false' ? (
+            ) : currentQuestion.type === 'true_false' || currentQuestion.type === 'true-false' ? (
               <TrueFalseQuestion
-                question={currentQuestion}
+                question={{
+                  ...currentQuestion,
+                  correct_answer: currentQuestion.correct_answer === 'True' || currentQuestion.correct_answer === 'true' || currentQuestion.correct_answer === true
+                }}
                 onAnswer={(answer) => handleAnswerSelect(answer)}
                 disabled={false}
                 showCorrect={false}

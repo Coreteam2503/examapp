@@ -1,6 +1,6 @@
 # Task ID: 5
 # Title: Quiz System Tables Creation
-# Status: pending
+# Status: done
 # Dependencies: None
 # Priority: high
 # Description: Create quizzes, questions, attempts, and answers tables for quiz functionality

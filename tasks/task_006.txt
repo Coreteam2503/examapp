@@ -1,6 +1,6 @@
 # Task ID: 6
 # Title: User Registration API
-# Status: pending
+# Status: done
 # Dependencies: None
 # Priority: high
 # Description: Implement user registration endpoint with password hashing and validation

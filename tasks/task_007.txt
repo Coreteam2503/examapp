@@ -1,6 +1,6 @@
 # Task ID: 7
 # Title: User Login API and JWT Implementation
-# Status: pending
+# Status: done
 # Dependencies: None
 # Priority: high
 # Description: Implement login endpoint with JWT token generation and validation middleware
