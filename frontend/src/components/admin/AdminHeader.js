@@ -117,7 +117,7 @@ const AdminHeader = ({ user, onLogout, onToggleSidebar, sidebarCollapsed }) => {
                   
                   <div className="dropdown-divider"></div>
                   
-                  <button className="dropdown-item">
+                  <button className="dropdown-item" onClick={() => window.location.href = '/dashboard'}>
                     <span className="item-icon">📚</span>
                     <span className="item-text">Student Dashboard</span>
                   </button>

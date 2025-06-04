@@ -60,6 +60,24 @@ const Dashboard = () => {
           <div className="user-info">
             <span>Welcome, {user?.email}</span>
             <span className="role-badge">{user?.role}</span>
+            {user?.role === 'admin' && (
+              <button 
+                onClick={() => navigate('/admin')} 
+                className="admin-btn"
+                style={{
+                  backgroundColor: '#e74c3c',
+                  color: 'white',
+                  border: 'none',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  marginRight: '10px',
+                  fontSize: '14px'
+                }}
+              >
+                Admin
+              </button>
+            )}
             <button onClick={handleLogout} className="logout-btn">
               Logout
             </button>

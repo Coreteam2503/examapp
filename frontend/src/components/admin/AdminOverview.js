@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiService, handleApiError } from '../../services/apiService';
 import './AdminOverview.css';
 
 const AdminOverview = () => {
@@ -13,60 +14,106 @@ const AdminOverview = () => {
   const [recentActivity, setRecentActivity] = useState([]);
 
   useEffect(() => {
-    // Simulate API call for system stats
     const fetchSystemStats = async () => {
       try {
-        // This will be replaced with actual API calls in future tasks
-        setTimeout(() => {
+        setSystemStats(prev => ({ ...prev, loading: true }));
+        
+        // Fetch real dashboard analytics
+        const analyticsResponse = await apiService.admin.getDashboardAnalytics({ timeframe: 'month' });
+        const studentsSummaryResponse = await apiService.admin.getStudentsSummary();
+        
+        if (analyticsResponse.data.success && studentsSummaryResponse.data.success) {
+          const analytics = analyticsResponse.data.data;
+          const studentsSummary = studentsSummaryResponse.data.data;
+          
           setSystemStats({
-            totalUsers: 156,
-            totalQuizzes: 342,
-            totalUploads: 578,
-            activeUsers: 23,
+            totalUsers: analytics.platformStats.totalUsers,
+            totalQuizzes: analytics.platformStats.totalQuizzes,
+            totalUploads: analytics.platformStats.totalUploads || 0,
+            activeUsers: studentsSummary.overview.activeStudents,
             loading: false
           });
 
-          setRecentActivity([
-            {
+          // Generate recent activity from real data
+          const activities = [];
+          
+          // Add new users activity
+          if (analytics.platformStats.newUsersThisPeriod > 0) {
+            activities.push({
               id: 1,
               type: 'user_registration',
-              message: 'New user registered: john.doe@example.com',
-              timestamp: new Date(Date.now() - 10 * 60 * 1000),
+              message: `${analytics.platformStats.newUsersThisPeriod} new users registered this month`,
+              timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
               icon: '👤'
-            },
-            {
+            });
+          }
+          
+          // Add quiz attempts activity
+          if (analytics.platformStats.totalAttemptsThisPeriod > 0) {
+            activities.push({
               id: 2,
               type: 'quiz_completed',
-              message: 'Quiz completed: "JavaScript Fundamentals" by sarah.smith@example.com',
-              timestamp: new Date(Date.now() - 25 * 60 * 1000),
-              icon: '✅'
-            },
-            {
-              id: 3,
-              type: 'file_upload',
-              message: 'File uploaded: "react-components.js" by mike.wilson@example.com',
-              timestamp: new Date(Date.now() - 45 * 60 * 1000),
-              icon: '📁'
-            },
-            {
-              id: 4,
-              type: 'quiz_generated',
-              message: 'New quiz generated: "Python Data Structures"',
+              message: `${analytics.platformStats.totalAttemptsThisPeriod} quiz attempts completed this month`,
               timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000),
-              icon: '📝'
-            },
-            {
+              icon: '✅'
+            });
+          }
+          
+          // Add system activity
+          activities.push({
+            id: 3,
+            type: 'system_stats',
+            message: `Platform average score: ${analytics.platformStats.platformAverageScore}%`,
+            timestamp: new Date(Date.now() - 30 * 60 * 1000),
+            icon: '📊'
+          });
+          
+          // Add top performers info
+          if (studentsSummary.topPerformers.length > 0) {
+            const topStudent = studentsSummary.topPerformers[0];
+            activities.push({
+              id: 4,
+              type: 'top_performer',
+              message: `Top performer: ${topStudent.email} (${topStudent.averageScore}% avg)`,
+              timestamp: new Date(Date.now() - 45 * 60 * 1000),
+              icon: '🏆'
+            });
+          }
+          
+          // Add recent activity indicator
+          if (studentsSummary.overview.recentActivityCount > 0) {
+            activities.push({
               id: 5,
-              type: 'system_backup',
-              message: 'Automated system backup completed successfully',
-              timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-              icon: '💾'
-            }
-          ]);
-        }, 1000);
+              type: 'recent_activity',
+              message: `${studentsSummary.overview.recentActivityCount} students active in last 7 days`,
+              timestamp: new Date(Date.now() - 10 * 60 * 1000),
+              icon: '🔥'
+            });
+          }
+          
+          setRecentActivity(activities);
+        }
       } catch (error) {
         console.error('Error fetching system stats:', error);
-        setSystemStats(prev => ({ ...prev, loading: false }));
+        const errorInfo = handleApiError(error);
+        console.error('API Error details:', errorInfo);
+        
+        // Fallback to show some data even if API fails
+        setSystemStats({
+          totalUsers: 0,
+          totalQuizzes: 0,
+          totalUploads: 0,
+          activeUsers: 0,
+          loading: false
+        });
+        
+        setRecentActivity([{
+          id: 1,
+          type: 'error',
+          message: 'Unable to load recent activity. Please check your connection.',
+          timestamp: new Date(),
+          icon: '⚠️'
+        }]);
       }
     };
 

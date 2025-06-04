@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiService, handleApiError } from '../../services/apiService';
 import PerformanceCharts from './analytics/PerformanceCharts';
 import UserEngagementMetrics from './analytics/UserEngagementMetrics';
 import QuizAnalytics from './analytics/QuizAnalytics';
@@ -32,8 +33,49 @@ const SystemAnalytics = () => {
     setAnalyticsData(prev => ({ ...prev, loading: true }));
     
     try {
-      // Simulate API call - this will be replaced with actual API calls
-      setTimeout(() => {
+      // Fetch real analytics data from multiple API endpoints
+      const [dashboardResponse, performanceResponse, contentResponse, usageResponse] = await Promise.all([
+        apiService.admin.getDashboardAnalytics({ timeframe: filters.timeRange.replace('d', '') === '7' ? 'week' : 'month' }),
+        apiService.admin.getPerformanceAnalytics({ timeframe: filters.timeRange.replace('d', '') === '7' ? 'week' : 'month' }),
+        apiService.admin.getContentAnalytics({ timeframe: filters.timeRange.replace('d', '') === '7' ? 'week' : 'month' }),
+        apiService.admin.getUsageAnalytics({ timeframe: filters.timeRange.replace('d', '') === '7' ? 'week' : 'month' })
+      ]);
+
+      if (dashboardResponse.data.success) {
+        const dashboardData = dashboardResponse.data.data;
+        const performanceData = performanceResponse.data.success ? performanceResponse.data.data : {};
+        const contentData = contentResponse.data.success ? contentResponse.data.data : {};
+        const usageData = usageResponse.data.success ? usageResponse.data.data : {};
+
+        setAnalyticsData({
+          loading: false,
+          userMetrics: {
+            totalUsers: dashboardData.platformStats.totalUsers,
+            activeUsers: dashboardData.platformStats.activeUsers || 0,
+            newUsers: dashboardData.platformStats.newUsersThisPeriod,
+            retentionRate: usageData.retentionMetrics?.retentionRate || 0,
+            dailyActiveUsers: dashboardData.userGrowth || [],
+            userGrowth: dashboardData.userGrowth || []
+          },
+          quizMetrics: {
+            totalQuizzes: dashboardData.platformStats.totalQuizzes,
+            completedQuizzes: dashboardData.platformStats.totalAttemptsThisPeriod,
+            averageScore: dashboardData.platformStats.platformAverageScore,
+            completionRate: dashboardData.quizMetrics?.completionRate || 0,
+            quizCompletions: dashboardData.activityTrends || [],
+            scoreDistribution: dashboardData.quizMetrics?.scoresByDifficulty || []
+          },
+          systemMetrics: {
+            // Removed server infrastructure stats (uptime, storage, etc.)
+            // Focus on user-facing analytics only
+            responseTime: null,
+            errorRate: null,
+            userActivityData: usageData.dailyPatterns || []
+          },
+          timeRange: filters.timeRange
+        });
+      } else {
+        // Fallback to mock data if API fails
         const mockData = generateMockAnalyticsData(filters.timeRange);
         setAnalyticsData({
           loading: false,
@@ -42,10 +84,22 @@ const SystemAnalytics = () => {
           systemMetrics: mockData.systemMetrics,
           timeRange: filters.timeRange
         });
-      }, 1000);
+      }
     } catch (error) {
       console.error('Error fetching analytics data:', error);
-      setAnalyticsData(prev => ({ ...prev, loading: false }));
+      const errorInfo = handleApiError(error);
+      console.error('API Error details:', errorInfo);
+      
+      // Fallback to mock data on error
+      const mockData = generateMockAnalyticsData(filters.timeRange);
+      setAnalyticsData({
+        loading: false,
+        userMetrics: mockData.userMetrics,
+        quizMetrics: mockData.quizMetrics,
+        systemMetrics: mockData.systemMetrics,
+        timeRange: filters.timeRange,
+        error: errorInfo.message
+      });
     }
   };
 
@@ -76,11 +130,9 @@ const SystemAnalytics = () => {
         ]
       },
       systemMetrics: {
-        serverUptime: 99.8,
-        responseTime: 142,
-        errorRate: 0.3,
-        storageUsed: 67.4,
-        bandwidthUsage: generateTimeSeriesData(days, 100, 500)
+        // Removed server infrastructure stats
+        // Focus on user engagement and activity patterns
+        userActivityData: generateTimeSeriesData(days, 100, 500)
       }
     };
   };

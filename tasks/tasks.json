@@ -646,6 +646,72 @@
       "details": "Fixed compilation error by replacing < character with HTML entity &lt; in metric display. Error was: Support for the experimental syntax 'decimal' isn't currently enabled.",
       "testStrategy": "Verify frontend builds without errors",
       "subtasks": []
+    },
+    {
+      "id": 55,
+      "title": "Implement Performance Analytics API",
+      "description": "Complete the performance analytics API methods in AdminController",
+      "details": "Complete the placeholder methods in AdminController: getPerformanceTrends, getSubjectPerformance, getDifficultyAnalysis, getPerformanceDistribution. These should return real data for quiz performance analytics over time.",
+      "testStrategy": "Test analytics data accuracy, performance with various date ranges, proper data aggregation",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "low",
+      "subtasks": []
+    },
+    {
+      "id": 56,
+      "title": "Implement Content Analytics API",
+      "description": "Complete the content analytics API methods in AdminController",
+      "details": "Complete the placeholder methods: getUploadStatistics, getQuizGenerationMetrics, getContentEngagementMetrics, getFileTypeDistribution. These should return real data about uploaded files, quiz generation patterns, and content engagement.",
+      "testStrategy": "Test file type distribution accuracy, upload metrics calculation, engagement tracking",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "low",
+      "subtasks": []
+    },
+    {
+      "id": 57,
+      "title": "Implement Usage Analytics API",
+      "description": "Complete the usage analytics API methods in AdminController",
+      "details": "Complete the placeholder methods: getDailyActivityPatterns, getHourlyUsagePatterns, getUserRetentionMetrics, getSessionAnalytics. Focus on user activity patterns and engagement metrics, exclude server infrastructure stats.",
+      "testStrategy": "Test activity pattern accuracy, retention calculation, user session tracking",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "low",
+      "subtasks": []
+    },
+    {
+      "id": 58,
+      "title": "Implement Activity Trends API",
+      "description": "Complete the activity trends API method in AdminController",
+      "details": "Complete the getActivityTrends and getTopPerformingContent methods to return real data about platform activity trends and best-performing quiz content based on user engagement.",
+      "testStrategy": "Test trend calculation accuracy, content ranking algorithms, activity tracking",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "low",
+      "subtasks": []
+    },
+    {
+      "id": 59,
+      "title": "Update Analytics Chart Components for Real Data",
+      "description": "Update analytics chart components to handle real API data structure",
+      "details": "Update PerformanceCharts, QuizAnalytics, UserEngagementMetrics, and SystemUsageChart components to properly handle real API data from admin analytics endpoints instead of mock data. Remove server infrastructure metrics (uptime, storage, etc.).",
+      "testStrategy": "Test chart rendering with real data, data transformation accuracy, responsive design",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "low",
+      "subtasks": []
+    },
+    {
+      "id": 60,
+      "title": "Complete Analytics Export Functionality",
+      "description": "Implement working export functionality for reports",
+      "details": "Complete the ExportReports and ReportGenerator components to actually generate and download PDF/CSV/Excel reports from real analytics data instead of just logging to console.",
+      "testStrategy": "Test report generation in various formats, data accuracy in exports, file download functionality",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "low",
+      "subtasks": []
     }
   ]
 }

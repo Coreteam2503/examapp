@@ -107,6 +107,22 @@ export const apiService = {
   // Analytics endpoints
   analytics: {
     getPerformance: (params) => api.get('/analytics/performance', { params })
+  },
+
+  // Admin endpoints
+  admin: {
+    // Student management
+    getStudents: (params) => api.get('/admin/students', { params }),
+    getStudentsSummary: () => api.get('/admin/students/summary'),
+    getStudentDetails: (id) => api.get(`/admin/students/${id}`),
+    updateStudentStatus: (id, data) => api.put(`/admin/students/${id}/status`, data),
+    deleteStudent: (id) => api.delete(`/admin/students/${id}`),
+    
+    // Analytics
+    getDashboardAnalytics: (params) => api.get('/admin/analytics/dashboard', { params }),
+    getPerformanceAnalytics: (params) => api.get('/admin/analytics/performance', { params }),
+    getContentAnalytics: (params) => api.get('/admin/analytics/content', { params }),
+    getUsageAnalytics: (params) => api.get('/admin/analytics/usage', { params })
   }
 };
 
