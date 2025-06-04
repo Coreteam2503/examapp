@@ -1,6 +1,6 @@
 # Task ID: 30
 # Title: Admin Dashboard Frontend Layout
-# Status: pending
+# Status: done
 # Dependencies: None
 # Priority: medium
 # Description: Create admin dashboard layout and navigation structure

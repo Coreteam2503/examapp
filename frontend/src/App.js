@@ -6,6 +6,7 @@ import UnauthorizedPage from './components/auth/UnauthorizedPage';
 import LoginForm from './components/LoginForm';
 import RegisterForm from './components/RegisterForm';
 import Dashboard from './components/Dashboard';
+import AdminDashboard from './components/admin/AdminDashboard';
 import './App.css';
 
 function App() {
@@ -77,13 +78,9 @@ function App() {
   );
 }
 
-// Placeholder components for future implementation
+// Admin Routes Component
 const AdminRoutes = () => (
-  <div style={{ padding: '2rem', textAlign: 'center' }}>
-    <h2>🔧 Admin Panel</h2>
-    <p>Admin routes will be implemented in future tasks.</p>
-    <p>You have admin access!</p>
-  </div>
+  <AdminDashboard />
 );
 
 const TeacherRoutes = () => (

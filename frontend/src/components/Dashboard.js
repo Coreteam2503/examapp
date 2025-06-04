@@ -17,6 +17,7 @@ const Dashboard = () => {
   const dispatch = useAuthDispatch();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     authActions.logout(dispatch)();
@@ -47,10 +48,36 @@ const Dashboard = () => {
     <div className="dashboard-container">
       <header className="dashboard-header">
         <div className="header-content">
-          <h1>Quiz Learning Platform</h1>
+          <div className="header-left">
+            <button 
+              className="mobile-menu-btn"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              ☰
+            </button>
+            <h1>Quiz Learning Platform</h1>
+          </div>
           <div className="user-info">
             <span>Welcome, {user?.email}</span>
             <span className="role-badge">{user?.role}</span>
+            {user?.role === 'admin' && (
+              <button 
+                onClick={() => navigate('/admin')} 
+                className="admin-btn"
+                style={{
+                  backgroundColor: '#e74c3c',
+                  color: 'white',
+                  border: 'none',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  marginRight: '10px',
+                  fontSize: '14px'
+                }}
+              >
+                Admin
+              </button>
+            )}
             <button onClick={handleLogout} className="logout-btn">
               Logout
             </button>
@@ -58,29 +85,29 @@ const Dashboard = () => {
         </div>
       </header>
 
-      <nav className="dashboard-nav">
+      <nav className={`dashboard-nav ${mobileMenuOpen ? 'mobile-open' : ''}`}>
         <div className="nav-content">
           <button 
             className={`nav-btn ${activeTab === 'overview' ? 'active' : ''}`}
-            onClick={() => setActiveTab('overview')}
+            onClick={() => { setActiveTab('overview'); setMobileMenuOpen(false); }}
           >
             Overview
           </button>
           <button 
             className={`nav-btn ${activeTab === 'upload' ? 'active' : ''}`}
-            onClick={() => setActiveTab('upload')}
+            onClick={() => { setActiveTab('upload'); setMobileMenuOpen(false); }}
           >
             Upload Files
           </button>
           <button 
             className={`nav-btn ${activeTab === 'files' ? 'active' : ''}`}
-            onClick={() => setActiveTab('files')}
+            onClick={() => { setActiveTab('files'); setMobileMenuOpen(false); }}
           >
             My Files
           </button>
           <button 
             className={`nav-btn ${activeTab === 'quizzes' ? 'active' : ''}`}
-            onClick={() => setActiveTab('quizzes')}
+            onClick={() => { setActiveTab('quizzes'); setMobileMenuOpen(false); }}
           >
             Quizzes
           </button>

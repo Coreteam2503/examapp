@@ -1,6 +1,6 @@
 # Task ID: 28
 # Title: Admin Student Management API
-# Status: pending
+# Status: done
 # Dependencies: None
 # Priority: medium
 # Description: Create API endpoints for admin to view and manage students

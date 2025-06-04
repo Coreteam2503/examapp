@@ -43,9 +43,9 @@ const QuickActions = ({ setActiveTab, user }) => {
       icon: '⚙',
       title: 'Admin Panel',
       description: 'Manage users and system',
-      action: () => setActiveTab('admin'),
+      action: () => window.location.href = '/admin',
       color: '#e74c3c',
-      enabled: false // Will be enabled when admin features are implemented
+      enabled: true // Admin features are now implemented
     });
   }
 
