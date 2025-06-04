@@ -1,0 +1,54 @@
+The Magical Forest
+
+In the peaceful town of Greenhill, there was a secret magical forest known only to children. It was hidden behind tall bushes and big trees. Adults couldn’t find it, no matter how hard they looked.
+
+One day, ten-year-old Mia and her brother Leo decided to explore this magical forest. They had heard stories about sparkling rivers, animals that talked, and trees that granted wishes.
+
+When they entered the forest, the leaves whispered, “Welcome!” Mia and Leo were amazed. Soon, they found a sparkling river. A tiny golden fish popped its head out and said, “If you help me find my lost pearl, I’ll grant you a wish.”
+
+Mia and Leo searched everywhere. Finally, under a glittering stone, Leo spotted the pearl. They returned it to the grateful fish.
+
+“As promised,” said the fish, “make your wish!”
+
+Mia wished for their grandmother’s health to improve, and Leo wished for endless happiness for their family.
+
+When they returned home, their parents greeted them with happy news: their grandmother felt better than ever.
+
+Mia and Leo smiled, knowing the magical forest had made their wishes come true. They promised to keep the forest’s secret safe and visited it often, sharing kindness and joy wherever they went.
+
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+1. Can you please initialize taskmaster-ai into my project?
+
+2. 
+
+yeah only web app , dashboard ,  user authentication, even multiple roles,  create small sqllite db. will integrate later with larger db . it will nbe used by my stuents to upload doc / code and be able to generatte questions and test themdelves duolingo style 
+
+no e-commerce,payment gateway,
+
+I want to build an app where my students can upload any piece of code and try to generate a quiz, which should look very similar to Duolingo. I want to have different types of questions like fill in the blank match. The following true or false multiple choice and so on. It will be a web application. I'm expecting to have user authentication as well and so user roles to because I would like to login as an admin and see how many of my students have answered questions and how was their performance and so on. I would like to utilise LLM to generate these questions and rest of the web application is pretty much basic. I mean a standard application which we see every other day.
+
+3. 
+can you show me in tabular format about tasks available etc ?
+
+4. 
+assign complexity if not done already. next time I ask you for a table, I don't want you to write a big html. just a short grid view will do. don't need fancy here.
+
+5. 
+Tasks that are larger than 5 rated, break them down into smaller tasks to make them fall into easy medium category. do not change category criterea, change create smaller  easier testable tasks.  I don't mind if mmy bumber of tasks go more than 25.
+
+6. 
+what will be my prompt to check current tasks, task status and start working on next tasks, if my  taskmaster ai isn't working which it isn't - so you will need to to that manually based on this prompt. I want to be able to use this pormpt at multi chat.
+
+7.
+complete first 5 tasks and report me. complete them one after the other
+
+
+
+
+
+
+
+
