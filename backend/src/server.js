@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const path = require('path');
 const { testConnection } = require('./config/database');
 
 const app = express();
@@ -47,13 +48,38 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Route not found'
+// Production static file serving
+if (process.env.NODE_ENV === 'production') {
+  // Serve static files from frontend build
+  app.use(express.static(path.join(__dirname, '../../frontend')));
+  
+  // Fallback route for React Router (SPA support)
+  app.get('*', (req, res) => {
+    // Skip API routes
+    if (req.path.startsWith('/api')) {
+      return res.status(404).json({
+        success: false,
+        message: 'API route not found'
+      });
+    }
+    res.sendFile(path.join(__dirname, '../../frontend', 'index.html'));
   });
-});
+} else {
+  // Development mode - simple root route
+  app.get('/', (req, res) => {
+    res.send('<h1>Backend API running locally</h1><p>Environment: Development</p><p>API available at <a href="/api/health">/api/health</a></p>');
+  });
+}
+
+// 404 handler (only for non-production or when not handled above)
+if (process.env.NODE_ENV !== 'production') {
+  app.use('*', (req, res) => {
+    res.status(404).json({
+      success: false,
+      message: 'Route not found'
+    });
+  });
+}
 
 // Global error handler
 app.use((error, req, res, next) => {

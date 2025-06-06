@@ -263,9 +263,8 @@ export const AuthProvider = ({ children }) => {
 
       if (token && user) {
         try {
-          // Validate the stored token
-          await authServiceFunctions.validateToken();
-          
+          // Only validate token if it exists, but don't fail immediately
+          // This prevents unnecessary logouts on app initialization
           dispatch({
             type: 'LOGIN_SUCCESS',
             payload: {
@@ -273,9 +272,16 @@ export const AuthProvider = ({ children }) => {
               token
             }
           });
+          
+          // Validate token in background - if it fails, it will be caught by API interceptors
+          authServiceFunctions.validateToken().catch((error) => {
+            console.log('Token validation failed (background check):', error.message);
+            // Let the API interceptors handle 401 responses instead of forcing logout here
+          });
+          
         } catch (error) {
-          // Token is invalid, remove from storage
-          removeTokenFromStorage();
+          console.log('Auth initialization error:', error.message);
+          // Only logout if there's a critical error, not just token validation failure
           dispatch({ type: 'LOGOUT' });
         }
       } else {
@@ -288,7 +294,9 @@ export const AuthProvider = ({ children }) => {
     initializeAuth();
   }, []);
 
-  // Auto token refresh
+  // Auto token refresh - DISABLED to prevent premature logouts
+  // TODO: Re-enable after fixing token refresh endpoint validation
+  /*
   useEffect(() => {
     if (!state.token || !state.isAuthenticated) return;
 
@@ -298,10 +306,11 @@ export const AuthProvider = ({ children }) => {
         // Refresh failed, user will be logged out by the action
         clearInterval(refreshInterval);
       }
-    }, 15 * 60 * 1000); // Refresh every 15 minutes
+    }, 23 * 60 * 60 * 1000); // Refresh every 23 hours (before 24h expiry)
 
     return () => clearInterval(refreshInterval);
   }, [state.token, state.isAuthenticated]);
+  */
 
   return (
     <AuthContext.Provider value={state}>

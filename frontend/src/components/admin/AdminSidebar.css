@@ -144,7 +144,7 @@
 
 .nav-content {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 0.25rem;
   flex: 1;
 }
