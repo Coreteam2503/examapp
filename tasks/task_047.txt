@@ -1,6 +1,6 @@
 # Task ID: 47
 # Title: File Upload Security
-# Status: pending
+# Status: done
 # Dependencies: None
 # Priority: high
 # Description: Enhance file upload security with advanced validation and scanning

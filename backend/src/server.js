@@ -2,15 +2,21 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const helmet = require('helmet');
 const path = require('path');
 const { testConnection } = require('./config/database');
+
+// Import security middleware
+const { securityConfig, requestLogger, additionalSecurityHeaders } = require('./middleware/security');
+const { generalApiLimiter, authLimiter, quizGenerationLimiter } = require('./middleware/rateLimiting');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
 
-// Middleware
-app.use(helmet());
+// Security Middleware
+app.use(securityConfig()); // Enhanced helmet configuration
+app.use(additionalSecurityHeaders); // Additional security headers
+app.use(requestLogger); // Request logging
+// Note: General rate limiting applied per route, not globally
 
 // CORS configuration with debugging
 const corsOptions = {
@@ -29,15 +35,17 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/uploads', require('./routes/uploads'));
-app.use('/api/quizzes', require('./routes/quizzes'));
-app.use('/api/quiz-attempts', require('./routes/quizAttempts'));
-app.use('/api/ai', require('./routes/ai'));
-app.use('/api/users', require('./routes/users'));
-app.use('/api/analytics', require('./routes/analytics'));
-app.use('/api/admin', require('./routes/admin'));
+// Routes with specific rate limiting
+app.use('/api/auth', authLimiter, require('./routes/auth')); // Auth-specific rate limiting
+app.use('/api/uploads', generalApiLimiter, require('./routes/uploads')); // General rate limiting
+app.use('/api/quizzes', generalApiLimiter, require('./routes/quizzes')); // General rate limiting
+app.use('/api/quiz-attempts', generalApiLimiter, require('./routes/quizAttempts')); // General rate limiting
+app.use('/api/users', generalApiLimiter, require('./routes/users')); // General rate limiting
+app.use('/api/analytics', generalApiLimiter, require('./routes/analytics')); // General rate limiting
+app.use('/api/admin', generalApiLimiter, require('./routes/admin')); // General rate limiting
+
+// AI routes (rate limiting applied per endpoint in routes/ai.js)
+app.use('/api/ai', require('./routes/ai')); // Rate limiting applied to specific endpoints
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -84,6 +92,23 @@ if (process.env.NODE_ENV !== 'production') {
 // Global error handler
 app.use((error, req, res, next) => {
   console.error('Global error handler:', error);
+  
+  // Handle rate limiting errors
+  if (error.type === 'entity.too.large') {
+    return res.status(413).json({
+      success: false,
+      message: 'Request entity too large'
+    });
+  }
+  
+  // Handle other specific errors
+  if (error.status) {
+    return res.status(error.status).json({
+      success: false,
+      message: error.message || 'Request failed'
+    });
+  }
+  
   res.status(500).json({
     success: false,
     message: 'Internal server error'

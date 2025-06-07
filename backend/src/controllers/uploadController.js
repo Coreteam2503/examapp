@@ -2,14 +2,125 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { promisify } = require('util');
+const { fileTypeFromFile } = require('file-type');
 const { db } = require('../config/database');
 
 const mkdir = promisify(fs.mkdir);
 const stat = promisify(fs.stat);
 
+// Get max file size from environment (default 10KB)
+const MAX_FILE_SIZE_KB = parseInt(process.env.MAX_FILE_SIZE_KB) || 10;
+const MAX_FILE_SIZE = MAX_FILE_SIZE_KB * 1024; // Convert KB to bytes
+
+console.log(`📁 File Upload Configuration:`);
+console.log(`   - Max file size: ${MAX_FILE_SIZE_KB}KB (${MAX_FILE_SIZE} bytes)`);
+
+// Advanced file type validation using file-type library
+const validateFileType = async (filePath, originalName) => {
+  try {
+    // Get actual file type from file content
+    const fileType = await fileTypeFromFile(filePath);
+    
+    // Allowed coding file extensions
+    const allowedExtensions = [
+      '.ipynb',  // Jupyter notebooks
+      '.py',     // Python
+      '.java',   // Java
+      '.ts',     // TypeScript
+      '.js',     // JavaScript
+      '.jsx',    // React JavaScript
+      '.tsx',    // React TypeScript
+      '.cpp',    // C++
+      '.c',      // C
+      '.h',      // C/C++ headers
+      '.hpp',    // C++ headers
+      '.cs',     // C#
+      '.php',    // PHP
+      '.rb',     // Ruby
+      '.go',     // Go
+      '.rs',     // Rust
+      '.swift',  // Swift
+      '.kt',     // Kotlin
+      '.scala',  // Scala
+      '.r',      // R
+      '.sql',    // SQL
+      '.sh',     // Shell scripts
+      '.json',   // JSON
+      '.yaml',   // YAML
+      '.yml',    // YAML
+      '.xml',    // XML
+      '.html',   // HTML
+      '.css',    // CSS
+      '.scss',   // SCSS
+      '.md',     // Markdown
+      '.txt'     // Plain text
+    ];
+
+    const ext = path.extname(originalName).toLowerCase();
+    
+    // Check if extension is allowed
+    if (!allowedExtensions.includes(ext)) {
+      return {
+        valid: false,
+        error: `File extension '${ext}' not allowed. Allowed types: ${allowedExtensions.join(', ')}`
+      };
+    }
+
+    // For most text-based coding files, file-type library may return null
+    // This is expected for plain text files like .py, .js, etc.
+    // We'll accept files with allowed extensions that are text-based
+    const textBasedExtensions = [
+      '.py', '.js', '.jsx', '.ts', '.tsx', '.java', '.cpp', '.c', '.h', '.hpp',
+      '.cs', '.php', '.rb', '.go', '.rs', '.swift', '.kt', '.scala', '.r',
+      '.sql', '.sh', '.json', '.yaml', '.yml', '.xml', '.html', '.css',
+      '.scss', '.md', '.txt'
+    ];
+
+    if (textBasedExtensions.includes(ext) && (!fileType || fileType.mime.startsWith('text/'))) {
+      return { valid: true };
+    }
+
+    // For .ipynb (Jupyter notebooks) - should be JSON
+    if (ext === '.ipynb') {
+      if (!fileType || fileType.mime === 'application/json') {
+        return { valid: true };
+      }
+    }
+
+    // If we have a detected file type, check if it's appropriate
+    if (fileType) {
+      const allowedMimeTypes = [
+        'text/plain',
+        'text/html',
+        'text/css',
+        'application/json',
+        'application/xml'
+      ];
+
+      if (allowedMimeTypes.includes(fileType.mime)) {
+        return { valid: true };
+      }
+
+      return {
+        valid: false,
+        error: `File content type '${fileType.mime}' doesn't match expected type for '${ext}' files`
+      };
+    }
+
+    // If no file type detected but extension is text-based, allow it
+    return { valid: true };
+
+  } catch (error) {
+    console.error('File type validation error:', error);
+    return {
+      valid: false,
+      error: 'Could not validate file type'
+    };
+  }
+};
+
 // Configure multer for file uploads
 const createUploadConfig = () => {
-  // Create uploads directory if it doesn't exist
   const uploadDir = path.join(__dirname, '../../uploads');
   
   const ensureUploadDir = async () => {
@@ -22,7 +133,6 @@ const createUploadConfig = () => {
     }
   };
 
-  // Configure storage
   const storage = multer.diskStorage({
     destination: async (req, file, cb) => {
       try {
@@ -33,7 +143,6 @@ const createUploadConfig = () => {
       }
     },
     filename: (req, file, cb) => {
-      // Generate unique filename
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
       const ext = path.extname(file.originalname);
       const name = path.basename(file.originalname, ext);
@@ -41,35 +150,18 @@ const createUploadConfig = () => {
     }
   });
 
-  // File filter function
+  // Simple file filter - basic extension check
   const fileFilter = (req, file, cb) => {
-    // Allowed file types
-    const allowedTypes = [
-      'text/plain',           // .txt files
-      'text/javascript',      // .js files
-      'text/x-python',        // .py files
-      'text/x-java-source',   // .java files
-      'text/x-c',            // .c files
-      'text/x-c++src',       // .cpp files
-      'application/json',     // .json files
-      'text/markdown',        // .md files
-      'text/html',           // .html files
-      'text/css',            // .css files
-      'application/pdf',      // .pdf files
-      'application/msword',   // .doc files
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document' // .docx files
-    ];
-
-    // Also check file extension as fallback
     const allowedExtensions = [
-      '.txt', '.js', '.py', '.java', '.c', '.cpp', '.h', '.hpp',
-      '.json', '.md', '.html', '.css', '.pdf', '.doc', '.docx',
-      '.ts', '.jsx', '.tsx', '.php', '.rb', '.go', '.rs', '.swift'
+      '.ipynb', '.py', '.java', '.ts', '.js', '.jsx', '.tsx', '.cpp', '.c',
+      '.h', '.hpp', '.cs', '.php', '.rb', '.go', '.rs', '.swift', '.kt',
+      '.scala', '.r', '.sql', '.sh', '.json', '.yaml', '.yml', '.xml',
+      '.html', '.css', '.scss', '.md', '.txt'
     ];
 
     const ext = path.extname(file.originalname).toLowerCase();
     
-    if (allowedTypes.includes(file.mimetype) || allowedExtensions.includes(ext)) {
+    if (allowedExtensions.includes(ext)) {
       cb(null, true);
     } else {
       cb(new Error(`File type not allowed. Allowed types: ${allowedExtensions.join(', ')}`), false);
@@ -80,22 +172,21 @@ const createUploadConfig = () => {
     storage: storage,
     fileFilter: fileFilter,
     limits: {
-      fileSize: 10 * 1024 * 1024, // 10MB limit
-      files: 5 // Maximum 5 files at once
+      fileSize: MAX_FILE_SIZE, // Use the dynamically calculated value
+      files: 5
     }
   });
 };
 
-// Initialize upload middleware
 const upload = createUploadConfig();
 
-// File upload controller functions
 const uploadController = {
-  // Single file upload
   uploadFile: async (req, res) => {
     try {
-      const { user } = req; // From auth middleware
+      const { user } = req;
       const file = req.file;
+
+      console.log(`📁 File upload attempt: ${file ? file.originalname : 'No file'} - Size: ${file ? file.size : 0} bytes - Limit: ${MAX_FILE_SIZE} bytes`);
 
       if (!file) {
         return res.status(400).json({
@@ -104,27 +195,53 @@ const uploadController = {
         });
       }
 
-      // Read file content for processing (but don't store large files in DB)
-      const filePath = file.path;
-      let content = null;
-      
-      // Only read content for text files under 1MB
-      if (file.size < 1024 * 1024) { // 1MB limit
+      // Check file size explicitly (multer should have caught this, but double-check)
+      if (file.size > MAX_FILE_SIZE) {
+        console.log(`⚠️  File too large: ${file.size} bytes > ${MAX_FILE_SIZE} bytes`);
+        // Clean up uploaded file
         try {
-          content = fs.readFileSync(filePath, 'utf8');
-        } catch (error) {
-          // If file can't be read as text, leave content as null
-          console.log('File not readable as text:', file.originalname);
+          fs.unlinkSync(file.path);
+        } catch (cleanupError) {
+          console.error('File cleanup error:', cleanupError);
         }
+        
+        return res.status(400).json({
+          success: false,
+          message: `File too large. Maximum size is ${MAX_FILE_SIZE_KB}KB.`
+        });
       }
 
-      // Save file info to database
+      // Enhanced file type validation using file-type library
+      const validation = await validateFileType(file.path, file.originalname);
+      if (!validation.valid) {
+        // Clean up uploaded file
+        try {
+          fs.unlinkSync(file.path);
+        } catch (cleanupError) {
+          console.error('File cleanup error:', cleanupError);
+        }
+        
+        return res.status(400).json({
+          success: false,
+          message: validation.error
+        });
+      }
+
+      // Read file content (since files are small now)
+      let content = null;
+      try {
+        content = fs.readFileSync(file.path, 'utf8');
+      } catch (error) {
+        console.log('File not readable as text:', file.originalname);
+      }
+
+      // Save to database
       const uploadRecord = await db('uploads').insert({
         user_id: user.userId,
-        filename: file.filename, // Generated unique filename
-        original_name: file.originalname, // Original filename
-        file_path: filePath,
-        content: content, // Only for small text files
+        filename: file.filename,
+        original_name: file.originalname,
+        file_path: file.path,
+        content: content,
         upload_date: new Date(),
         file_size: file.size,
         file_type: path.extname(file.originalname).toLowerCase(),
@@ -132,7 +249,6 @@ const uploadController = {
         status: 'completed'
       }).returning('*');
 
-      // Return success response
       res.status(201).json({
         success: true,
         message: 'File uploaded successfully',
@@ -141,14 +257,14 @@ const uploadController = {
           filename: uploadRecord[0].original_name,
           size: uploadRecord[0].file_size,
           type: uploadRecord[0].mime_type,
-          uploadDate: uploadRecord[0].upload_date
+          uploadDate: uploadRecord[0].upload_date,
+          maxFileSize: `${MAX_FILE_SIZE_KB}KB`
         }
       });
 
     } catch (error) {
       console.error('File upload error:', error);
       
-      // Clean up file if database save fails
       if (req.file && req.file.path) {
         try {
           fs.unlinkSync(req.file.path);
@@ -165,7 +281,6 @@ const uploadController = {
     }
   },
 
-  // Multiple files upload
   uploadMultipleFiles: async (req, res) => {
     try {
       const { user } = req;
@@ -181,18 +296,24 @@ const uploadController = {
       const uploadedFiles = [];
       const errors = [];
 
-      // Process each file
       for (const file of files) {
         try {
+          // Validate each file
+          const validation = await validateFileType(file.path, file.originalname);
+          if (!validation.valid) {
+            errors.push({
+              filename: file.originalname,
+              error: validation.error
+            });
+            fs.unlinkSync(file.path);
+            continue;
+          }
+
           let content = null;
-          
-          // Only read content for small text files
-          if (file.size < 1024 * 1024) {
-            try {
-              content = fs.readFileSync(file.path, 'utf8');
-            } catch (error) {
-              console.log('File not readable as text:', file.originalname);
-            }
+          try {
+            content = fs.readFileSync(file.path, 'utf8');
+          } catch (error) {
+            console.log('File not readable as text:', file.originalname);
           }
 
           const uploadRecord = await db('uploads').insert({
@@ -221,8 +342,6 @@ const uploadController = {
             filename: file.originalname,
             error: error.message
           });
-
-          // Clean up failed file
           try {
             fs.unlinkSync(file.path);
           } catch (cleanupError) {
@@ -236,14 +355,14 @@ const uploadController = {
         message: `${uploadedFiles.length} files uploaded successfully`,
         data: {
           uploadedFiles,
-          errors: errors.length > 0 ? errors : undefined
+          errors: errors.length > 0 ? errors : undefined,
+          maxFileSize: `${MAX_FILE_SIZE_KB}KB`
         }
       });
 
     } catch (error) {
       console.error('Multiple file upload error:', error);
 
-      // Clean up all files on general error
       if (req.files) {
         req.files.forEach(file => {
           try {
@@ -262,7 +381,6 @@ const uploadController = {
     }
   },
 
-  // Get user's uploaded files
   getUserUploads: async (req, res) => {
     try {
       const { user } = req;
@@ -270,7 +388,6 @@ const uploadController = {
       
       const offset = (page - 1) * limit;
 
-      // Get user's uploads with pagination
       const uploads = await db('uploads')
         .where('user_id', user.userId)
         .orderBy('upload_date', 'desc')
@@ -278,7 +395,6 @@ const uploadController = {
         .offset(offset)
         .select('id', 'original_name as filename', 'file_size', 'mime_type as file_type', 'upload_date');
 
-      // Get total count for pagination
       const totalCount = await db('uploads')
         .where('user_id', user.userId)
         .count('id as count')
@@ -293,7 +409,8 @@ const uploadController = {
             limit: parseInt(limit),
             total: totalCount.count,
             totalPages: Math.ceil(totalCount.count / limit)
-          }
+          },
+          maxFileSize: `${MAX_FILE_SIZE_KB}KB`
         }
       });
 
@@ -307,7 +424,6 @@ const uploadController = {
     }
   },
 
-  // Get specific upload details
   getUploadById: async (req, res) => {
     try {
       const { user } = req;
@@ -339,7 +455,6 @@ const uploadController = {
     }
   },
 
-  // Delete upload
   deleteUpload: async (req, res) => {
     try {
       const { user } = req;
@@ -356,17 +471,14 @@ const uploadController = {
         });
       }
 
-      // Delete file from filesystem
       try {
         if (fs.existsSync(upload.file_path)) {
           fs.unlinkSync(upload.file_path);
         }
       } catch (fileError) {
         console.error('File deletion error:', fileError);
-        // Continue with database deletion even if file deletion fails
       }
 
-      // Delete from database
       await db('uploads').where({ id, user_id: user.userId }).del();
 
       res.json({

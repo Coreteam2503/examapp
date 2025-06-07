@@ -6,6 +6,7 @@ const authenticateToken = async (req, res, next) => {
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
+    console.log(" test 1")
     console.log('Auth middleware - Header:', authHeader ? 'Present' : 'Missing');
     console.log('Auth middleware - Token:', token ? 'Present' : 'Missing');
 

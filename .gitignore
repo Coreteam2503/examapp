@@ -30,3 +30,5 @@ node_modules/
 # tasks.json
 # tasks/ 
 backend/data/quiz_app.db
+backend/data
+backend/uploads
