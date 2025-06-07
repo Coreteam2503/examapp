@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { normalizeQuizAnswers } from '../utils/answerNormalization';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
@@ -13,9 +14,11 @@ const apiClient = axios.create({
 // Add auth token to requests
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('authToken'); // Fixed: use same key as apiService
+    console.log('QuizService - Token found:', token ? 'Yes' : 'No');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('QuizService - Authorization header set');
     }
     return config;
   },
@@ -30,7 +33,8 @@ apiClient.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Token expired or invalid
-      localStorage.removeItem('token');
+      localStorage.removeItem('authToken'); // Fixed: use same key as apiService
+      localStorage.removeItem('authUser');
       window.location.href = '/login';
     }
     return Promise.reject(error);
@@ -100,11 +104,19 @@ const quizService = {
   /**
    * Submit quiz attempt and get results
    */
-  submitQuizAttempt: async (quizId, answers, timeElapsed) => {
+  submitQuizAttempt: async (quizId, answers, timeElapsed, quiz = null) => {
     try {
+      // Normalize answers before submission if quiz data is available
+      let normalizedAnswers = answers;
+      if (quiz && quiz.questions) {
+        normalizedAnswers = normalizeQuizAnswers(answers, quiz.questions);
+        console.log('Original answers:', answers);
+        console.log('Normalized answers:', normalizedAnswers);
+      }
+      
       const response = await apiClient.post('/quiz-attempts', {
         quizId,
-        answers,
+        answers: normalizedAnswers,
         timeElapsed,
         completedAt: new Date().toISOString()
       });

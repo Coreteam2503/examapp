@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import QuizDisplay from './QuizDisplay';
 import { apiService, handleApiError } from '../../services/apiService';
+import quizService from '../../services/quizService';
 import './QuizManager.css';
 
 const QuizManager = () => {
@@ -19,7 +20,6 @@ const QuizManager = () => {
     try {
       setLoading(true);
       const response = await apiService.quizzes.list({ page: 1, limit: 10 });
-      console.log('Quiz list response:', response.data);
       setQuizzes(response.data.quizzes || []);
       setError(null);
     } catch (err) {
@@ -53,24 +53,24 @@ const QuizManager = () => {
     try {
       setLoading(true);
       
-      // Submit quiz attempt to backend
+      // Submit quiz attempt to backend with normalization
       console.log('Submitting quiz attempt:', {
         quizId: selectedQuiz.id,
         answers: results.answers,
         timeElapsed: results.timeElapsed
       });
       
-      const response = await apiService.quizAttempts.submit({
-        quizId: selectedQuiz.id,
-        answers: results.answers,
-        timeElapsed: results.timeElapsed,
-        completedAt: new Date().toISOString()
-      });
+      const response = await quizService.submitQuizAttempt(
+        selectedQuiz.id,
+        results.answers,
+        results.timeElapsed,
+        selectedQuiz // Pass quiz data for answer normalization
+      );
       
-      console.log('Quiz attempt submitted successfully:', response.data);
+      console.log('Quiz attempt submitted successfully:', response);
       
       // Store results with backend response data
-      const backendResults = response.data.attempt || {};
+      const backendResults = response.attempt || {};
       setQuizResults({
         ...results,
         attemptId: backendResults.id,
@@ -83,8 +83,7 @@ const QuizManager = () => {
       setError(null);
     } catch (err) {
       console.error('Error submitting quiz attempt:', err);
-      const errorResponse = handleApiError(err);
-      setError(`Failed to submit quiz: ${errorResponse.message}`);
+      setError(`Failed to submit quiz: ${err.message}`);
       
       // Still show results even if submission failed
       setQuizResults(results);

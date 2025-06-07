@@ -54,11 +54,18 @@ class QuizAttemptController {
       for (const question of questions) {
         const userAnswer = answers[question.id];
         if (userAnswer) {
-          const isCorrect = userAnswer.answer === question.correct_answer;
+          console.log('Comparing answers:', {
+            questionId: question.id,
+            userAnswer: userAnswer.answer,
+            correctAnswer: question.correct_answer,
+            questionType: question.type
+          });
+          const isCorrect = this.validateAnswer(userAnswer.answer, question);
+          console.log(`Answer for question ${question.id}: ${isCorrect ? 'Correct' : 'Incorrect'}`);
           answerRecords.push({
             attempt_id: attemptId,
             question_id: question.id,
-            user_answer: userAnswer.answer,
+            user_answer: typeof userAnswer.answer === 'object' ? JSON.stringify(userAnswer.answer) : userAnswer.answer,
             is_correct: isCorrect,
             time_spent: userAnswer.timeSpent || 0,
             created_at: new Date()
@@ -428,9 +435,9 @@ class QuizAttemptController {
 
     for (const question of questions) {
       const userAnswer = answers[question.id];
-      if (userAnswer && userAnswer.answer) {
+      if (userAnswer && userAnswer.answer !== undefined && userAnswer.answer !== null) {
         totalAnswered++;
-        if (userAnswer.answer === question.correct_answer) {
+        if (this.validateAnswer(userAnswer.answer, question)) {
           correctAnswers++;
         }
       }
@@ -490,6 +497,297 @@ class QuizAttemptController {
     } else {
       return `${secs}s`;
     }
+  }
+
+  /**
+   * Enhanced answer validation with lenient matching for different question types
+   */
+  validateAnswer(userAnswer, question) {
+    if (userAnswer === null || userAnswer === undefined) {
+      return false;
+    }
+
+    // If correct answer is null, any answer should be considered correct
+    if (question.correct_answer === null || question.correct_answer === undefined) {
+      return true;
+    }
+
+    const questionType = question.type;
+    const correctAnswer = question.correct_answer;
+
+    console.log('Validating answer:', {
+      questionType,
+      userAnswer,
+      correctAnswer,
+      userAnswerType: typeof userAnswer,
+      correctAnswerType: typeof correctAnswer
+    });
+
+    switch (questionType) {
+      case 'multiple_choice':
+        return this.validateMultipleChoice(userAnswer, correctAnswer);
+      
+      case 'true_false':
+      case 'true-false':
+        return this.validateTrueFalse(userAnswer, correctAnswer);
+      
+      case 'fill_in_the_blank':
+      case 'fill-in-the-blank':
+      case 'fill_blank':
+        return this.validateFillInTheBlank(userAnswer, question);
+      
+      default:
+        // Default to exact match for unknown types
+        return String(userAnswer).trim() === String(correctAnswer).trim();
+    }
+  }
+
+  /**
+   * Validate multiple choice answers
+   */
+  validateMultipleChoice(userAnswer, correctAnswer) {
+    // Handle both "B) Option text" and "B" formats
+    const userLetter = this.extractLetter(userAnswer);
+    const correctLetter = this.extractLetter(correctAnswer);
+    
+    return userLetter === correctLetter;
+  }
+
+  /**
+   * Validate true/false answers
+   */
+  validateTrueFalse(userAnswer, correctAnswer) {
+    const normalizedUser = this.normalizeTrueFalse(userAnswer);
+    const normalizedCorrect = this.normalizeTrueFalse(correctAnswer);
+    
+    return normalizedUser === normalizedCorrect;
+  }
+
+  /**
+   * Validate fill-in-the-blank answers with lenient matching
+   */
+  validateFillInTheBlank(userAnswer, question) {
+    // If correct answer is null or empty, accept any answer
+    if (!question.correct_answer || question.correct_answer === 'null') {
+      return true;
+    }
+
+    // Handle object answers (multiple blanks)
+    if (typeof userAnswer === 'object' && userAnswer !== null) {
+      return this.validateFillBlankObject(userAnswer, question);
+    }
+
+    // Handle string answers (single blank)
+    if (typeof userAnswer === 'string') {
+      return this.validateFillBlankString(userAnswer, question.correct_answer);
+    }
+
+    return false;
+  }
+
+  /**
+   * Validate fill-in-the-blank object answers (multiple blanks)
+   */
+  validateFillBlankObject(userAnswers, question) {
+    try {
+      // Try to parse correct answers if it's a string
+      let correctAnswers = question.correct_answers_data;
+      if (typeof correctAnswers === 'string') {
+        correctAnswers = JSON.parse(correctAnswers);
+      }
+
+      if (!correctAnswers || typeof correctAnswers !== 'object') {
+        // If no correct answers defined, accept any answers
+        return true;
+      }
+
+      // Check each blank
+      let allCorrect = true;
+      Object.keys(userAnswers).forEach(blankKey => {
+        const userBlankAnswer = userAnswers[blankKey];
+        const correctBlankAnswers = correctAnswers[blankKey];
+
+        if (!correctBlankAnswers || correctBlankAnswers.length === 0) {
+          // No correct answers for this blank, accept any answer
+          return;
+        }
+
+        const isBlankCorrect = this.isAnswerInList(userBlankAnswer, correctBlankAnswers);
+        if (!isBlankCorrect) {
+          allCorrect = false;
+        }
+      });
+
+      return allCorrect;
+    } catch (error) {
+      console.error('Error validating fill blank object:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Validate fill-in-the-blank string answer (single blank)
+   */
+  validateFillBlankString(userAnswer, correctAnswer) {
+    if (!correctAnswer) {
+      return true; // Accept any answer if no correct answer defined
+    }
+
+    try {
+      // If correct answer is a JSON array, check against all possibilities
+      if (correctAnswer.startsWith('[') || correctAnswer.startsWith('{')) {
+        const correctAnswers = JSON.parse(correctAnswer);
+        if (Array.isArray(correctAnswers)) {
+          return this.isAnswerInList(userAnswer, correctAnswers);
+        }
+      }
+    } catch (error) {
+      // Not JSON, treat as single string
+    }
+
+    // Single string comparison with lenient matching
+    return this.isAnswerMatch(userAnswer, correctAnswer);
+  }
+
+  /**
+   * Check if user answer matches any answer in a list with lenient matching
+   */
+  isAnswerInList(userAnswer, correctAnswersList) {
+    if (!correctAnswersList || correctAnswersList.length === 0) {
+      return true; // Accept any answer if no correct answers
+    }
+
+    for (const correctAnswer of correctAnswersList) {
+      if (this.isAnswerMatch(userAnswer, correctAnswer)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Lenient answer matching for fill-in-the-blank
+   */
+  isAnswerMatch(userAnswer, correctAnswer) {
+    if (!userAnswer || !correctAnswer) {
+      return false;
+    }
+
+    const userNormalized = String(userAnswer).toLowerCase().trim();
+    const correctNormalized = String(correctAnswer).toLowerCase().trim();
+
+    // Exact match
+    if (userNormalized === correctNormalized) {
+      return true;
+    }
+
+    // User answer contains correct answer
+    if (userNormalized.includes(correctNormalized)) {
+      return true;
+    }
+
+    // Correct answer contains user answer (more lenient)
+    if (correctNormalized.includes(userNormalized)) {
+      return true;
+    }
+
+    // Simple similarity for single words
+    if (userNormalized.split(' ').length === 1 && correctNormalized.split(' ').length === 1) {
+      const similarity = this.calculateSimilarity(userNormalized, correctNormalized);
+      return similarity > 0.7; // 70% similarity threshold
+    }
+
+    return false;
+  }
+
+  /**
+   * Calculate simple similarity between two strings
+   */
+  calculateSimilarity(str1, str2) {
+    const maxLength = Math.max(str1.length, str2.length);
+    if (maxLength === 0) return 1;
+    
+    const distance = this.levenshteinDistance(str1, str2);
+    return (maxLength - distance) / maxLength;
+  }
+
+  /**
+   * Calculate Levenshtein distance
+   */
+  levenshteinDistance(str1, str2) {
+    const matrix = [];
+    
+    for (let i = 0; i <= str2.length; i++) {
+      matrix[i] = [i];
+    }
+    
+    for (let j = 0; j <= str1.length; j++) {
+      matrix[0][j] = j;
+    }
+    
+    for (let i = 1; i <= str2.length; i++) {
+      for (let j = 1; j <= str1.length; j++) {
+        if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+          matrix[i][j] = matrix[i - 1][j - 1];
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j - 1] + 1, // substitution
+            matrix[i][j - 1] + 1,     // insertion
+            matrix[i - 1][j] + 1      // deletion
+          );
+        }
+      }
+    }
+    
+    return matrix[str2.length][str1.length];
+  }
+
+  /**
+   * Extract letter from multiple choice option
+   */
+  extractLetter(option) {
+    if (!option || typeof option !== 'string') {
+      return option;
+    }
+    
+    // Match patterns like "A)", "B)", "C)", "D)" at the start
+    const match = option.match(/^([A-D])\)/);
+    if (match) {
+      return match[1];
+    }
+    
+    // If already just a letter
+    if (/^[A-D]$/.test(option.trim())) {
+      return option.trim();
+    }
+    
+    return option;
+  }
+
+  /**
+   * Normalize true/false values
+   */
+  normalizeTrueFalse(value) {
+    if (typeof value === 'boolean') {
+      return value ? 'True' : 'False';
+    }
+    
+    if (typeof value === 'string') {
+      const lower = value.toLowerCase().trim();
+      if (lower === 'true' || lower === '1' || lower === 'yes') {
+        return 'True';
+      }
+      if (lower === 'false' || lower === '0' || lower === 'no') {
+        return 'False';
+      }
+      return value;
+    }
+    
+    if (typeof value === 'number') {
+      return value === 1 || value > 0 ? 'True' : 'False';
+    }
+    
+    return value;
   }
 }
 

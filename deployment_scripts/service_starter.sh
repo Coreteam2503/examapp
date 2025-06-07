@@ -1,5 +1,7 @@
 #!/bin/bash
 
+./Users/balajiv/Documents/coderepos/futureOS/examApp/deployment_scripts/stop.sh
+
 # Service Starter
 # Handles starting backend and frontend services
 

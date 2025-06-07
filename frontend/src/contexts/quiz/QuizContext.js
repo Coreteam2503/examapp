@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import { normalizeAnswer } from '../../utils/answerNormalization';
 
 // Quiz Session State Management
 const QuizContext = createContext();
@@ -254,13 +255,16 @@ export const QuizProvider = ({ children }) => {
     const currentQuestion = state.quiz?.questions?.[state.currentQuestionIndex];
     if (!currentQuestion) return;
 
+    // Normalize the answer based on question type
+    const normalizedAnswer = normalizeAnswer(answer, currentQuestion.type, currentQuestion);
+    
     const timeSpent = state.timeElapsed - (state.lastQuestionTime || 0);
     
     dispatch({
       type: QUIZ_ACTIONS.SUBMIT_ANSWER,
       payload: {
         questionId,
-        answer,
+        answer: normalizedAnswer,
         timeSpent
       }
     });
