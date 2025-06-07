@@ -142,8 +142,8 @@ const authServiceFunctions = {
     return response.data;
   },
 
-  register: async (email, password, confirmPassword) => {
-    const response = await apiService.auth.register({ email, password, confirmPassword });
+  register: async (userData) => {
+    const response = await apiService.auth.register(userData);
     return response.data;
   },
 
@@ -189,11 +189,11 @@ export const authActions = {
     }
   },
 
-  register: (dispatch) => async (email, password, confirmPassword) => {
+  register: (dispatch) => async (userData) => {
     try {
       dispatch({ type: 'LOGIN_START' });
       
-      const data = await authServiceFunctions.register(email, password, confirmPassword);
+      const data = await authServiceFunctions.register(userData);
       console.log('Register response data:', data);
       
       // Handle both data.data and direct data structures
@@ -261,10 +261,10 @@ export const AuthProvider = ({ children }) => {
       const token = getTokenFromStorage();
       const user = getUserFromStorage();
 
-      if (token && user) {
+      // Both token and user must exist for authentication
+      if (token && user && token !== 'undefined' && user !== 'undefined') {
         try {
-          // Only validate token if it exists, but don't fail immediately
-          // This prevents unnecessary logouts on app initialization
+          console.log('Initializing auth with stored token and user');
           dispatch({
             type: 'LOGIN_SUCCESS',
             payload: {
@@ -281,10 +281,14 @@ export const AuthProvider = ({ children }) => {
           
         } catch (error) {
           console.log('Auth initialization error:', error.message);
-          // Only logout if there's a critical error, not just token validation failure
+          // Clear invalid data and logout
+          removeTokenFromStorage();
           dispatch({ type: 'LOGOUT' });
         }
       } else {
+        console.log('No valid token or user found, logging out');
+        // Clear any invalid data
+        removeTokenFromStorage();
         dispatch({ type: 'LOGOUT' });
       }
       

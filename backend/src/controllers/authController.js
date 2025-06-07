@@ -31,6 +31,20 @@ const authController = {
 
       const user = await User.create(userData);
 
+      // Generate JWT token (same as login)
+      const jwtSecret = process.env.JWT_SECRET || 'your-super-secret-jwt-key';
+      console.log('Registration - JWT Secret being used:', jwtSecret);
+      
+      const token = jwt.sign(
+        { 
+          userId: user.id, 
+          email: user.email, 
+          role: user.role 
+        },
+        jwtSecret,
+        { expiresIn: '24h' }
+      );
+
       // Remove password from response
       const { password: _, ...userResponse } = user;
 
@@ -38,7 +52,9 @@ const authController = {
         success: true,
         message: 'User registered successfully',
         data: {
-          user: userResponse
+          user: userResponse,
+          token,
+          expiresIn: '24h'
         }
       });
 

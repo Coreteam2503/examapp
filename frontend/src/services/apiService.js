@@ -33,10 +33,17 @@ api.interceptors.response.use(
     console.log('API Response Error:', error.response?.status, error.response?.data);
     if (error.response?.status === 401) {
       console.log('401 Error details:', error.response.data);
-      // Token expired or invalid
+      // Token expired or invalid - clear storage and force logout
       localStorage.removeItem('authToken');
       localStorage.removeItem('authUser');
-      // Don't redirect here, let components handle it
+      
+      // Dispatch logout action to update auth context
+      // We need to get dispatch from somewhere accessible
+      // For now, just redirect to login - the auth context will sync
+      if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+        console.log('Redirecting to login due to 401 error');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

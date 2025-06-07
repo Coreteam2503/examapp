@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth, useAuthDispatch, authActions } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import FileUpload from './FileUpload';
@@ -13,11 +13,19 @@ import PerformanceStats from './dashboard/PerformanceStats';
 import QuickActions from './dashboard/QuickActions';
 
 const Dashboard = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
   const dispatch = useAuthDispatch();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Additional auth check - redirect if not authenticated and not loading
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      console.log('Dashboard: User not authenticated, redirecting to login');
+      navigate('/login', { replace: true });
+    }
+  }, [isAuthenticated, loading, navigate]);
 
   const handleLogout = () => {
     authActions.logout(dispatch)();
@@ -40,8 +48,34 @@ const Dashboard = () => {
     // If quizId is provided, could pass it to QuizManager to start specific quiz
   };
 
+  // Show loading state while checking authentication
+  if (loading) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        flexDirection: 'column'
+      }}>
+        <div>Loading dashboard...</div>
+      </div>
+    );
+  }
+
+  // This should not render if not authenticated due to useEffect redirect above
   if (!isAuthenticated) {
-    return <div>Not authenticated</div>;
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        flexDirection: 'column'
+      }}>
+        <div>Redirecting to login...</div>
+      </div>
+    );
   }
 
   return (
