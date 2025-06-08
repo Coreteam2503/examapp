@@ -70,7 +70,11 @@ class AnalyticsController {
         startDate.setDate(now.getDate() - 7);
     }
 
-    return { startDate, endDate: now };
+    // Convert to Unix timestamps (milliseconds) to match database format
+    return { 
+      startDate: startDate.getTime(), 
+      endDate: now.getTime() 
+    };
   }
 
   /**
@@ -81,14 +85,14 @@ class AnalyticsController {
       // Get activity for the last 7 days - SQLite compatible
       const activities = await knex('attempts')
         .select([
-          knex.raw("strftime('%Y-%m-%d', completed_at) as date"),
+          knex.raw("strftime('%Y-%m-%d', datetime(completed_at/1000, 'unixepoch')) as date"),
           knex.raw('COUNT(*) as quizzes'),
           knex.raw('AVG(score_percentage) as avgScore')
         ])
         .where('user_id', userId)
         .where('completed_at', '>=', dateRange.startDate)
         .where('completed_at', '<=', dateRange.endDate)
-        .groupBy(knex.raw("strftime('%Y-%m-%d', completed_at)"))
+        .groupBy(knex.raw("strftime('%Y-%m-%d', datetime(completed_at/1000, 'unixepoch'))"))
         .orderBy('date');
 
       // Create array for last 7 days with default values
@@ -105,8 +109,8 @@ class AnalyticsController {
         weeklyData.push({
           day: dayNames[date.getDay()],
           date: dateStr,
-          quizzes: activity ? parseInt(activity.quizzes) : 0,
-          avgScore: activity ? Math.round(activity.avgScore) : 0
+          quizzes: activity ? parseInt(activity.quizzes) || 0 : 0,
+          avgScore: activity ? Math.round(parseFloat(activity.avgScore) || 0) : 0
         });
       }
 
@@ -147,13 +151,16 @@ class AnalyticsController {
         
         if (subjectMap.has(subject)) {
           const existing = subjectMap.get(subject);
-          existing.quizCount += parseInt(quiz.quizCount);
-          existing.averageScore = (existing.averageScore + parseFloat(quiz.averageScore)) / 2;
-          existing.improvement = this.calculateImprovement(quiz.quiz_id, userId);
+          existing.quizCount += parseInt(quiz.quizCount) || 0;
+          const currentAvg = parseFloat(quiz.averageScore) || 0;
+          existing.averageScore = existing.averageScore > 0 && currentAvg > 0 
+            ? Math.round((existing.averageScore + currentAvg) / 2) 
+            : Math.round(currentAvg);
+          existing.improvement = await this.calculateImprovement(quiz.quiz_id, userId);
         } else {
           subjectMap.set(subject, {
             name: subject,
-            quizCount: parseInt(quiz.quizCount),
+            quizCount: parseInt(quiz.quizCount) || 0,
             averageScore: Math.round(parseFloat(quiz.averageScore) || 0),
             improvement: await this.calculateImprovement(quiz.quiz_id, userId)
           });
@@ -266,20 +273,22 @@ class AnalyticsController {
       // Best performance day - SQLite compatible
       const dayPerformance = await knex('attempts')
         .select([
-          knex.raw("strftime('%w', completed_at) as dayNumber"),
+          knex.raw("strftime('%w', datetime(completed_at/1000, 'unixepoch')) as dayNumber"),
           knex.raw('AVG(score_percentage) as avgScore'),
           knex.raw('COUNT(*) as attemptCount')
         ])
         .where('user_id', userId)
         .where('completed_at', '>=', dateRange.startDate)
         .where('completed_at', '<=', dateRange.endDate)
-        .groupBy(knex.raw("strftime('%w', completed_at)"))
+        .groupBy(knex.raw("strftime('%w', datetime(completed_at/1000, 'unixepoch'))"))
         .orderBy('avgScore', 'desc')
         .first();
 
       // Convert day number to day name
       const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-      const bestDayName = dayPerformance ? dayNames[parseInt(dayPerformance.dayNumber)] : 'No data';
+      const bestDayName = dayPerformance && dayPerformance.dayNumber !== null 
+        ? dayNames[parseInt(dayPerformance.dayNumber)] 
+        : 'No data';
 
       // Most improved subject
       const subjects = await this.getSubjectBreakdown(userId, dateRange);
@@ -293,7 +302,7 @@ class AnalyticsController {
         averageSessionTime: Math.round(parseFloat(timeData.averageSessionTime) || 0),
         totalSessions: parseInt(timeData.totalSessions) || 0,
         bestPerformanceDay: bestDayName,
-        mostImprovedSubject: mostImprovedSubject.name
+        mostImprovedSubject: mostImprovedSubject.name || 'None'
       };
 
     } catch (error) {
