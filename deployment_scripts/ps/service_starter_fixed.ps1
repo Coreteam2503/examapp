@@ -1,4 +1,4 @@
-# Service Starter (Windows PowerShell)
+# Service Starter (Windows PowerShell) - Fixed Version
 # Handles starting backend and frontend services
 
 param(
@@ -11,16 +11,20 @@ param(
     [string]$Environment = "development"
 )
 
-# Configuration
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$DeploymentScriptsDir = Split-Path -Parent $ScriptDir
-$ProjectRoot = Split-Path -Parent $DeploymentScriptsDir
+# Configuration - Use absolute paths
+$ProjectRoot = "C:\Users\jcupp\coderepos\Future\examApp"
 $BackendDir = Join-Path $ProjectRoot "backend"
 $FrontendDir = Join-Path $ProjectRoot "frontend"
-$LogsDir = Join-Path $DeploymentScriptsDir "logs"
+$LogsDir = Join-Path $ProjectRoot "deployment_scripts\logs"
+
+# Colors for output
+function Write-Log { param($Message) Write-Host "[STARTER] $Message" -ForegroundColor Cyan }
+function Write-Error-Log { param($Message) Write-Host "[ERROR] $Message" -ForegroundColor Red }
+function Write-Success { param($Message) Write-Host "[SUCCESS] $Message" -ForegroundColor Green }
+function Write-Warning-Log { param($Message) Write-Host "[WARNING] $Message" -ForegroundColor Yellow }
+function Write-Header { param($Message) Write-Host $Message -ForegroundColor Magenta }
 
 # Debug path information
-Write-Host "[DEBUG] Script Directory: $ScriptDir" -ForegroundColor Yellow
 Write-Host "[DEBUG] Project Root: $ProjectRoot" -ForegroundColor Yellow
 Write-Host "[DEBUG] Backend Directory: $BackendDir" -ForegroundColor Yellow
 Write-Host "[DEBUG] Frontend Directory: $FrontendDir" -ForegroundColor Yellow
@@ -36,12 +40,7 @@ if (-not (Test-Path $FrontendDir)) {
     exit 1
 }
 
-# Colors for output
-function Write-Log { param($Message) Write-Host "[STARTER] $Message" -ForegroundColor Cyan }
-function Write-Error-Log { param($Message) Write-Host "[ERROR] $Message" -ForegroundColor Red }
-function Write-Success { param($Message) Write-Host "[SUCCESS] $Message" -ForegroundColor Green }
-function Write-Warning-Log { param($Message) Write-Host "[WARNING] $Message" -ForegroundColor Yellow }
-function Write-Header { param($Message) Write-Host $Message -ForegroundColor Magenta }
+Write-Success "All directories verified successfully"
 
 # Function to start backend
 function Start-Backend {
@@ -49,7 +48,8 @@ function Start-Backend {
     
     Write-Header "=== Starting Backend Server ==="
     
-    Push-Location $BackendDir
+    # Change to backend directory
+    Set-Location $BackendDir
     
     # Create logs directory
     if (-not (Test-Path $LogsDir)) {
@@ -75,7 +75,8 @@ function Start-Backend {
         Write-Success "Backend started in development mode (PID: $($Process.Id))"
     }
     
-    Pop-Location
+    # Return to project root
+    Set-Location $ProjectRoot
 }
 
 # Function to start frontend
@@ -84,7 +85,8 @@ function Start-Frontend {
     
     Write-Header "=== Starting Frontend Server ==="
     
-    Push-Location $FrontendDir
+    # Change to frontend directory
+    Set-Location $FrontendDir
     
     # Create logs directory
     if (-not (Test-Path $LogsDir)) {
@@ -120,7 +122,8 @@ function Start-Frontend {
         Write-Success "Frontend started in development mode (PID: $($Process.Id))"
     }
     
-    Pop-Location
+    # Return to project root
+    Set-Location $ProjectRoot
 }
 
 # Function to start both services
@@ -149,7 +152,7 @@ try {
             Start-BothServices $Environment
         }
         default {
-            Write-Host "Usage: .\service_starter.ps1 {backend|frontend|both} [environment]" -ForegroundColor White
+            Write-Host "Usage: .\service_starter_fixed.ps1 {backend|frontend|both} [environment]" -ForegroundColor White
             Write-Host ""
             Write-Host "Commands:" -ForegroundColor White
             Write-Host "  backend [env]     Start backend service"

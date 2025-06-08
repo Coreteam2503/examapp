@@ -1,4 +1,4 @@
-// Auto-restart trigger - Quiz generation fix applied
+// Auto-restart trigger - Adding debug route
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -35,14 +35,40 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// Debug endpoint to test basic functionality
+app.get('/api/debug', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Debug endpoint working',
+    timestamp: new Date().toISOString(),
+    routes_loaded: {
+      task_34: 'Advanced Role Management',
+      task_35: 'Points and Scoring System'
+    }
+  });
+});
+
 // Routes with specific rate limiting
-app.use('/api/auth', authLimiter, require('./routes/auth')); // Auth-specific rate limiting
-app.use('/api/uploads', generalApiLimiter, require('./routes/uploads')); // General rate limiting
-app.use('/api/quizzes', generalApiLimiter, require('./routes/quizzes')); // General rate limiting
-app.use('/api/quiz-attempts', generalApiLimiter, require('./routes/quizAttempts')); // General rate limiting
-app.use('/api/users', generalApiLimiter, require('./routes/users')); // General rate limiting
-app.use('/api/analytics', generalApiLimiter, require('./routes/analytics')); // General rate limiting
-app.use('/api/admin', generalApiLimiter, require('./routes/admin')); // General rate limiting
+try {
+  app.use('/api/auth', authLimiter, require('./routes/auth')); // Auth-specific rate limiting
+  app.use('/api/uploads', generalApiLimiter, require('./routes/uploads')); // General rate limiting
+  app.use('/api/quizzes', generalApiLimiter, require('./routes/quizzes')); // General rate limiting
+  app.use('/api/quiz-attempts', generalApiLimiter, require('./routes/quizAttempts')); // General rate limiting
+  app.use('/api/users', generalApiLimiter, require('./routes/users')); // General rate limiting
+  app.use('/api/analytics', generalApiLimiter, require('./routes/analytics')); // General rate limiting
+  app.use('/api/admin', generalApiLimiter, require('./routes/admin')); // General rate limiting
+  
+  console.log('Loading simplified roles route...');
+  app.use('/api/roles', generalApiLimiter, require('./routes/roles-simple')); // Role management (simplified)
+  console.log('Simplified roles route loaded successfully');
+  
+  console.log('Loading simplified points route...');
+  app.use('/api/points', generalApiLimiter, require('./routes/points-simple')); // Points system (simplified)
+  console.log('Simplified points route loaded successfully');
+  
+} catch (error) {
+  console.error('Error loading routes:', error);
+}
 
 // AI routes (rate limiting applied per endpoint in routes/ai.js)
 app.use('/api/ai', require('./routes/ai')); // Rate limiting applied to specific endpoints
@@ -133,6 +159,7 @@ console.log('API Key present:', !!process.env.OPENAI_API_KEY ? 'Yes' : 'No');
       console.log(`✅ Server running on port ${PORT}`);
       console.log(`🌐 API available at http://localhost:${PORT}/api`);
       console.log(`🏥 Health check: http://localhost:${PORT}/api/health`);
+      console.log(`🔧 Debug endpoint: http://localhost:${PORT}/api/debug`);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);
