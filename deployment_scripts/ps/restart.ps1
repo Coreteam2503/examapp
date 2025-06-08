@@ -10,7 +10,8 @@ param(
 
 # Configuration
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$ProjectRoot = Split-Path -Parent $ScriptDir
+$DeploymentScriptsDir = Split-Path -Parent $ScriptDir
+$ProjectRoot = Split-Path -Parent $DeploymentScriptsDir
 $BackendDir = Join-Path $ProjectRoot "backend"
 $LogsDir = Join-Path $ProjectRoot "logs"
 

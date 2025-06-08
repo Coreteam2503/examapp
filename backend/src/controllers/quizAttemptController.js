@@ -1,4 +1,5 @@
 const { db: knex } = require('../config/database');
+const PointsService = require('../services/points/PointsService');
 
 class QuizAttemptController {
   /**
@@ -75,6 +76,21 @@ class QuizAttemptController {
 
       if (answerRecords.length > 0) {
         await knex('answers').insert(answerRecords);
+      }
+
+      // Award points for quiz completion
+      try {
+        const pointsResult = await PointsService.awardQuizPoints(
+          userId, 
+          attemptId, 
+          scoreData.scorePercentage, 
+          questions.length, 
+          scoreData.correctAnswers
+        );
+        console.log(`Awarded ${pointsResult.totalPoints} points to user ${userId} for quiz completion`);
+      } catch (pointsError) {
+        console.error('Error awarding points:', pointsError);
+        // Don't fail the quiz submission if points fail
       }
 
       // Get complete attempt data to return
