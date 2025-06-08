@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# ./Users/balajiv/Documents/coderepos/futureOS/examApp/deployment_scripts/sh/stop.sh
+# ./Users/balajiv/Documents/coderepos/futureOS/examApp/deployment_scripts/sh/start.sh
 
-# Service Starter
-# Handles starting backend and frontend services
+# Service Starter with Pre-Cleanup
+# Stops any process using ports 3000 and 8000 before starting backend and frontend services
 
 # Colors for output
 RED='\033[0;31m'
@@ -39,17 +39,39 @@ header() {
     echo -e "${PURPLE}$1${NC}"
 }
 
+# Kill process running on a given port
+kill_port() {
+    local port=$1
+    local pid
+
+    pid=$(lsof -ti :"$port")
+    if [ -n "$pid" ]; then
+        warning "Port $port is in use by PID(s): $pid. Terminating..."
+        kill -9 $pid
+        success "Port $port has been freed."
+    else
+        log "Port $port is free."
+    fi
+}
+
+# Stop processes using common ports
+cleanup_ports() {
+    header "=== Stopping Processes on Ports 3000 and 8000 ==="
+    kill_port 3000
+    kill_port 8000
+}
+
 # Function to start backend
 start_backend() {
     local environment=${1:-development}
-    
+
     header "=== Starting Backend Server ==="
-    
+
     cd "$BACKEND_DIR"
-    
+
     # Create logs directory
     mkdir -p ../logs
-    
+
     if [ "$environment" = "production" ]; then
         log "Starting backend in production mode..."
         NODE_ENV=production nohup node src/server.js > ../logs/backend.log 2>&1 &
@@ -65,28 +87,28 @@ start_backend() {
         echo $! > ../logs/backend.pid
         success "Backend started in development mode (PID: $(cat ../logs/backend.pid))"
     fi
-    
+
     cd "$PROJECT_ROOT"
 }
 
 # Function to start frontend
 start_frontend() {
     local environment=${1:-development}
-    
+
     header "=== Starting Frontend Server ==="
-    
+
     cd "$FRONTEND_DIR"
-    
+
     # Create logs directory
     mkdir -p ../logs
-    
+
     if [ "$environment" = "production" ]; then
         # Build for production if needed
         if [ ! -d "build" ]; then
             log "Building frontend for production..."
             npm run build
         fi
-        
+
         log "Starting frontend in production mode..."
         if command -v serve >/dev/null 2>&1; then
             nohup serve -s build -l 3000 > ../logs/frontend.log 2>&1 &
@@ -105,27 +127,30 @@ start_frontend() {
         echo $! > ../logs/frontend.pid
         success "Frontend started in development mode (PID: $(cat ../logs/frontend.pid))"
     fi
-    
+
     cd "$PROJECT_ROOT"
 }
 
 # Function to start both services
 start_both() {
     local environment=${1:-development}
-    
+
     log "Starting both services in $environment mode..."
-    
+
     start_backend "$environment"
     sleep 3  # Give backend time to start
     start_frontend "$environment"
-    
+
     success "Both services started"
 }
 
 # Main function when script is called directly
 main() {
+    # First: Kill processes using common ports
+    cleanup_ports
+
     local environment=${NODE_ENV:-development}
-    
+
     case "$1" in
         backend)
             environment=${2:-$environment}

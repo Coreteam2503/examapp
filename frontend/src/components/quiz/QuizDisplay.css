@@ -187,9 +187,9 @@
 
 .quiz-intro-content li::before {
   content: '✨';
-  position: absolute;
+  position: relative;
   left: 0;
-  top: 12px;
+  top: 0;
   font-size: 1.1rem;
   animation: twinkle 2s ease-in-out infinite;
 }
@@ -402,7 +402,7 @@
 }
 
 .question-header h3::before {
-  content: '❓';
+  
   position: absolute;
   left: 16px;
   top: 16px;
@@ -410,6 +410,17 @@
   color: var(--primary-blue);
   animation: bounce 2s ease-in-out infinite;
 }
+
+.question-header h3::after {
+  
+  position: absolute;
+  left: 16px;
+  top: 16px;
+  font-size: 1.3rem;
+  color: var(--primary-blue);
+  animation: bounce 2s ease-in-out infinite;
+}
+
 
 @keyframes bounce {
   0%, 100% { transform: translateY(0); }

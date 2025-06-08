@@ -53,6 +53,7 @@ try {
   app.use('/api/auth', authLimiter, require('./routes/auth')); // Auth-specific rate limiting
   app.use('/api/uploads', generalApiLimiter, require('./routes/uploads')); // General rate limiting
   app.use('/api/quizzes', generalApiLimiter, require('./routes/quizzes')); // General rate limiting
+  app.use('/api/quiz-attempts', generalApiLimiter, require('./routes/quizAttempts')); // submit quiz answers
   app.use('/api/users', generalApiLimiter, require('./routes/users')); // General rate limiting
   app.use('/api/analytics', generalApiLimiter, require('./routes/analytics')); // General rate limiting
   app.use('/api/admin', generalApiLimiter, require('./routes/admin')); // General rate limiting
