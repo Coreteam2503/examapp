@@ -7,8 +7,8 @@ const { quizGenerationLimiter } = require('../middleware/rateLimiting');
 // Generate basic quiz from uploaded content - WITH RATE LIMITING
 router.post('/generate', authenticateToken, quizGenerationLimiter, QuizController.generateQuiz);
 
-// Generate enhanced quiz with specific question types
-router.post('/generate-enhanced', authenticateToken, QuizController.generateEnhancedQuiz);
+// Generate enhanced quiz with specific question types - WITH RATE LIMITING
+router.post('/generate-enhanced', authenticateToken, quizGenerationLimiter, QuizController.generateEnhancedQuiz);
 
 // Get all quizzes for current user
 router.get('/', authenticateToken, QuizController.getUserQuizzes);

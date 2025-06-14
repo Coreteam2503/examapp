@@ -200,25 +200,28 @@ class QuizController {
         const normalizedType = this.normalizeQuestionType(question.type);
         
         return {
-          quiz_id: quizId,
-          question_number: index + 1,
-          type: normalizedType,
-          question_text: question.question,
-          code_snippet: question.code_snippet || null,
-          options: question.options ? JSON.stringify(question.options) : null,
-          correct_answer: question.correct_answer || null,
-          // Store correctAnswers for fill-in-the-blank questions
-          correct_answers_data: question.correctAnswers ? JSON.stringify(question.correctAnswers) : null,
-          // Store pairs for matching questions
-          pairs: question.pairs ? JSON.stringify(question.pairs) : null,
-          explanation: question.explanation,
-          difficulty: question.difficulty || difficulty,
-          concepts: JSON.stringify(question.concepts || []),
-          hint: question.hint || null,
+        quiz_id: quizId,
+        question_number: index + 1,
+        type: normalizedType,
+        question_text: question.question,
+        code_snippet: question.code_snippet || null,
+        options: question.options ? JSON.stringify(question.options) : null,
+        correct_answer: question.correct_answer || null,
+        // Store correctAnswers for fill-in-the-blank questions
+        correct_answers_data: question.correctAnswers ? JSON.stringify(question.correctAnswers) : null,
+        // Store pairs for matching questions
+        pairs: question.pairs ? JSON.stringify(question.pairs) : null,
+        // Store items and correct order for ordering questions
+        items: question.items ? JSON.stringify(question.items) : null,
+        correct_order: question.correctOrder ? JSON.stringify(question.correctOrder) : null,
+        explanation: question.explanation,
+        difficulty: question.difficulty || difficulty,
+        concepts: JSON.stringify(question.concepts || []),
+        hint: question.hint || null,
           // Store the formatted text for fill-in-blank questions
-          formatted_text: question.text || question.question,
-          created_at: new Date()
-        };
+        formatted_text: question.text || question.question,
+        created_at: new Date()
+      };
       });
 
       await knex('questions').insert(questions);
@@ -392,6 +395,8 @@ class QuizController {
         concepts: JSON.parse(question.concepts || '[]'),
         correctAnswers: question.correct_answers_data ? JSON.parse(question.correct_answers_data) : null,
         pairs: question.pairs ? JSON.parse(question.pairs) : null,
+        items: question.items ? JSON.parse(question.items) : null,
+        correctOrder: question.correct_order ? JSON.parse(question.correct_order) : null,
         text: question.formatted_text || question.question_text,
         // Ensure consistent boolean handling for true/false questions
         correct_answer: question.type === 'true_false' && typeof question.correct_answer === 'string' 
@@ -443,7 +448,9 @@ class QuizController {
       'fill_in_the_blank': 'fill_in_the_blank',
       'true-false': 'true_false',
       'true_false': 'true_false',
-      'matching': 'matching'
+      'matching': 'matching',
+      'drag_drop_match': 'drag_drop_match',
+      'drag_drop_order': 'drag_drop_order'
     };
     
     return typeMap[type] || type || 'multiple_choice';

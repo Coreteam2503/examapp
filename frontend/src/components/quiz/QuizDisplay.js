@@ -7,6 +7,7 @@ import './QuizThemeOverride.css';
 import FillInTheBlankQuestion from './questions/FillInTheBlankQuestion';
 import TrueFalseQuestion from './questions/TrueFalseQuestion';
 import MatchingQuestion from './questions/MatchingQuestion';
+import OrderingQuestion from './questions/OrderingQuestion';
 
 const QuizDisplay = ({ quiz, onQuizComplete, onAnswerChange }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -89,6 +90,11 @@ const QuizDisplay = ({ quiz, onQuizComplete, onAnswerChange }) => {
       ? answers[currentQuestion.id].answer !== undefined && answers[currentQuestion.id].answer !== null
       : currentQuestion.type === 'matching'
       ? Object.keys(answers[currentQuestion.id].answer || {}).length > 0
+      : (currentQuestion.type === 'drag_drop_match' || currentQuestion.type === 'drag_drop_order')
+      ? answers[currentQuestion.id].answer && 
+        (Array.isArray(answers[currentQuestion.id].answer) 
+          ? answers[currentQuestion.id].answer.length > 0 
+          : Object.keys(answers[currentQuestion.id].answer).length > 0)
       : answers[currentQuestion.id].answer !== undefined && answers[currentQuestion.id].answer !== null
   );
   const canProceed = isAnswered || currentQuestionIndex === totalQuestions - 1;
@@ -158,7 +164,8 @@ const QuizDisplay = ({ quiz, onQuizComplete, onAnswerChange }) => {
         </div>
         
         <div className="quiz-timer">
-          <span>Time: {formatTime(timeElapsed)}</span>
+          <span className="timer-icon">⏱️</span>
+          <span className="timer-text">Time: {formatTime(timeElapsed)}</span>
         </div>
       </div>
 
@@ -217,6 +224,22 @@ const QuizDisplay = ({ quiz, onQuizComplete, onAnswerChange }) => {
               />
             ) : currentQuestion.type === 'matching' ? (
               <MatchingQuestion
+                question={currentQuestion}
+                onAnswer={(answer) => handleAnswerSelect(answer)}
+                disabled={false}
+                showCorrect={false}
+                userAnswer={answers[currentQuestion.id]?.answer}
+              />
+            ) : (currentQuestion.type === 'drag_drop_match') ? (
+              <MatchingQuestion
+                question={currentQuestion}
+                onAnswer={(answer) => handleAnswerSelect(answer)}
+                disabled={false}
+                showCorrect={false}
+                userAnswer={answers[currentQuestion.id]?.answer}
+              />
+            ) : (currentQuestion.type === 'drag_drop_order') ? (
+              <OrderingQuestion
                 question={currentQuestion}
                 onAnswer={(answer) => handleAnswerSelect(answer)}
                 disabled={false}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService, handleApiError } from '../services/apiService';
+import QuizOptionsModal from './quiz/QuizOptionsModal';
 
 const FileManager = () => {
   const [uploads, setUploads] = useState([]);
@@ -9,6 +10,8 @@ const FileManager = () => {
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState(null);
   const [generatingQuiz, setGeneratingQuiz] = useState(null); // Track which file is generating
+  const [showQuizOptions, setShowQuizOptions] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
   const { token } = useAuth();
 
   const fetchUploads = async (pageNum = 1) => {
@@ -60,33 +63,43 @@ const FileManager = () => {
     }
   };
 
-  const generateQuiz = async (uploadId, filename) => {
-    setGeneratingQuiz(uploadId);
+  const generateQuiz = async (options) => {
+    if (!selectedFile) return;
+    
+    setGeneratingQuiz(selectedFile.id);
     setError('');
 
     try {
-      const response = await apiService.quizzes.generate({
-        uploadId: uploadId,
-        difficulty: 'medium',
-        numQuestions: 5
+      // Use the enhanced quiz generation endpoint with new parameters
+      const response = await apiService.quizzes.generateEnhanced({
+        uploadId: selectedFile.id,
+        difficulty: options.difficulty,
+        numQuestions: options.numQuestions,
+        questionTypes: options.questionTypes
       });
 
       if (response.data && response.data.quiz) {
         // Quiz generated successfully
-        alert(`Quiz generated successfully for "${filename}"!\nQuiz ID: ${response.data.quiz.id}\nQuestions: ${response.data.quiz.total_questions}`);
+        alert(`Quiz generated successfully for "${selectedFile.filename}"!\nQuiz ID: ${response.data.quiz.id}\nQuestions: ${response.data.quiz.total_questions}\nDifficulty: ${options.difficulty}\nTime limit: No limit (you can take your time)`);
         
-        // You can redirect to quiz page or show success message
-        // window.location.href = `/quiz/${response.data.quiz.id}`;
+        // Close modal
+        setShowQuizOptions(false);
+        setSelectedFile(null);
       } else {
         setError('Quiz generated but response format unexpected');
       }
     } catch (error) {
       console.error('Quiz generation error:', error);
       const errorResponse = handleApiError(error);
-      setError(`Failed to generate quiz for "${filename}": ${errorResponse.message}`);
+      setError(`Failed to generate quiz for "${selectedFile.filename}": ${errorResponse.message}`);
     } finally {
       setGeneratingQuiz(null);
     }
+  };
+
+  const openQuizOptions = (upload) => {
+    setSelectedFile(upload);
+    setShowQuizOptions(true);
   };
 
   const formatFileSize = (bytes) => {
@@ -188,7 +201,7 @@ const FileManager = () => {
                   <button 
                     className={`generate-quiz-btn ${generatingQuiz === upload.id ? 'generating' : ''}`}
                     disabled={generatingQuiz === upload.id}
-                    onClick={() => generateQuiz(upload.id, upload.filename)}
+                    onClick={() => openQuizOptions(upload)}
                   >
                     {generatingQuiz === upload.id ? (
                       <span>
@@ -230,6 +243,17 @@ const FileManager = () => {
           )}
         </>
       )}
+
+      {/* Quiz Options Modal */}
+      <QuizOptionsModal
+        isOpen={showQuizOptions}
+        onClose={() => {
+          setShowQuizOptions(false);
+          setSelectedFile(null);
+        }}
+        onGenerateQuiz={generateQuiz}
+        filename={selectedFile?.filename || ''}
+      />
 
       <style jsx>{`
         .file-manager {

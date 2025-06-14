@@ -153,6 +153,21 @@ QUESTION TYPE GUIDELINES:
    - Focus on key terms, function names, or critical concepts
    - Include hint if helpful
 
+3. TRUE/FALSE (true_false):
+   - Create statements that can be definitively true or false
+   - Avoid ambiguous statements
+   - Focus on specific facts or concepts
+
+4. DRAG & DROP MATCHING (drag_drop_match):
+   - Create pairs of related concepts
+   - Provide an array of pairs with 'left' and 'right' properties
+   - Focus on definitions, relationships, or associations
+
+5. DRAG & DROP ORDERING (drag_drop_order):
+   - Provide items that need to be placed in correct sequence
+   - Include the correct order in the correctOrder array
+   - Focus on processes, steps, or chronological concepts
+
 RESPONSE FORMAT:
 Return a valid JSON object with this exact structure:
 {
@@ -182,6 +197,38 @@ Return a valid JSON object with this exact structure:
       "explanation": "Detailed explanation",
       "difficulty": "medium",
       "concepts": ["arrays", "methods"]
+    },
+    {
+      "id": 3,
+      "type": "true_false",
+      "question": "JavaScript arrays are mutable objects.",
+      "correct_answer": true,
+      "explanation": "Arrays in JavaScript are indeed mutable objects.",
+      "difficulty": "easy",
+      "concepts": ["arrays", "mutability"]
+    },
+    {
+      "id": 4,
+      "type": "drag_drop_match",
+      "question": "Match the JavaScript method with its purpose:",
+      "pairs": [
+        {"left": "map()", "right": "Creates new array with transformed elements"},
+        {"left": "filter()", "right": "Creates new array with selected elements"},
+        {"left": "reduce()", "right": "Reduces array to single value"}
+      ],
+      "explanation": "Each array method has a specific purpose for data transformation.",
+      "difficulty": "medium",
+      "concepts": ["array methods", "functional programming"]
+    },
+    {
+      "id": 5,
+      "type": "drag_drop_order",
+      "question": "Arrange these steps in the correct order for handling an API request:",
+      "items": ["Send request", "Parse response", "Handle errors", "Validate data"],
+      "correctOrder": ["Send request", "Handle errors", "Parse response", "Validate data"],
+      "explanation": "API requests should follow this logical sequence.",
+      "difficulty": "medium",
+      "concepts": ["API", "error handling", "data processing"]
     }
   ],
   "metadata": {
@@ -240,6 +287,35 @@ Generate the questions now:`;
           // Ensure text field exists for fill-in-the-blank
           if (!question.text) {
             question.text = question.question;
+          }
+        }
+
+        // Validate true/false structure
+        if (question.type === 'true_false' || question.type === 'true-false') {
+          if (question.correct_answer === undefined || question.correct_answer === null) {
+            throw new Error(`Question ${index + 1} missing correct_answer for true/false`);
+          }
+        }
+
+        // Validate drag & drop matching structure
+        if (question.type === 'drag_drop_match') {
+          if (!question.pairs || !Array.isArray(question.pairs) || question.pairs.length === 0) {
+            throw new Error(`Question ${index + 1} missing pairs array for drag_drop_match`);
+          }
+          question.pairs.forEach((pair, pairIndex) => {
+            if (!pair.left || !pair.right) {
+              throw new Error(`Question ${index + 1}, pair ${pairIndex + 1} missing left or right property`);
+            }
+          });
+        }
+
+        // Validate drag & drop ordering structure
+        if (question.type === 'drag_drop_order') {
+          if (!question.items || !Array.isArray(question.items) || question.items.length === 0) {
+            throw new Error(`Question ${index + 1} missing items array for drag_drop_order`);
+          }
+          if (!question.correctOrder || !Array.isArray(question.correctOrder)) {
+            throw new Error(`Question ${index + 1} missing correctOrder array for drag_drop_order`);
           }
         }
       });

@@ -86,6 +86,7 @@ export const apiService = {
   // Quiz endpoints
   quizzes: {
     generate: (data) => api.post('/quizzes/generate', data),
+    generateEnhanced: (data) => api.post('/quizzes/generate-enhanced', data),
     list: (params) => api.get('/quizzes', { params }),
     getById: (id) => api.get(`/quizzes/${id}`),
     create: (data) => api.post('/quizzes', data),

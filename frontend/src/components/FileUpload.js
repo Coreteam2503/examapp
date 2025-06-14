@@ -14,11 +14,9 @@ const FileUpload = ({ onUploadSuccess, maxFiles = 5 }) => {
   const dropZoneRef = useRef(null);
   const { token } = useAuth();
 
-  // Supported file types
+  // Supported file types - Updated to only allow .txt and .ipynb files
   const supportedTypes = [
-    '.txt', '.js', '.py', '.java', '.c', '.cpp', '.h', '.hpp',
-    '.json', '.md', '.html', '.css', '.pdf', '.doc', '.docx',
-    '.ts', '.jsx', '.tsx', '.php', '.rb', '.go', '.rs', '.swift'
+    '.txt', '.ipynb'
   ];
 
   const maxFileSize = 10 * 1024 * 1024; // 10MB
@@ -42,7 +40,7 @@ const FileUpload = ({ onUploadSuccess, maxFiles = 5 }) => {
 
   const generatePreview = async (file) => {
     const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
-    const textTypes = ['.txt', '.js', '.py', '.java', '.c', '.cpp', '.h', '.hpp', '.json', '.md', '.html', '.css', '.ts', '.jsx', '.tsx', '.php', '.rb', '.go', '.rs', '.swift'];
+    const textTypes = ['.txt', '.ipynb'];
     
     if (textTypes.includes(fileExtension)) {
       try {
@@ -229,11 +227,8 @@ const FileUpload = ({ onUploadSuccess, maxFiles = 5 }) => {
   const getFileIcon = (fileName) => {
     const ext = fileName.split('.').pop().toLowerCase();
     const iconMap = {
-      'js': '📄', 'jsx': '⚛️', 'ts': '📘', 'tsx': '⚛️',
-      'py': '🐍', 'java': '☕', 'c': '🔧', 'cpp': '🔧', 'h': '🔧', 'hpp': '🔧',
-      'html': '🌐', 'css': '🎨', 'json': '📋', 'md': '📝',
-      'pdf': '📕', 'doc': '📝', 'docx': '📝',
-      'php': '🐘', 'rb': '💎', 'go': '🐹', 'rs': '🦀', 'swift': '🍎'
+      'txt': '📄',
+      'ipynb': '📊'
     };
     return iconMap[ext] || '📄';
   };
@@ -243,7 +238,7 @@ const FileUpload = ({ onUploadSuccess, maxFiles = 5 }) => {
       <div className="upload-section">
         <h3>Upload Files</h3>
         <p className="upload-description">
-          Drag and drop files here or click to browse. Supported formats: {supportedTypes.join(', ')}
+          Drag and drop files here or click to browse. Supported formats: {supportedTypes.join(', ')} (Text files and Jupyter Notebooks)
         </p>
         
         {/* Drag and Drop Zone */}
