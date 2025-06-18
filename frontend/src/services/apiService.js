@@ -94,6 +94,12 @@ export const apiService = {
     delete: (id) => api.delete(`/quizzes/${id}`)
   },
 
+  // Games endpoints
+  games: {
+    generate: (data) => api.post('/games/generate', data),
+    getById: (id) => api.get(`/games/${id}`)
+  },
+
   // Quiz attempts endpoints
   quizAttempts: {
     submit: (data) => api.post('/quiz-attempts', data),

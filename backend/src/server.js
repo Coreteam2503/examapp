@@ -66,6 +66,10 @@ try {
   app.use('/api/points', generalApiLimiter, require('./routes/points-simple')); // Points system (simplified)
   console.log('Simplified points route loaded successfully');
   
+  console.log('Loading games route...');
+  app.use('/api/games', generalApiLimiter, require('./routes/games')); // Game formats
+  console.log('Games route loaded successfully');
+  
 } catch (error) {
   console.error('Error loading routes:', error);
 }
@@ -118,12 +122,23 @@ if (process.env.NODE_ENV !== 'production') {
 // Global error handler
 app.use((error, req, res, next) => {
   console.error('Global error handler:', error);
+  console.error('Error stack:', error.stack);
   
   // Handle rate limiting errors
   if (error.type === 'entity.too.large') {
     return res.status(413).json({
       success: false,
       message: 'Request entity too large'
+    });
+  }
+  
+  // Handle game generation errors specifically
+  if (error.message && error.message.includes('game')) {
+    return res.status(500).json({
+      success: false,
+      error: 'Game generation failed',
+      message: 'Failed to generate game content. Using fallback generation.',
+      details: process.env.NODE_ENV === 'development' ? error.message : 'Server error occurred'
     });
   }
   
@@ -137,7 +152,8 @@ app.use((error, req, res, next) => {
   
   res.status(500).json({
     success: false,
-    message: 'Internal server error'
+    message: 'Internal server error',
+    details: process.env.NODE_ENV === 'development' ? error.message : 'Please try again'
   });
 });
 

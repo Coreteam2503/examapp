@@ -9,11 +9,21 @@ import TrueFalseQuestion from './questions/TrueFalseQuestion';
 import MatchingQuestion from './questions/MatchingQuestion';
 import OrderingQuestion from './questions/OrderingQuestion';
 
+// Import game components
+import HangmanGame from '../games/HangmanGame';
+import KnowledgeTowerGame from '../games/KnowledgeTowerGame';
+import WordLadderGame from '../games/WordLadderGame';
+import MemoryGridGame from '../games/MemoryGridGame';
+
 const QuizDisplay = ({ quiz, onQuizComplete, onAnswerChange }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [isStarted, setIsStarted] = useState(false);
+
+  // Check if this is a game format
+  const isGameFormat = quiz?.game_format && quiz.game_format !== 'traditional';
+  const gameFormat = quiz?.game_format;
 
   const currentQuestion = quiz?.questions?.[currentQuestionIndex];
   const totalQuestions = quiz?.questions?.length || 0;
@@ -99,6 +109,78 @@ const QuizDisplay = ({ quiz, onQuizComplete, onAnswerChange }) => {
   );
   const canProceed = isAnswered || currentQuestionIndex === totalQuestions - 1;
 
+  // If this is a game format, render the appropriate game component
+  if (isGameFormat) {
+    const gameData = {
+      ...quiz,
+      metadata: quiz.metadata ? (typeof quiz.metadata === 'string' ? JSON.parse(quiz.metadata) : quiz.metadata) : {},
+      game_options: quiz.game_options ? (typeof quiz.game_options === 'string' ? JSON.parse(quiz.game_options) : quiz.game_options) : {}
+    };
+
+    const handleGameComplete = (gameResults) => {
+      if (onQuizComplete) {
+        onQuizComplete({
+          answers: { game_result: gameResults },
+          timeElapsed: gameResults.timeElapsed || 0,
+          totalQuestions: 1,
+          answeredQuestions: 1,
+          gameResults
+        });
+      }
+    };
+
+    const handleGameAnswerChange = (gameAnswers) => {
+      if (onAnswerChange) {
+        onAnswerChange({ game_answers: gameAnswers });
+      }
+    };
+
+    switch (gameFormat) {
+      case 'hangman':
+        return (
+          <HangmanGame 
+            gameData={gameData}
+            onGameComplete={handleGameComplete}
+            onAnswerChange={handleGameAnswerChange}
+          />
+        );
+      case 'knowledge_tower':
+        return (
+          <KnowledgeTowerGame 
+            gameData={gameData}
+            onGameComplete={handleGameComplete}
+            onAnswerChange={handleGameAnswerChange}
+          />
+        );
+      case 'word_ladder':
+        return (
+          <WordLadderGame 
+            gameData={gameData}
+            onGameComplete={handleGameComplete}
+            onAnswerChange={handleGameAnswerChange}
+          />
+        );
+      case 'memory_grid':
+        return (
+          <MemoryGridGame 
+            gameData={gameData}
+            onGameComplete={handleGameComplete}
+            onAnswerChange={handleGameAnswerChange}
+          />
+        );
+      default:
+        return (
+          <div className="quiz-display-container">
+            <div className="quiz-empty">
+              <h3>Unsupported Game Format</h3>
+              <p>The game format "{gameFormat}" is not supported yet.</p>
+            </div>
+          </div>
+        );
+    }
+  }
+
+  // Traditional quiz format - check for questions
   if (!quiz || !quiz.questions || quiz.questions.length === 0) {
     return (
       <div className="quiz-display-container">
