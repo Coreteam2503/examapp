@@ -12,8 +12,15 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
   const [memoryTimer, setMemoryTimer] = useState(0);
   const [selectedCells, setSelectedCells] = useState(new Set());
 
-  // Extract game data
-  const patterns = gameData?.questions?.map(q => q.pattern_data) || gameData?.patterns || [
+  // Extract game data with better error handling - moved before useEffects
+  const patterns = gameData?.questions?.map(q => {
+    try {
+      return typeof q.pattern_data === 'string' ? JSON.parse(q.pattern_data) : q.pattern_data;
+    } catch (e) {
+      console.warn('Failed to parse pattern_data:', q.pattern_data);
+      return null;
+    }
+  }).filter(Boolean) || gameData?.patterns || [
     {
       grid: [
         ["🔧", "💻", "🔧", "📝"],
@@ -28,9 +35,20 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
 
   const gridSize = gameData?.metadata?.gridSize || 4;
   const memoryTime = gameData?.metadata?.memoryTime || 5;
-  const currentPattern = patterns[currentLevel] || patterns[0];
+  
+  // Ensure we have a valid current pattern with fallback
+  const currentPattern = patterns[currentLevel] || patterns[0] || {
+    grid: [
+      ["🔧", "💻", "🔧", "📝"],
+      ["📝", "🔧", "💻", "🔧"],
+      ["💻", "📝", "🔧", "💻"],
+      ["🔧", "💻", "📝", "🔧"]
+    ],
+    sequence: [0, 5, 10, 15],
+    symbols: ["🔧", "💻", "📝"]
+  };
 
-  // Timer effects
+  // Timer effects - ALL useEffects must come after state declarations
   useEffect(() => {
     let interval;
     if (gameState !== 'intro' && gameState !== 'complete') {
@@ -74,6 +92,18 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
     }
   }, [currentLevel, userSequence, score, lives, timeElapsed, gameState, onAnswerChange]);
 
+  // Validation after ALL hooks are declared
+  if (!gameData) {
+    console.error('MemoryGridGame: gameData is required');
+    return (
+      <div className="memory-grid-container">
+        <div className="error-message">
+          Game data not available. Please try generating the game again.
+        </div>
+      </div>
+    );
+  }
+
   const startGame = () => {
     setGameState('memorize');
     setShowPattern(true);
@@ -95,8 +125,10 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
     setSelectedCells(newSelected);
 
     // Check if sequence matches expected pattern so far
-    const expectedSequence = currentPattern.sequence;
-    const isCorrectSoFar = newSequence.every((val, idx) => val === expectedSequence[idx]);
+    const expectedSequence = currentPattern?.sequence || [];
+    const isCorrectSoFar = newSequence.every((val, idx) => {
+      return idx < expectedSequence.length && val === expectedSequence[idx];
+    });
 
     if (!isCorrectSoFar) {
       // Wrong sequence
@@ -172,8 +204,12 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
   };
 
   const calculateAccuracy = () => {
-    const totalAttempts = userSequence.length + (lives < 3 ? (3 - lives) * currentPattern.sequence.length : 0);
-    const correctAttempts = userSequence.filter((val, idx) => val === currentPattern.sequence[idx]).length;
+    const sequenceLength = currentPattern?.sequence?.length || 1;
+    const totalAttempts = userSequence.length + (lives < 3 ? (3 - lives) * sequenceLength : 0);
+    const correctAttempts = userSequence.filter((val, idx) => {
+      const expectedSequence = currentPattern?.sequence || [];
+      return idx < expectedSequence.length && val === expectedSequence[idx];
+    }).length;
     return totalAttempts > 0 ? Math.round((correctAttempts / totalAttempts) * 100) : 100;
   };
 
@@ -195,8 +231,39 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
   };
 
   const renderGrid = () => {
-    const grid = currentPattern.grid;
-    const flatGrid = grid.flat();
+    const grid = currentPattern?.grid;
+    
+    // Ensure grid exists and is properly formatted
+    if (!grid || !Array.isArray(grid) || grid.length === 0) {
+      console.error('Invalid grid data:', grid);
+      return (
+        <div className="memory-grid error">
+          <div className="error-message">Invalid grid data</div>
+        </div>
+      );
+    }
+    
+    // Safely flatten the grid
+    let flatGrid;
+    try {
+      flatGrid = grid.flat();
+    } catch (error) {
+      console.error('Error flattening grid:', error);
+      return (
+        <div className="memory-grid error">
+          <div className="error-message">Error processing grid</div>
+        </div>
+      );
+    }
+    
+    if (!flatGrid || flatGrid.length === 0) {
+      console.error('Empty flat grid');
+      return (
+        <div className="memory-grid error">
+          <div className="error-message">Empty grid</div>
+        </div>
+      );
+    }
     
     return (
       <div className="memory-grid" style={{ gridTemplateColumns: `repeat(${gridSize}, 1fr)` }}>
@@ -348,15 +415,27 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
           <h4>Your Sequence:</h4>
           <div className="sequence-cells">
             {userSequence.map((index, pos) => {
-              const symbol = currentPattern.grid.flat()[index];
-              const isCorrect = index === currentPattern.sequence[pos];
+              const grid = currentPattern?.grid;
+              let symbol = '?';
+              
+              if (grid && Array.isArray(grid)) {
+                try {
+                  const flatGrid = grid.flat();
+                  symbol = flatGrid[index] || '?';
+                } catch (error) {
+                  console.error('Error accessing grid symbol:', error);
+                  symbol = '?';
+                }
+              }
+              
+              const isCorrect = currentPattern?.sequence && index === currentPattern.sequence[pos];
               return (
                 <div key={pos} className={`sequence-cell ${isCorrect ? 'correct' : 'incorrect'}`}>
                   {symbol}
                 </div>
               );
             })}
-            {userSequence.length < currentPattern.sequence.length && (
+            {userSequence.length < (currentPattern?.sequence?.length || 0) && (
               <div className="sequence-cell next">?</div>
             )}
           </div>

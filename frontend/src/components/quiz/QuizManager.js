@@ -256,7 +256,7 @@ const QuizManager = () => {
           {quizzes.map((quiz) => (
             <div
               key={quiz.id}
-              className="quiz-card"
+              className={`quiz-card ${quiz.is_game ? 'game-format' : ''}`}
               onClick={() => handleQuizSelect(quiz)}
             >
               <div className="quiz-card-header">
@@ -272,13 +272,18 @@ const QuizManager = () => {
               
               <div className="quiz-card-content">
                 <div className="quiz-info">
-                  <span className="quiz-questions">
-                    {quiz.total_questions} questions
+                <span className="quiz-questions">
+                {quiz.total_questions} questions
+                </span>
+                <span className="quiz-difficulty">
+                {quiz.difficulty}
+                </span>
+                  {quiz.game_format && quiz.game_format !== 'traditional' && (
+                  <span className="quiz-game-format">
+                    🎮 {quiz.game_format.replace('_', ' ').toUpperCase()}
                   </span>
-                  <span className="quiz-difficulty">
-                    {quiz.difficulty}
-                  </span>
-                </div>
+                )}
+              </div>
                 
                 <div className="quiz-meta">
                   <span className="quiz-file">
@@ -292,7 +297,7 @@ const QuizManager = () => {
               
               <div className="quiz-card-footer">
                 <button className="start-quiz-btn">
-                  Start Quiz →
+                  {quiz.is_game ? 'Play Game →' : 'Start Quiz →'}
                 </button>
               </div>
             </div>

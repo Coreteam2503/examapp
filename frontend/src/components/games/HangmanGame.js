@@ -9,11 +9,41 @@ const HangmanGame = ({ gameData, onGameComplete, onAnswerChange }) => {
   const [showHint, setShowHint] = useState(false);
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [gameResults, setGameResults] = useState([]);
+  const [showExitConfirmation, setShowExitConfirmation] = useState(false);
 
+  // Parse word data properly - fix for word not displaying
   const currentWord = gameData?.questions?.[currentWordIndex];
-  const word = currentWord?.word_data?.word || '';
-  const hint = currentWord?.word_data?.hint || '';
-  const category = currentWord?.word_data?.category || '';
+  let word = '';
+  let hint = '';
+  let category = '';
+  
+  if (currentWord) {
+    // Handle different data structures
+    if (currentWord.word_data) {
+      // If word_data exists as object
+      if (typeof currentWord.word_data === 'string') {
+        try {
+          const parsedData = JSON.parse(currentWord.word_data);
+          word = parsedData.word || '';
+          hint = parsedData.hint || '';
+          category = parsedData.category || '';
+        } catch (e) {
+          console.warn('Failed to parse word_data:', currentWord.word_data);
+        }
+      } else if (typeof currentWord.word_data === 'object') {
+        word = currentWord.word_data.word || '';
+        hint = currentWord.word_data.hint || '';
+        category = currentWord.word_data.category || '';
+      }
+    } else {
+      // Fallback to direct properties
+      word = currentWord.correct_answer || currentWord.word || '';
+      hint = currentWord.hint || 'No hint available';
+      category = currentWord.category || 'General';
+    }
+  }
+  
+  console.log('Hangman game data:', { currentWord, word, hint, category });
   const maxWrongGuesses = currentWord?.max_attempts || 6;
   
   const totalWords = gameData?.questions?.length || 0;
@@ -48,13 +78,43 @@ const HangmanGame = ({ gameData, onGameComplete, onAnswerChange }) => {
         timeSpent: timeElapsed,
         guessedLetters: Array.from(guessedLetters)
       };
-      setGameResults(prev => [...prev, result]);
+      
+      const updatedResults = [...gameResults, result];
+      setGameResults(updatedResults);
+      
+      // Check if this was the last word and auto-complete if so
+      if (currentWordIndex >= totalWords - 1) {
+        // This was the last word - auto-submit results
+        setTimeout(() => {
+          const correctWords = updatedResults.filter(r => r.status === 'won').length;
+          const finalScore = updatedResults.length > 0 ? Math.round((correctWords / updatedResults.length) * 100) : 0;
+          
+          console.log('Hangman game auto-completed after final word:', {
+            updatedResults,
+            correctWords,
+            finalScore,
+            totalWords
+          });
+          
+          if (onGameComplete) {
+            onGameComplete({
+              results: updatedResults,
+              totalWords: totalWords,
+              timeElapsed: timeElapsed,
+              completed: true,
+              score: finalScore,
+              correctWords: correctWords,
+              totalWordsCompleted: updatedResults.length
+            });
+          }
+        }, 2000); // Give user 2 seconds to see the completion screen
+      }
       
       if (onAnswerChange) {
         onAnswerChange({
           currentWord: currentWordIndex,
           result: result,
-          allResults: [...gameResults, result]
+          allResults: updatedResults
         });
       }
     } else if (wrongGuesses >= maxWrongGuesses && gameStatus === 'playing') {
@@ -68,28 +128,91 @@ const HangmanGame = ({ gameData, onGameComplete, onAnswerChange }) => {
         timeSpent: timeElapsed,
         guessedLetters: Array.from(guessedLetters)
       };
-      setGameResults(prev => [...prev, result]);
+      const updatedResults = [...gameResults, result];
+      setGameResults(updatedResults);
       
       if (onAnswerChange) {
         onAnswerChange({
           currentWord: currentWordIndex,
           result: result,
-          allResults: [...gameResults, result]
+          allResults: updatedResults
         });
       }
     }
-  }, [guessedLetters, wrongGuesses, word, gameStatus, currentWordIndex, timeElapsed, maxWrongGuesses, gameResults, onAnswerChange]);
+  }, [guessedLetters, wrongGuesses, word, gameStatus, currentWordIndex, timeElapsed, maxWrongGuesses, gameResults, onAnswerChange, totalWords, onGameComplete]);
 
   const handleLetterGuess = (letter) => {
-    if (guessedLetters.has(letter) || gameStatus !== 'playing') return;
+    if (guessedLetters.has(letter) || gameStatus !== 'playing') {
+      console.log('Letter already guessed or game not playing:', letter, gameStatus);
+      return;
+    }
 
+    console.log('Guessing letter:', letter);
     const newGuessedLetters = new Set(guessedLetters);
     newGuessedLetters.add(letter);
     setGuessedLetters(newGuessedLetters);
 
     if (!word.toUpperCase().includes(letter)) {
-      setWrongGuesses(prev => prev + 1);
+      console.log('Wrong guess, incrementing wrong guesses');
+      setWrongGuesses(prev => {
+        const newWrongGuesses = prev + 1;
+        console.log('New wrong guesses count:', newWrongGuesses, 'Max:', maxWrongGuesses);
+        return newWrongGuesses;
+      });
+    } else {
+      console.log('Correct guess!');
     }
+  };
+
+  const handleExitGame = () => {
+    setShowExitConfirmation(true);
+  };
+
+  const confirmExitGame = () => {
+    // Calculate final results from current progress
+    const finalResults = [...gameResults];
+    
+    // Add current word result if game is in progress
+    if (gameStatus === 'playing' && currentWordIndex < totalWords) {
+      const currentResult = {
+        wordIndex: currentWordIndex,
+        word: word,
+        status: 'incomplete',
+        wrongGuesses: wrongGuesses,
+        timeSpent: timeElapsed,
+        guessedLetters: Array.from(guessedLetters)
+      };
+      finalResults.push(currentResult);
+    }
+    
+    const totalWordsAttempted = finalResults.length;
+    const correctWords = finalResults.filter(result => result.status === 'won').length;
+    const finalScore = totalWordsAttempted > 0 ? Math.round((correctWords / totalWordsAttempted) * 100) : 0;
+    
+    console.log('Hangman game exited early:', {
+      finalResults,
+      totalWordsAttempted,
+      correctWords,
+      finalScore,
+      timeElapsed
+    });
+    
+    if (onGameComplete) {
+      onGameComplete({
+        results: finalResults,
+        totalWords: totalWords,
+        timeElapsed: timeElapsed,
+        completed: false, // Mark as incomplete/exited
+        score: finalScore,
+        correctWords: correctWords,
+        totalWordsCompleted: totalWordsAttempted,
+        exitedEarly: true
+      });
+    }
+  };
+
+  const cancelExitGame = () => {
+    setShowExitConfirmation(false);
   };
 
   const nextWord = () => {
@@ -100,17 +223,8 @@ const HangmanGame = ({ gameData, onGameComplete, onAnswerChange }) => {
       setGameStatus('playing');
       setShowHint(false);
       setTimeElapsed(0);
-    } else {
-      // Game complete
-      if (onGameComplete) {
-        onGameComplete({
-          results: gameResults,
-          totalWords: totalWords,
-          timeElapsed: timeElapsed,
-          completed: true
-        });
-      }
     }
+    // Note: Final completion is now handled automatically in useEffect
   };
 
   const restartCurrentWord = () => {
@@ -122,6 +236,16 @@ const HangmanGame = ({ gameData, onGameComplete, onAnswerChange }) => {
   };
 
   const renderWord = () => {
+    if (!word) {
+      return (
+        <div className="word-display-error">
+          <span className="error-text">No word to display</span>
+        </div>
+      );
+    }
+    
+    console.log('Rendering word:', word);
+    
     return word.split('').map((letter, index) => {
       if (!/[A-Z]/i.test(letter)) {
         return <span key={index} className="letter space">{letter}</span>;
@@ -149,7 +273,9 @@ const HangmanGame = ({ gameData, onGameComplete, onAnswerChange }) => {
 
     return (
       <div className="hangman-display">
-        <pre>{parts.join('\\n')}</pre>
+        {parts.map((part, index) => (
+          <div key={index} className="hangman-line">{part}</div>
+        ))}
       </div>
     );
   };
@@ -209,6 +335,16 @@ const HangmanGame = ({ gameData, onGameComplete, onAnswerChange }) => {
           </div>
         </div>
         
+        <div className="game-actions">
+          <button 
+            className="exit-game-btn"
+            onClick={handleExitGame}
+            title="Exit Game"
+          >
+            🚪 Exit Quiz
+          </button>
+        </div>
+        
         <div className="category">
           <span className="category-label">Category:</span>
           <span className="category-value">{category}</span>
@@ -234,24 +370,36 @@ const HangmanGame = ({ gameData, onGameComplete, onAnswerChange }) => {
 
         {/* Word Display */}
         <div className="word-section">
+          {/* Debug info */}
+          <div className="debug-info" style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)', marginBottom: '10px' }}>
+            Debug: Word="{word}", Category="{category}", HasHint={!!hint}
+          </div>
+          
           <div className="word-display">
             {renderWord()}
           </div>
           
           {/* Hint Section */}
           <div className="hint-section">
-            {!showHint ? (
+            {!showHint && hint ? (
               <button 
                 className="hint-button"
-                onClick={() => setShowHint(true)}
+                onClick={() => {
+                  console.log('Showing hint:', hint);
+                  setShowHint(true);
+                }}
                 disabled={gameStatus !== 'playing'}
               >
                 💡 Show Hint
               </button>
-            ) : (
+            ) : showHint && hint ? (
               <div className="hint-display">
                 <span className="hint-label">💡 Hint:</span>
                 <span className="hint-text">{hint}</span>
+              </div>
+            ) : (
+              <div className="no-hint">
+                <span className="no-hint-text">No hint available for this word</span>
               </div>
             )}
           </div>
@@ -263,39 +411,118 @@ const HangmanGame = ({ gameData, onGameComplete, onAnswerChange }) => {
         {renderKeyboard()}
       </div>
 
-      {/* Game Status Messages */}
+      {/* Game Status Messages and Game Over Overlay */}
       {gameStatus !== 'playing' && (
-        <div className={`game-status ${gameStatus}`}>
+        <div className={`game-status-overlay ${gameStatus}`}>
           <div className="status-content">
+            <div className="status-icon">
+              {gameStatus === 'won' ? '🎉' : '😵'}
+            </div>
             <h3>
-              {gameStatus === 'won' ? '🎉 Congratulations!' : '😞 Game Over'}
+              {gameStatus === 'won' ? '🎉 Congratulations!' : '😵 Game Over!'}
             </h3>
-            <p>
+            <p className="status-message">
               {gameStatus === 'won' 
                 ? `You guessed "${word}" correctly!` 
-                : `The word was "${word}"`
+                : `You ran out of lives! The word was "${word}"`
               }
             </p>
             
             <div className="status-actions">
-              {!isLastWord ? (
+              {gameStatus === 'won' && !isLastWord && (
                 <button className="next-word-btn" onClick={nextWord}>
                   Next Word ➡️
                 </button>
-              ) : (
-                <button className="complete-game-btn" onClick={() => onGameComplete && onGameComplete({
-                  results: gameResults,
-                  totalWords: totalWords,
-                  timeElapsed: timeElapsed,
-                  completed: true
-                })}>
-                  Complete Game ✅
-                </button>
+              )}
+              
+              {gameStatus === 'won' && isLastWord && (
+                <div className="hangman-final-score">
+                  <h4>🏆 Game Completed!</h4>
+                  <div className="hangman-final-stats">
+                    <div className="hangman-stat-item">
+                      <span className="hangman-stat-value">{Math.round((gameResults.filter(r => r.status === 'won').length / gameResults.length) * 100)}%</span>
+                      <span className="hangman-stat-label">Final Score</span>
+                    </div>
+                    <div className="hangman-stat-item">
+                      <span className="hangman-stat-value">{gameResults.filter(r => r.status === 'won').length}/{gameResults.length}</span>
+                      <span className="hangman-stat-label">Words Guessed</span>
+                    </div>
+                    <div className="hangman-stat-item">
+                      <span className="hangman-stat-value">{formatTime(timeElapsed)}</span>
+                      <span className="hangman-stat-label">Total Time</span>
+                    </div>
+                  </div>
+                  <p style={{ fontSize: '14px', opacity: 0.8, marginBottom: '15px' }}>
+                    🔄 Submitting results automatically in 2 seconds...
+                  </p>
+                  <button className="complete-game-btn" onClick={() => {
+                    const finalResults = [...gameResults];
+                    const correctWords = finalResults.filter(result => result.status === 'won').length;
+                    const finalScore = finalResults.length > 0 ? Math.round((correctWords / finalResults.length) * 100) : 0;
+                    
+                    console.log('Manual game completion triggered');
+                    
+                    onGameComplete && onGameComplete({
+                      results: finalResults,
+                      totalWords: totalWords,
+                      timeElapsed: timeElapsed,
+                      completed: true,
+                      score: finalScore,
+                      correctWords: correctWords,
+                      totalWordsCompleted: finalResults.length
+                    });
+                  }}>
+                    Complete Now ✅
+                  </button>
+                </div>
               )}
               
               <button className="restart-word-btn" onClick={restartCurrentWord}>
                 🔄 Try Again
               </button>
+              
+              {gameStatus === 'lost' && !isLastWord && (
+                <button className="skip-word-btn" onClick={nextWord}>
+                  Skip to Next Word ⏭️
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Exit Confirmation Dialog */}
+      {showExitConfirmation && (
+        <div className="exit-confirmation-overlay">
+          <div className="exit-confirmation-dialog">
+            <div className="exit-confirmation-content">
+              <h3>🚪 Exit Quiz?</h3>
+              <p>Are you sure you want to exit the Hangman game?</p>
+              <div className="exit-current-progress">
+                <p><strong>Current Progress:</strong></p>
+                <ul>
+                  <li>Words completed: {gameResults.filter(r => r.status === 'won').length}/{currentWordIndex + 1}</li>
+                  <li>Time elapsed: {formatTime(timeElapsed)}</li>
+                  <li>Current word: {word ? `"${word}"` : 'N/A'}</li>
+                </ul>
+                <p className="exit-warning">
+                  ⚠️ Your progress will be saved, but the quiz will be marked as incomplete.
+                </p>
+              </div>
+              <div className="exit-confirmation-actions">
+                <button 
+                  className="exit-cancel-btn"
+                  onClick={cancelExitGame}
+                >
+                  ❌ Cancel
+                </button>
+                <button 
+                  className="exit-confirm-btn"
+                  onClick={confirmExitGame}
+                >
+                  🚪 Exit Quiz
+                </button>
+              </div>
             </div>
           </div>
         </div>

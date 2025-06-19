@@ -8,12 +8,20 @@ class QuizAttemptController {
    */
   async submitAttempt(req, res) {
     try {
-      const { quizId, answers, timeElapsed, completedAt } = req.body;
+      const { quizId, answers, timeElapsed, completedAt, isGameFormat, gameFormat, gameResults } = req.body;
       const userId = req.user.userId;
 
       if (!quizId || !answers) {
         return res.status(400).json({ error: 'Quiz ID and answers are required' });
       }
+      
+      console.log('Quiz submission received:', {
+        quizId,
+        isGameFormat,
+        gameFormat,
+        answersCount: Object.keys(answers).length,
+        hasGameResults: !!gameResults
+      });
 
       // Get quiz information
       const quiz = await knex('quizzes')
@@ -33,8 +41,12 @@ class QuizAttemptController {
         return res.status(400).json({ error: 'Quiz has no questions' });
       }
 
-      // Calculate score
-      const scoreData = this.calculateScore(questions, answers);
+      // Calculate score (with game format handling)
+      const scoreData = isGameFormat 
+        ? this.calculateGameScore(gameResults, gameFormat, questions.length)
+        : this.calculateScore(questions, answers);
+        
+      console.log('Score calculation result:', scoreData);
 
       // Create attempt record
       const [attemptId] = await knex('attempts').insert({
@@ -43,34 +55,59 @@ class QuizAttemptController {
         started_at: new Date(Date.now() - (timeElapsed * 1000)),
         completed_at: completedAt ? new Date(completedAt) : new Date(),
         time_elapsed: timeElapsed,
-        total_questions: questions.length,
-        questions_answered: Object.keys(answers).length,
+        total_questions: scoreData.totalQuestions,
+        questions_answered: scoreData.totalAnswered,
         correct_answers: scoreData.correctAnswers,
         score_percentage: scoreData.scorePercentage,
         created_at: new Date()
       });
 
-      // Store individual answers
+      // Store individual answers (handle both game and traditional formats)
       const answerRecords = [];
-      for (const question of questions) {
-        const userAnswer = answers[question.id];
-        if (userAnswer) {
-          console.log('Comparing answers:', {
-            questionId: question.id,
-            userAnswer: userAnswer.answer,
-            correctAnswer: question.correct_answer,
-            questionType: question.type
-          });
-          const isCorrect = this.validateAnswer(userAnswer.answer, question);
-          console.log(`Answer for question ${question.id}: ${isCorrect ? 'Correct' : 'Incorrect'}`);
+      
+      if (isGameFormat) {
+        // For game formats, use the transformed answers
+        for (const [answerId, answerData] of Object.entries(answers)) {
+          // Store game-specific data in user_answer as JSON if needed
+          let userAnswerData = answerData.answer;
+          if (answerData.gameSpecific) {
+            userAnswerData = JSON.stringify({
+              answer: answerData.answer,
+              gameData: answerData.gameSpecific
+            });
+          }
+          
           answerRecords.push({
             attempt_id: attemptId,
-            question_id: question.id,
-            user_answer: typeof userAnswer.answer === 'object' ? JSON.stringify(userAnswer.answer) : userAnswer.answer,
-            is_correct: isCorrect,
-            time_spent: userAnswer.timeSpent || 0,
+            question_id: answerId,
+            user_answer: typeof userAnswerData === 'object' ? JSON.stringify(userAnswerData) : userAnswerData,
+            is_correct: answerData.isCorrect || false,
+            time_spent: answerData.timeSpent || 0,
             created_at: new Date()
           });
+        }
+      } else {
+        // Traditional quiz format
+        for (const question of questions) {
+          const userAnswer = answers[question.id];
+          if (userAnswer) {
+            console.log('Comparing answers:', {
+              questionId: question.id,
+              userAnswer: userAnswer.answer,
+              correctAnswer: question.correct_answer,
+              questionType: question.type
+            });
+            const isCorrect = this.validateAnswer(userAnswer.answer, question);
+            console.log(`Answer for question ${question.id}: ${isCorrect ? 'Correct' : 'Incorrect'}`);
+            answerRecords.push({
+              attempt_id: attemptId,
+              question_id: question.id,
+              user_answer: typeof userAnswer.answer === 'object' ? JSON.stringify(userAnswer.answer) : userAnswer.answer,
+              is_correct: isCorrect,
+              time_spent: userAnswer.timeSpent || 0,
+              created_at: new Date()
+            });
+          }
         }
       }
 
@@ -442,6 +479,50 @@ class QuizAttemptController {
     }
   }
 
+  /**
+   * Helper method to calculate game score
+   */
+  calculateGameScore(gameResults, gameFormat, totalQuestions) {
+    let correctAnswers = 0;
+    let totalAnswered = 0;
+    
+    console.log('Calculating game score:', { gameResults, gameFormat, totalQuestions });
+    
+    switch (gameFormat) {
+      case 'hangman':
+        correctAnswers = gameResults.correctWords || 0;
+        totalAnswered = gameResults.totalWordsCompleted || gameResults.totalWords || totalQuestions;
+        break;
+        
+      case 'knowledge_tower':
+        correctAnswers = gameResults.correctAnswers || 0;
+        totalAnswered = gameResults.totalQuestions || gameResults.totalLevels || totalQuestions;
+        break;
+        
+      default:
+        // For other games, use provided score or assume completion
+        correctAnswers = gameResults.score ? Math.round((gameResults.score / 100) * totalQuestions) : totalQuestions;
+        totalAnswered = totalQuestions;
+        break;
+    }
+    
+    const scorePercentage = totalAnswered > 0 ? Math.round((correctAnswers / totalAnswered) * 100) : 0;
+    
+    console.log('Game score calculated:', {
+      correctAnswers,
+      totalAnswered,
+      scorePercentage,
+      totalQuestions
+    });
+    
+    return {
+      correctAnswers,
+      totalAnswered,
+      scorePercentage,
+      totalQuestions
+    };
+  }
+  
   /**
    * Helper method to calculate quiz score
    */

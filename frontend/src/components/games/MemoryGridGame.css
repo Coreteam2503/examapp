@@ -180,6 +180,23 @@
   margin: 30px 0;
 }
 
+.memory-grid.error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffe6e6;
+  border-color: #ff6b6b;
+  min-height: 200px;
+}
+
+.error-message {
+  color: #ff6b6b;
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-align: center;
+  padding: 20px;
+}
+
 .memory-grid {
   display: grid;
   gap: 10px;

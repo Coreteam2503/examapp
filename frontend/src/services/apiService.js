@@ -91,7 +91,8 @@ export const apiService = {
     getById: (id) => api.get(`/quizzes/${id}`),
     create: (data) => api.post('/quizzes', data),
     update: (id, data) => api.put(`/quizzes/${id}`, data),
-    delete: (id) => api.delete(`/quizzes/${id}`)
+    delete: (id) => api.delete(`/quizzes/${id}`),
+    getResults: (attemptId) => api.get(`/quiz-attempts/${attemptId}/detailed`)
   },
 
   // Games endpoints

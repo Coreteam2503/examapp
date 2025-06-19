@@ -109,6 +109,93 @@ const QuizDisplay = ({ quiz, onQuizComplete, onAnswerChange }) => {
   );
   const canProceed = isAnswered || currentQuestionIndex === totalQuestions - 1;
 
+  // Helper function to transform game results to quiz format
+  const transformGameResultsToQuizFormat = (gameResults, gameFormat, quiz) => {
+    const answers = {};
+    let totalQuestions = 0;
+    let answeredQuestions = 0;
+    
+    switch (gameFormat) {
+      case 'hangman':
+        totalQuestions = gameResults.totalWords || gameResults.totalWordsCompleted || quiz.questions?.length || 1;
+        answeredQuestions = gameResults.totalWordsCompleted || gameResults.results?.length || totalQuestions;
+        
+        // Create mock answers for each word in hangman
+        if (gameResults.results && Array.isArray(gameResults.results)) {
+          gameResults.results.forEach((result, index) => {
+            const questionId = quiz.questions?.[index]?.id || `hangman_word_${index}`;
+            answers[questionId] = {
+              answer: result.status === 'won' ? 'correct' : 'incorrect',
+              timeSpent: result.timeSpent || 0,
+              isCorrect: result.status === 'won',
+              gameSpecific: {
+                word: result.word,
+                wrongGuesses: result.wrongGuesses,
+                guessedLetters: result.guessedLetters
+              }
+            };
+          });
+        } else {
+          // Fallback for single result
+          const questionId = quiz.questions?.[0]?.id || 'hangman_result';
+          answers[questionId] = {
+            answer: gameResults.correctWords > 0 ? 'correct' : 'incorrect',
+            timeSpent: gameResults.timeElapsed || 0,
+            isCorrect: gameResults.correctWords > 0
+          };
+        }
+        break;
+        
+      case 'knowledge_tower':
+        totalQuestions = gameResults.totalLevels || gameResults.totalQuestions || quiz.questions?.length || 1;
+        answeredQuestions = gameResults.results?.length || totalQuestions;
+        
+        // Create answers for each level in knowledge tower
+        if (gameResults.results && Array.isArray(gameResults.results)) {
+          gameResults.results.forEach((result, index) => {
+            const questionId = quiz.questions?.[index]?.id || `tower_level_${result.level || index}`;
+            answers[questionId] = {
+              answer: result.selectedAnswer,
+              timeSpent: result.timeSpent || 0,
+              isCorrect: result.isCorrect,
+              gameSpecific: {
+                level: result.level,
+                levelTheme: result.levelTheme,
+                correctAnswer: result.correctAnswer
+              }
+            };
+          });
+        } else {
+          // Fallback for aggregate result
+          const questionId = quiz.questions?.[0]?.id || 'tower_result';
+          answers[questionId] = {
+            answer: gameResults.correctAnswers > 0 ? 'correct' : 'incorrect',
+            timeSpent: gameResults.timeElapsed || 0,
+            isCorrect: gameResults.correctAnswers > 0
+          };
+        }
+        break;
+        
+      default:
+        // For other game formats, use a simple transformation
+        totalQuestions = 1;
+        answeredQuestions = 1;
+        const questionId = quiz.questions?.[0]?.id || 'game_result';
+        answers[questionId] = {
+          answer: 'completed',
+          timeSpent: gameResults.timeElapsed || 0,
+          isCorrect: true
+        };
+        break;
+    }
+    
+    return {
+      answers,
+      totalQuestions,
+      answeredQuestions
+    };
+  };
+
   // If this is a game format, render the appropriate game component
   if (isGameFormat) {
     const gameData = {
@@ -119,12 +206,17 @@ const QuizDisplay = ({ quiz, onQuizComplete, onAnswerChange }) => {
 
     const handleGameComplete = (gameResults) => {
       if (onQuizComplete) {
+        // Transform game results into format expected by backend
+        const transformedData = transformGameResultsToQuizFormat(gameResults, gameFormat, quiz);
+        
         onQuizComplete({
-          answers: { game_result: gameResults },
+          answers: transformedData.answers,
           timeElapsed: gameResults.timeElapsed || 0,
-          totalQuestions: 1,
-          answeredQuestions: 1,
-          gameResults
+          totalQuestions: transformedData.totalQuestions,
+          answeredQuestions: transformedData.answeredQuestions,
+          gameResults,
+          isGameFormat: true,
+          gameFormat: gameFormat
         });
       }
     };

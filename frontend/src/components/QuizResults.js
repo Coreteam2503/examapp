@@ -27,12 +27,31 @@ const QuizResults = ({ attemptId: propAttemptId }) => {
 
     try {
       const response = await apiService.quizzes.getResults(attemptId);
-      const result = response.data;
-
-      if (result.success) {
-        setResults(result.data);
+      console.log('Raw API response:', response.data);
+      
+      if (response.data) {
+        // Transform the detailed results to match the expected format
+        const attempt = response.data.attempt;
+        const summary = response.data.summary;
+        const answers = response.data.answers;
+        
+        const transformedResults = {
+          quiz_title: attempt.quiz_title || 'Quiz Results',
+          total_questions: attempt.total_questions,
+          questions_answered: attempt.questions_answered,
+          correct_answers: attempt.correct_answers,
+          incorrect_answers: summary.incorrect_answers,
+          score: attempt.correct_answers, // Use correct_answers as score
+          score_percentage: attempt.score_percentage,
+          time_taken: attempt.time_elapsed,
+          completed_at: attempt.completed_at,
+          answers: answers || []
+        };
+        
+        console.log('Transformed results:', transformedResults);
+        setResults(transformedResults);
       } else {
-        setError(result.message || 'Failed to load quiz results');
+        setError('No results data received');
       }
     } catch (error) {
       console.error('Fetch results error:', error);
@@ -115,7 +134,8 @@ const QuizResults = ({ attemptId: propAttemptId }) => {
     );
   }
 
-  const scorePercentage = Math.round((results.score / results.total_questions) * 100);
+  // Calculate score percentage properly
+  const scorePercentage = results.score_percentage || Math.round((results.correct_answers / results.total_questions) * 100);
 
   return (
     <div className="quiz-results">
@@ -135,7 +155,7 @@ const QuizResults = ({ attemptId: propAttemptId }) => {
             <div className="score-inner">
               <span className="score-percentage">{scorePercentage}%</span>
               <span className="score-fraction">
-                {results.score} / {results.total_questions}
+                {results.correct_answers} / {results.total_questions}
               </span>
             </div>
           </div>

@@ -208,6 +208,37 @@
   text-transform: capitalize;
 }
 
+.quiz-game-format {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  border: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Game format quiz cards styling */
+.quiz-card.game-format {
+  border-left: 4px solid #667eea;
+}
+
+.quiz-card.game-format .quiz-card-header {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+  border-radius: 12px 12px 0 0;
+}
+
+.quiz-card.game-format .start-quiz-btn {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.quiz-card.game-format .start-quiz-btn:hover {
+  background: linear-gradient(135deg, #5a67d8, #6b46c1);
+}
+
 .quiz-meta {
   display: flex;
   flex-direction: column;

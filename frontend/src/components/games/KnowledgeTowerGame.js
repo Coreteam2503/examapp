@@ -9,6 +9,7 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [gameResults, setGameResults] = useState([]);
   const [towerHeight, setTowerHeight] = useState(0);
+  const [showExitConfirmation, setShowExitConfirmation] = useState(false);
 
   const questions = gameData?.questions || [];
   const totalLevels = gameData?.metadata?.totalLevels || 5;
@@ -30,6 +31,62 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
     const progress = (currentLevel - 1) / totalLevels;
     setTowerHeight(progress * 100);
   }, [currentLevel, totalLevels]);
+
+  const handleExitGame = () => {
+    setShowExitConfirmation(true);
+  };
+
+  const confirmExitGame = () => {
+    // Calculate final results from current progress
+    const finalResults = [...gameResults];
+    
+    // Add current level result if in progress
+    if (!showResult && currentLevel <= totalLevels) {
+      const currentResult = {
+        level: currentLevel,
+        question: currentLevelQuestion?.question || '',
+        selectedAnswer: selectedAnswer || 'No answer',
+        correctAnswer: currentLevelQuestion?.correct_answer || '',
+        isCorrect: false, // Mark as incomplete
+        timeSpent: timeElapsed,
+        levelTheme: currentLevelQuestion?.level_theme || 'General',
+        incomplete: true
+      };
+      if (selectedAnswer) {
+        finalResults.push(currentResult);
+      }
+    }
+    
+    const totalLevelsAttempted = finalResults.length;
+    const correctAnswers = finalResults.filter(result => result.isCorrect).length;
+    const finalScore = totalLevelsAttempted > 0 ? Math.round((correctAnswers / totalLevelsAttempted) * 100) : 0;
+    
+    console.log('Knowledge Tower game exited early:', {
+      finalResults,
+      totalLevelsAttempted,
+      correctAnswers,
+      finalScore,
+      timeElapsed
+    });
+    
+    if (onGameComplete) {
+      onGameComplete({
+        results: finalResults,
+        totalLevels,
+        timeElapsed,
+        finalLevel: currentLevel,
+        completed: false, // Mark as incomplete/exited
+        score: finalScore,
+        correctAnswers,
+        totalQuestions: totalLevelsAttempted,
+        exitedEarly: true
+      });
+    }
+  };
+
+  const cancelExitGame = () => {
+    setShowExitConfirmation(false);
+  };
 
   const handleAnswerSelect = (answer) => {
     setSelectedAnswer(answer);
@@ -72,14 +129,29 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
       setSelectedAnswer('');
       setShowResult(false);
     } else {
-      // Game complete
+      // Game complete - show final score
+      const finalResults = gameResults;
+      const correctAnswers = finalResults.filter(r => r.isCorrect).length;
+      const totalQuestions = finalResults.length;
+      const finalScore = Math.round((correctAnswers / totalQuestions) * 100);
+      
+      console.log('Game completed:', {
+        finalResults,
+        correctAnswers,
+        totalQuestions,
+        finalScore
+      });
+      
       if (onGameComplete) {
         onGameComplete({
-          results: gameResults,
+          results: finalResults,
           totalLevels,
           timeElapsed,
           finalLevel: currentLevel,
-          completed: true
+          completed: true,
+          score: finalScore,
+          correctAnswers,
+          totalQuestions
         });
       }
     }
@@ -160,10 +232,34 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
           <div className="error-message">
             <h3>No question available for Level {currentLevel}</h3>
             <p>This level might not have been generated yet.</p>
+            <button onClick={() => setCurrentLevel(1)} className="back-to-start-btn">
+              Go to Level 1
+            </button>
           </div>
         </div>
       );
     }
+
+    // Parse question text and options if they're stored as JSON strings
+    let questionText = currentLevelQuestion.question_text || currentLevelQuestion.question || '';
+    let options = currentLevelQuestion.options;
+    
+    // Handle case where options might be stored as JSON string
+    if (typeof options === 'string') {
+      try {
+        options = JSON.parse(options);
+      } catch (e) {
+        console.warn('Failed to parse options:', options);
+        options = [];
+      }
+    }
+
+    console.log('Rendering question:', {
+      level: currentLevel,
+      questionText,
+      options,
+      rawQuestion: currentLevelQuestion
+    });
 
     return (
       <div className="question-section">
@@ -177,11 +273,11 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
         </div>
         
         <div className="question-content">
-          <h4 className="question-text">{currentLevelQuestion.question}</h4>
+          <h4 className="question-text">{questionText}</h4>
           
-          {currentLevelQuestion.options && (
+          {options && Array.isArray(options) && options.length > 0 ? (
             <div className="options-container">
-              {currentLevelQuestion.options.map((option, index) => (
+              {options.map((option, index) => (
                 <button
                   key={index}
                   className={`option ${selectedAnswer === option ? 'selected' : ''}`}
@@ -193,6 +289,18 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
                 </button>
               ))}
             </div>
+          ) : (
+            <div className="text-input-container">
+              <input
+                type="text"
+                className="answer-input"
+                value={selectedAnswer}
+                onChange={(e) => handleAnswerSelect(e.target.value)}
+                placeholder="Type your answer here..."
+                disabled={showResult}
+                autoFocus
+              />
+            </div>
           )}
         </div>
         
@@ -201,7 +309,7 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
             <button 
               className="submit-btn"
               onClick={submitAnswer}
-              disabled={!selectedAnswer}
+              disabled={!selectedAnswer || selectedAnswer.trim() === ''}
             >
               Submit Answer 🚀
             </button>
@@ -216,6 +324,8 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
 
     const result = answeredQuestions[currentLevel];
     const isCorrect = result.isCorrect;
+    const isLastLevel = currentLevel >= totalLevels;
+    const allLevelsAttempted = Object.keys(answeredQuestions).length === totalLevels;
 
     return (
       <div className={`result-modal ${isCorrect ? 'correct' : 'incorrect'}`}>
@@ -235,6 +345,27 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
             {!isCorrect && <p className="failure-message">Study the material and try again!</p>}
           </div>
           
+          {/* Show final score if this is the last level (regardless of correct/incorrect) */}
+          {isLastLevel && (
+            <div className="final-score-display">
+              <h4>🏆 Tower Challenge Complete!</h4>
+              <div className="final-stats">
+                <div className="stat-item">
+                  <span className="stat-value">{Math.round((Object.values(answeredQuestions).filter(r => r.isCorrect).length / totalLevels) * 100)}%</span>
+                  <span className="stat-label">Final Score</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-value">{Object.values(answeredQuestions).filter(r => r.isCorrect).length}/{totalLevels}</span>
+                  <span className="stat-label">Correct Answers</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-value">{formatTime(timeElapsed)}</span>
+                  <span className="stat-label">Time Taken</span>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div className="result-actions">
             {isCorrect && currentLevel < totalLevels && (
               <button className="next-level-btn" onClick={nextLevel}>
@@ -242,19 +373,35 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
               </button>
             )}
             
-            {isCorrect && currentLevel >= totalLevels && (
-              <button className="complete-game-btn" onClick={() => onGameComplete && onGameComplete({
-                results: gameResults,
-                totalLevels,
-                timeElapsed,
-                finalLevel: currentLevel,
-                completed: true
-              })}>
-                Complete Tower! 🏆
+            {isLastLevel && (
+              <button className="complete-game-btn" onClick={() => {
+                const finalResults = gameResults;
+                const correctAnswers = finalResults.filter(r => r.isCorrect).length;
+                const finalScore = Math.round((correctAnswers / totalLevels) * 100);
+                
+                console.log('Knowledge Tower completed:', {
+                  finalResults,
+                  correctAnswers,
+                  totalLevels,
+                  finalScore
+                });
+                
+                onGameComplete && onGameComplete({
+                  results: finalResults,
+                  totalLevels,
+                  timeElapsed,
+                  finalLevel: currentLevel,
+                  completed: true,
+                  score: finalScore,
+                  correctAnswers,
+                  totalQuestions: totalLevels
+                });
+              }}>
+                {isCorrect ? 'Complete Tower! 🏆' : 'Finish Challenge 🏁'}
               </button>
             )}
             
-            {!isCorrect && (
+            {!isCorrect && currentLevel < totalLevels && (
               <button className="retry-btn" onClick={restartLevel}>
                 Try Again 🔄
               </button>
@@ -300,6 +447,16 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
           </div>
         </div>
         
+        <div className="game-actions">
+          <button 
+            className="exit-game-btn"
+            onClick={handleExitGame}
+            title="Exit Game"
+          >
+            🚪 Exit Quiz
+          </button>
+        </div>
+        
         <div className="game-description">
           <p>Climb the Knowledge Tower by answering questions correctly. Each level builds on the previous one!</p>
         </div>
@@ -320,6 +477,44 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
 
       {/* Result Modal */}
       {renderResult()}
+
+      {/* Exit Confirmation Dialog */}
+      {showExitConfirmation && (
+        <div className="exit-confirmation-overlay">
+          <div className="exit-confirmation-dialog">
+            <div className="exit-confirmation-content">
+              <h3>🚪 Exit Tower Challenge?</h3>
+              <p>Are you sure you want to exit the Knowledge Tower game?</p>
+              <div className="exit-current-progress">
+                <p><strong>Current Progress:</strong></p>
+                <ul>
+                  <li>Current Level: {currentLevel}/{totalLevels}</li>
+                  <li>Levels completed: {Object.values(answeredQuestions).filter(r => r.isCorrect).length}</li>
+                  <li>Time elapsed: {formatTime(timeElapsed)}</li>
+                  <li>Current score: {calculateScore()}%</li>
+                </ul>
+                <p className="exit-warning">
+                  ⚠️ Your progress will be saved, but the quiz will be marked as incomplete.
+                </p>
+              </div>
+              <div className="exit-confirmation-actions">
+                <button 
+                  className="exit-cancel-btn"
+                  onClick={cancelExitGame}
+                >
+                  ❌ Cancel
+                </button>
+                <button 
+                  className="exit-confirm-btn"
+                  onClick={confirmExitGame}
+                >
+                  🚪 Exit Quiz
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Progress Summary */}
       <div className="progress-summary">

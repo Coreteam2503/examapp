@@ -271,10 +271,21 @@ class QuizController {
         .count('id as count')
         .first();
 
+      // Log for debugging game formats
+      console.log('📋 Fetched quizzes for user', userId, ':', quizzes.map(q => ({
+        id: q.id, 
+        title: q.title, 
+        game_format: q.game_format,
+        total_questions: q.total_questions
+      })));
+
       res.json({
         quizzes: quizzes.map(quiz => ({
           ...quiz,
-          metadata: quiz.metadata ? JSON.parse(quiz.metadata) : {}
+          metadata: quiz.metadata ? JSON.parse(quiz.metadata) : {},
+          // Ensure game_format is included and properly formatted
+          game_format: quiz.game_format || 'traditional',
+          is_game: quiz.game_format && quiz.game_format !== 'traditional'
         })),
         pagination: {
           page: parseInt(page),
