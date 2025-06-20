@@ -210,56 +210,50 @@ const validatePointsUpdate = (req, res, next) => {
 // Game format validation schemas
 const validateGameFormat = (req, res, next) => {
   const schema = Joi.object({
-    uploadId: Joi.number().integer().positive().required(),
+    uploadId: Joi.number().integer().positive().optional().allow(null), // Make uploadId optional
     gameFormat: Joi.string().valid('hangman', 'knowledge_tower', 'word_ladder', 'memory_grid').required(),
     difficulty: Joi.string().valid('easy', 'medium', 'hard').default('medium'),
+    numQuestions: Joi.number().integer().min(1).max(10).default(5), // Add numQuestions support
     gameOptions: Joi.object({
+      // Common option for all games
+      numQuestions: Joi.number().integer().min(1).max(10).optional(),
+      
       // Hangman options
-      maxWrongGuesses: Joi.number().integer().min(3).max(10).when('..gameFormat', {
-        is: 'hangman',
-        then: Joi.required(),
-        otherwise: Joi.optional()
-      }),
+      maxWrongGuesses: Joi.number().integer().min(3).max(10).optional().default(6),
       
       // Knowledge Tower options
-      levelsCount: Joi.number().integer().min(3).max(20).when('..gameFormat', {
-        is: 'knowledge_tower',
-        then: Joi.required(),
-        otherwise: Joi.optional()
-      }),
+      levelsCount: Joi.number().integer().min(1).max(20).optional(),
       
       // Word Ladder options
-      maxSteps: Joi.number().integer().min(3).max(15).when('..gameFormat', {
-        is: 'word_ladder',
-        then: Joi.required(),
-        otherwise: Joi.optional()
-      }),
+      maxSteps: Joi.number().integer().min(3).max(15).optional().default(8),
       
       // Memory Grid options
-      gridSize: Joi.number().integer().min(3).max(6).when('..gameFormat', {
-        is: 'memory_grid',
-        then: Joi.required(),
-        otherwise: Joi.optional()
-      }),
-      memoryTime: Joi.number().integer().min(2).max(10).when('..gameFormat', {
-        is: 'memory_grid',
-        then: Joi.required(),
-        otherwise: Joi.optional()
-      })
-    }).optional()
+      gridSize: Joi.number().integer().min(3).max(6).optional().default(4),
+      memoryTime: Joi.number().integer().min(2).max(10).optional().default(5)
+    }).optional().default({})
   });
 
   const { error, value } = schema.validate(req.body);
   
   if (error) {
+    console.log('Game format validation error:', error.details);
     return res.status(400).json({
       success: false,
-      message: 'Validation error',
-      errors: error.details.map(detail => detail.message)
+      message: 'Game validation error',
+      errors: error.details.map(detail => detail.message),
+      receivedData: req.body // Help with debugging
     });
   }
 
+  // Sanitize and enhance the data
   req.body = sanitizeInput(value);
+  
+  // Ensure numQuestions is set from either direct field or gameOptions
+  if (!req.body.numQuestions && req.body.gameOptions && req.body.gameOptions.numQuestions) {
+    req.body.numQuestions = req.body.gameOptions.numQuestions;
+  }
+  
+  console.log('Game format validation passed:', req.body);
   next();
 };
 

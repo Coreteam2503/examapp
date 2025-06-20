@@ -649,30 +649,7 @@
   opacity: 0.9;
 }
 
-/* Word display error styles for Hangman */
-.word-display-error {
-  background: rgba(244, 67, 54, 0.2);
-  border: 2px solid #f44336;
-  border-radius: 10px;
-  padding: 20px;
-  text-align: center;
-}
-
-.error-text {
-  color: #f44336;
-  font-weight: bold;
-  font-size: 1.2em;
-}
-
-.no-hint {
-  text-align: center;
-  opacity: 0.7;
-}
-
-.no-hint-text {
-  font-style: italic;
-  color: rgba(255, 255, 255, 0.6);
-}
+/* Remove debug info display - no longer needed */
 
 .result-actions {
   display: flex;

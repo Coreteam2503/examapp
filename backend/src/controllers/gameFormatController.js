@@ -90,9 +90,10 @@ class GameFormatController {
       const gameFormat = req.body?.gameFormat || 'hangman';
       const difficulty = req.body?.difficulty || 'medium';
       const gameOptions = req.body?.gameOptions || {};
+      const numQuestions = parseInt(req.body?.numQuestions || gameOptions?.numQuestions || gameOptions?.levelsCount || 5);
       const userId = req.user?.userId || 1;
 
-      console.log(`📝 [${requestId}] Processing:`, { uploadId, gameFormat, difficulty, gameOptions, userId });
+      console.log(`📝 [${requestId}] Processing:`, { uploadId, gameFormat, difficulty, gameOptions, userId, numQuestions });
 
       // Validate game format
       if (!this.fallbackData[gameFormat]) {
@@ -143,6 +144,8 @@ class GameFormatController {
         } catch (dbError) {
           console.log(`⚠️ [${requestId}] Database lookup failed:`, dbError.message);
         }
+      } else {
+        console.log(`📄 [${requestId}] No uploadId provided, using default content for demo`);
       }
 
       if (!content || content.trim().length === 0) {
@@ -154,7 +157,7 @@ class GameFormatController {
       let gameData;
       try {
         console.log(`🧠 [${requestId}] Generating game data with AI service...`);
-        gameData = await this.generateGameDataSafely(gameFormat, difficulty, gameOptions, content);
+        gameData = await this.generateGameDataSafely(gameFormat, difficulty, { ...gameOptions, numQuestions }, content);
         console.log(`✅ [${requestId}] Game data generated:`, {
           title: gameData.title,
           questionCount: gameData.questions?.length,
@@ -164,7 +167,7 @@ class GameFormatController {
         console.error(`❌ [${requestId}] Game generation error:`, gameGenError);
         console.log(`🔄 [${requestId}] Using bulletproof fallback...`);
         
-        gameData = this.getFallbackGameData(gameFormat, difficulty, gameOptions, upload?.filename);
+        gameData = this.getFallbackGameData(gameFormat, difficulty, { ...gameOptions, numQuestions }, upload?.filename);
         console.log(`✅ [${requestId}] Fallback data ready`);
       }
 
@@ -178,9 +181,9 @@ class GameFormatController {
           created_by: userId,
           title: gameData.title || `${gameFormat.replace('_', ' ').toUpperCase()} Game`,
           difficulty: difficulty,
-          total_questions: gameData.questions ? gameData.questions.length : 1,
+          total_questions: gameData.questions ? gameData.questions.length : numQuestions,
           game_format: gameFormat,
-          game_options: JSON.stringify(gameOptions),
+          game_options: JSON.stringify({ ...gameOptions, numQuestions }),
           created_at: new Date(),
           metadata: JSON.stringify(gameData.metadata || {})
         });
@@ -197,7 +200,7 @@ class GameFormatController {
             question_text: question.question || question.prompt || '',
             correct_answer: question.correct_answer || '',
             word_data: question.word_data ? JSON.stringify(question.word_data) : null,
-            level_number: question.level_number || 1,
+            level_number: question.level_number || (index + 1),
             pattern_data: question.pattern_data ? JSON.stringify(question.pattern_data) : null,
             ladder_steps: question.ladder_steps ? JSON.stringify(question.ladder_steps) : null,
             max_attempts: question.max_attempts || gameOptions.maxWrongGuesses || 6,
@@ -205,6 +208,8 @@ class GameFormatController {
             difficulty: question.difficulty || difficulty,
             concepts: JSON.stringify(question.concepts || []),
             hint: question.hint || null,
+            level_theme: question.level_theme || `Level ${index + 1}`,
+            options: question.options ? JSON.stringify(question.options) : null,
             created_at: new Date()
           }));
 
@@ -226,7 +231,7 @@ class GameFormatController {
           title: gameData.title,
           game_format: gameFormat,
           difficulty: difficulty,
-          total_questions: gameData.questions ? gameData.questions.length : 1,
+          total_questions: gameData.questions ? gameData.questions.length : numQuestions,
           metadata: gameData.metadata,
           questions: gameData.questions,
           created_at: new Date().toISOString(),
@@ -246,7 +251,8 @@ class GameFormatController {
       console.error(`Stack:`, error.stack);
       
       const gameFormat = req.body?.gameFormat || 'hangman';
-      const emergency = this.fallbackData[gameFormat] || this.fallbackData.hangman;
+      const numQuestions = parseInt(req.body?.numQuestions || 5);
+      const emergency = this.getFallbackGameData(gameFormat, 'medium', { numQuestions });
       
       res.status(200).json({
         success: true,
@@ -302,25 +308,110 @@ class GameFormatController {
   }
 
   /**
-   * Get bulletproof fallback data
+   * Get bulletproof fallback data with correct number of questions
    */
   getFallbackGameData(gameFormat, difficulty, gameOptions, filename = 'content') {
+    const numQuestions = gameOptions.numQuestions || 5;
     const baseData = this.fallbackData[gameFormat] || this.fallbackData.hangman;
     
+    // Generate multiple questions/levels based on user selection
+    const questions = [];
+    
+    switch (gameFormat) {
+      case 'hangman':
+        const words = ['PROGRAMMING', 'FUNCTION', 'VARIABLE', 'ALGORITHM', 'DATABASE', 'NETWORK', 'SECURITY', 'TESTING'];
+        for (let i = 0; i < numQuestions; i++) {
+          const word = words[i % words.length];
+          questions.push({
+            word_data: {
+              word: word,
+              category: "Technology",
+              hint: `A ${word.toLowerCase()}-related programming concept`
+            },
+            correct_answer: word,
+            max_attempts: gameOptions.maxWrongGuesses || 6,
+            difficulty: difficulty,
+            concepts: ["programming", "technology"]
+          });
+        }
+        break;
+        
+      case 'knowledge_tower':
+        const themes = ['Fundamentals', 'Intermediate', 'Advanced', 'Expert', 'Master'];
+        for (let i = 0; i < numQuestions; i++) {
+          questions.push({
+            level_number: i + 1,
+            question: `Level ${i + 1}: What is a key concept in programming?`,
+            options: ["Variables store data", "Functions are colors", "Loops are shapes", "Classes are numbers"],
+            correct_answer: "Variables store data",
+            level_theme: themes[i % themes.length],
+            difficulty: i < 2 ? 'easy' : i < 4 ? 'medium' : 'hard',
+            concepts: ["programming", "basics"]
+          });
+        }
+        break;
+        
+      case 'word_ladder':
+        const ladders = [
+          { start: 'CODE', end: 'NODE', steps: ['CODE', 'COVE', 'NOVE', 'NODE'] },
+          { start: 'LOOP', end: 'POOL', steps: ['LOOP', 'LOOM', 'POOM', 'POOL'] },
+          { start: 'DATA', end: 'BASE', steps: ['DATA', 'BATA', 'BABE', 'BASE'] }
+        ];
+        for (let i = 0; i < numQuestions; i++) {
+          const ladder = ladders[i % ladders.length];
+          questions.push({
+            ladder_steps: {
+              startWord: ladder.start,
+              endWord: ladder.end,
+              steps: ladder.steps,
+              hints: [`Transform ${ladder.start}`, 'Change one letter', 'Keep changing', `Reach ${ladder.end}`]
+            },
+            correct_answer: ladder.end,
+            difficulty: difficulty,
+            concepts: ["programming", "word games"]
+          });
+        }
+        break;
+        
+      case 'memory_grid':
+        for (let i = 0; i < numQuestions; i++) {
+          questions.push({
+            pattern_data: {
+              grid: [
+                ["🔧", "💻", "📝"],
+                ["💻", "🔧", "📝"],
+                ["📝", "💻", "🔧"]
+              ],
+              sequence: [0, 4, 8],
+              symbols: ["🔧", "💻", "📝"]
+            },
+            correct_answer: `[0,4,8]`,
+            difficulty: difficulty,
+            concepts: ["patterns", "memory", "programming"]
+          });
+        }
+        break;
+        
+      default:
+        // Fallback to single question
+        questions.push(baseData.questions[0]);
+    }
+    
     return {
-      ...baseData,
       title: `${gameFormat.replace('_', ' ').toUpperCase()} Game - ${filename}`,
       metadata: {
         ...baseData.metadata,
+        totalQuestions: numQuestions,
+        totalWords: gameFormat === 'hangman' ? numQuestions : undefined,
+        totalLevels: gameFormat === 'knowledge_tower' ? numQuestions : undefined,
+        totalLadders: gameFormat === 'word_ladder' ? numQuestions : undefined,
+        totalPatterns: gameFormat === 'memory_grid' ? numQuestions : undefined,
         difficulty: difficulty,
         gameOptions: gameOptions,
         generated_by: 'bulletproof_fallback',
         timestamp: new Date().toISOString()
       },
-      questions: baseData.questions.map(q => ({
-        ...q,
-        difficulty: difficulty
-      }))
+      questions: questions
     };
   }
 
@@ -328,10 +419,12 @@ class GameFormatController {
    * Generate Hangman game data from content
    */
   async generateHangmanGame(content, difficulty, options) {
+    const numWords = options.numQuestions || 5;
     console.log('🎯 Starting Hangman game generation:', {
       contentLength: content.length,
       difficulty,
-      options
+      options,
+      numWords
     });
     
     const maxWrongGuesses = options.maxWrongGuesses || 6;
@@ -341,18 +434,19 @@ class GameFormatController {
     Content: ${content}
     
     Requirements:
-    - Extract 5-10 important words or phrases from the content
+    - Extract exactly ${numWords} important words or phrases from the content
     - Words should be relevant to the main concepts
     - Difficulty: ${difficulty}
     - Provide hints for each word
     - Words should be 4-15 characters long
+    - Generate EXACTLY ${numWords} words, no more, no less
     
     Return a JSON object with this structure:
     {
       "title": "Hangman Game Title",
       "metadata": {
         "maxWrongGuesses": ${maxWrongGuesses},
-        "totalWords": 5
+        "totalWords": ${numWords}
       },
       "questions": [
         {
@@ -366,6 +460,7 @@ class GameFormatController {
           "difficulty": "${difficulty}",
           "concepts": ["programming", "examples"]
         }
+        // Repeat for all ${numWords} words
       ]
     }`;
 
@@ -374,6 +469,13 @@ class GameFormatController {
       const response = await this.promptService.generateContent(prompt);
       console.log('✅ AI service response received, parsing JSON...');
       const gameData = JSON.parse(response);
+      
+      // Validate we got the right number of questions
+      if (!gameData.questions || gameData.questions.length !== numWords) {
+        console.log(`⚠️ AI generated ${gameData.questions?.length || 0} words instead of ${numWords}, using fallback`);
+        throw new Error(`Expected ${numWords} words, got ${gameData.questions?.length || 0}`);
+      }
+      
       console.log('✅ Hangman game data parsed successfully:', {
         title: gameData.title,
         questionCount: gameData.questions?.length
@@ -389,18 +491,19 @@ class GameFormatController {
    * Generate Knowledge Tower game data from content
    */
   async generateKnowledgeTowerGame(content, difficulty, options) {
-    const levelsCount = options.levelsCount || 5;
+    const levelsCount = options.numQuestions || options.levelsCount || 5;
     
     const prompt = `Generate a Knowledge Tower climbing game based on the following content.
     
     Content: ${content}
     
     Requirements:
-    - Create ${levelsCount} progressive difficulty levels
+    - Create EXACTLY ${levelsCount} progressive difficulty levels
     - Each level should have questions that build on previous levels
     - Start with basic concepts and progress to advanced
     - Difficulty: ${difficulty}
     - Each level should have a clear theme/focus
+    - Generate EXACTLY ${levelsCount} levels, no more, no less
     
     Return a JSON object with this structure:
     {
@@ -419,12 +522,20 @@ class GameFormatController {
           "difficulty": "easy",
           "concepts": ["basic concept"]
         }
+        // Repeat for all ${levelsCount} levels with increasing difficulty
       ]
     }`;
 
     try {
       const response = await this.promptService.generateContent(prompt);
       const gameData = JSON.parse(response);
+      
+      // Validate we got the right number of levels
+      if (!gameData.questions || gameData.questions.length !== levelsCount) {
+        console.log(`⚠️ AI generated ${gameData.questions?.length || 0} levels instead of ${levelsCount}, using fallback`);
+        throw new Error(`Expected ${levelsCount} levels, got ${gameData.questions?.length || 0}`);
+      }
+      
       return gameData;
     } catch (error) {
       console.error('Error generating knowledge tower game:', error);
@@ -436,6 +547,7 @@ class GameFormatController {
    * Generate Word Ladder game data from content
    */
   async generateWordLadderGame(content, difficulty, options) {
+    const numLadders = options.numQuestions || 3;
     const maxSteps = options.maxSteps || 6;
     
     const prompt = `Generate a Word Ladder transformation game based on the following content.
@@ -443,18 +555,19 @@ class GameFormatController {
     Content: ${content}
     
     Requirements:
-    - Create word transformation chains where each step changes one letter
+    - Create EXACTLY ${numLadders} word ladder puzzles
     - Words should be related to the content concepts
     - Maximum ${maxSteps} steps per ladder
     - Difficulty: ${difficulty}
     - Provide hints for transformations
+    - Generate EXACTLY ${numLadders} ladders, no more, no less
     
     Return a JSON object with this structure:
     {
       "title": "Word Ladder Game Title", 
       "metadata": {
         "maxSteps": ${maxSteps},
-        "totalLadders": 3
+        "totalLadders": ${numLadders}
       },
       "questions": [
         {
@@ -468,12 +581,20 @@ class GameFormatController {
           "difficulty": "${difficulty}",
           "concepts": ["programming", "data structures"]
         }
+        // Repeat for all ${numLadders} ladders
       ]
     }`;
 
     try {
       const response = await this.promptService.generateContent(prompt);
       const gameData = JSON.parse(response);
+      
+      // Validate we got the right number of ladders
+      if (!gameData.questions || gameData.questions.length !== numLadders) {
+        console.log(`⚠️ AI generated ${gameData.questions?.length || 0} ladders instead of ${numLadders}, using fallback`);
+        throw new Error(`Expected ${numLadders} ladders, got ${gameData.questions?.length || 0}`);
+      }
+      
       return gameData;
     } catch (error) {
       console.error('Error generating word ladder game:', error);
@@ -485,6 +606,7 @@ class GameFormatController {
    * Generate Memory Grid game data from content
    */
   async generateMemoryGridGame(content, difficulty, options) {
+    const numPatterns = options.numQuestions || 3;
     const gridSize = options.gridSize || 4;
     const memoryTime = options.memoryTime || 5;
     
@@ -493,10 +615,11 @@ class GameFormatController {
     Content: ${content}
     
     Requirements:
-    - Create ${gridSize}x${gridSize} grid patterns with symbols/concepts from the content
+    - Create EXACTLY ${numPatterns} different ${gridSize}x${gridSize} grid patterns with symbols/concepts from the content
     - Memory time: ${memoryTime} seconds
     - Difficulty: ${difficulty}
     - Patterns should represent key concepts from the content
+    - Generate EXACTLY ${numPatterns} patterns, no more, no less
     
     Return a JSON object with this structure:
     {
@@ -504,7 +627,7 @@ class GameFormatController {
       "metadata": {
         "gridSize": ${gridSize},
         "memoryTime": ${memoryTime},
-        "totalPatterns": 3
+        "totalPatterns": ${numPatterns}
       },
       "questions": [
         {
@@ -522,12 +645,20 @@ class GameFormatController {
           "difficulty": "${difficulty}",
           "concepts": ["patterns", "memory"]
         }
+        // Repeat for all ${numPatterns} patterns
       ]
     }`;
 
     try {
       const response = await this.promptService.generateContent(prompt);
       const gameData = JSON.parse(response);
+      
+      // Validate we got the right number of patterns
+      if (!gameData.questions || gameData.questions.length !== numPatterns) {
+        console.log(`⚠️ AI generated ${gameData.questions?.length || 0} patterns instead of ${numPatterns}, using fallback`);
+        throw new Error(`Expected ${numPatterns} patterns, got ${gameData.questions?.length || 0}`);
+      }
+      
       return gameData;
     } catch (error) {
       console.error('Error generating memory grid game:', error);
@@ -573,6 +704,7 @@ class GameFormatController {
         pattern_data: question.pattern_data ? JSON.parse(question.pattern_data) : null,
         ladder_steps: question.ladder_steps ? JSON.parse(question.ladder_steps) : null,
         visual_data: question.visual_data ? JSON.parse(question.visual_data) : null,
+        options: question.options ? JSON.parse(question.options) : null,
         concepts: JSON.parse(question.concepts || '[]')
       }))
     };

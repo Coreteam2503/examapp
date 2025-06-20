@@ -1,60 +1,39 @@
 import React, { useState, useEffect } from 'react';
+import quizService from '../../services/quizService';
 import './RecentQuizzes.css';
 
-const RecentQuizzes = ({ onTakeQuiz }) => {
+const RecentQuizzes = ({ onTakeQuiz, refreshTrigger }) => {
   const [recentQuizzes, setRecentQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchRecentQuizzes();
-  }, []);
+  }, [refreshTrigger]); // Add refreshTrigger as dependency
 
   const fetchRecentQuizzes = async () => {
     try {
-      const response = await fetch('/api/quiz-attempts/recent', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
-      });
+      setLoading(true);
+      const data = await quizService.getRecentQuizAttempts(5);
       
-      if (response.ok) {
-        const data = await response.json();
-        setRecentQuizzes(data);
+      if (data && Array.isArray(data)) {
+        // Transform the data to match expected format
+        const transformedData = data.map(attempt => ({
+          id: attempt.id,
+          title: attempt.quiz_title || 'Quiz',
+          questionCount: attempt.total_questions || 0,
+          score: attempt.score_percentage || 0,
+          completedAt: attempt.completed_at,
+          maxScore: 100,
+          timeSpent: Math.round(attempt.time_elapsed / 60) || 0, // Convert seconds to minutes
+          gameFormat: attempt.game_format || null
+        }));
+        setRecentQuizzes(transformedData);
       } else {
-        // Fallback with mock data for development
-        setRecentQuizzes([
-          {
-            id: 1,
-            title: 'JavaScript Fundamentals',
-            questionCount: 10,
-            score: 85,
-            completedAt: new Date().toISOString(),
-            maxScore: 100,
-            timeSpent: 15 // minutes
-          },
-          {
-            id: 2,
-            title: 'React Components',
-            questionCount: 8,
-            score: 92,
-            completedAt: new Date(Date.now() - 86400000).toISOString(), // yesterday
-            maxScore: 100,
-            timeSpent: 12
-          },
-          {
-            id: 3,
-            title: 'Node.js APIs',
-            questionCount: 12,
-            score: 78,
-            completedAt: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
-            maxScore: 100,
-            timeSpent: 20
-          }
-        ]);
+        setRecentQuizzes([]);
       }
     } catch (error) {
       console.error('Error fetching recent quizzes:', error);
-      // Fallback with mock data
+      // Fallback with mock data for development
       setRecentQuizzes([
         {
           id: 1,
@@ -146,10 +125,15 @@ const RecentQuizzes = ({ onTakeQuiz }) => {
           {recentQuizzes.map(quiz => (
             <div key={quiz.id} className="quiz-item">
               <div className="quiz-info">
-                <h4 className="quiz-title">{quiz.title}</h4>
+                <h4 className="quiz-title">
+                  {quiz.gameFormat && quiz.gameFormat !== 'traditional' && (
+                    <span className="game-indicator">🎮 </span>
+                  )}
+                  {quiz.title}
+                </h4>
                 <div className="quiz-meta">
                   <span className="question-count">
-                    {quiz.questionCount} questions
+                    {quiz.gameFormat === 'hangman' ? `${quiz.questionCount} words` : `${quiz.questionCount} questions`}
                   </span>
                   <span className="separator">•</span>
                   <span className="time-spent">
@@ -159,6 +143,14 @@ const RecentQuizzes = ({ onTakeQuiz }) => {
                   <span className="completion-date">
                     {formatDate(quiz.completedAt)}
                   </span>
+                  {quiz.gameFormat && quiz.gameFormat !== 'traditional' && (
+                    <>
+                      <span className="separator">•</span>
+                      <span className="game-format">
+                        {quiz.gameFormat.replace('_', ' ').toUpperCase()}
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
               

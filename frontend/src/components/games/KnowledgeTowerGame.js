@@ -61,13 +61,7 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
     const correctAnswers = finalResults.filter(result => result.isCorrect).length;
     const finalScore = totalLevelsAttempted > 0 ? Math.round((correctAnswers / totalLevelsAttempted) * 100) : 0;
     
-    console.log('Knowledge Tower game exited early:', {
-      finalResults,
-      totalLevelsAttempted,
-      correctAnswers,
-      finalScore,
-      timeElapsed
-    });
+    // For debugging: console.log('Knowledge Tower game exited early:', { finalResults, totalLevelsAttempted, correctAnswers, finalScore, timeElapsed });
     
     if (onGameComplete) {
       onGameComplete({
@@ -135,12 +129,7 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
       const totalQuestions = finalResults.length;
       const finalScore = Math.round((correctAnswers / totalQuestions) * 100);
       
-      console.log('Game completed:', {
-        finalResults,
-        correctAnswers,
-        totalQuestions,
-        finalScore
-      });
+      // For debugging: console.log('Game completed:', { finalResults, correctAnswers, totalQuestions, finalScore });
       
       if (onGameComplete) {
         onGameComplete({
@@ -249,17 +238,12 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
       try {
         options = JSON.parse(options);
       } catch (e) {
-        console.warn('Failed to parse options:', options);
+        // For debugging: console.warn('Failed to parse options:', options);
         options = [];
       }
     }
 
-    console.log('Rendering question:', {
-      level: currentLevel,
-      questionText,
-      options,
-      rawQuestion: currentLevelQuestion
-    });
+    // For debugging: console.log('Rendering question:', { level: currentLevel, questionText, options, rawQuestion: currentLevelQuestion });
 
     return (
       <div className="question-section">
@@ -325,7 +309,6 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
     const result = answeredQuestions[currentLevel];
     const isCorrect = result.isCorrect;
     const isLastLevel = currentLevel >= totalLevels;
-    const allLevelsAttempted = Object.keys(answeredQuestions).length === totalLevels;
 
     return (
       <div className={`result-modal ${isCorrect ? 'correct' : 'incorrect'}`}>
@@ -345,8 +328,8 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
             {!isCorrect && <p className="failure-message">Study the material and try again!</p>}
           </div>
           
-          {/* Show final score if this is the last level (regardless of correct/incorrect) */}
-          {isLastLevel && (
+          {/* Show final score if this is the last level AND answered correctly */}
+          {isLastLevel && isCorrect && (
             <div className="final-score-display">
               <h4>🏆 Tower Challenge Complete!</h4>
               <div className="final-stats">
@@ -367,24 +350,28 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
           )}
           
           <div className="result-actions">
+            {/* ALWAYS show Try Again button for ANY incorrect answer - this should work for all levels including the last one */}
+            {!isCorrect && (
+              <button className="retry-btn" onClick={restartLevel}>
+                Try Again 🔄
+              </button>
+            )}
+            
+            {/* Show next level button only for correct answers on non-final levels */}
             {isCorrect && currentLevel < totalLevels && (
               <button className="next-level-btn" onClick={nextLevel}>
                 Climb to Level {currentLevel + 1} 🧗‍♂️
               </button>
             )}
             
-            {isLastLevel && (
+            {/* Show completion button only when the last level is answered correctly */}
+            {isLastLevel && isCorrect && (
               <button className="complete-game-btn" onClick={() => {
                 const finalResults = gameResults;
                 const correctAnswers = finalResults.filter(r => r.isCorrect).length;
                 const finalScore = Math.round((correctAnswers / totalLevels) * 100);
                 
-                console.log('Knowledge Tower completed:', {
-                  finalResults,
-                  correctAnswers,
-                  totalLevels,
-                  finalScore
-                });
+                // For debugging: console.log('Knowledge Tower completed:', { finalResults, correctAnswers, totalLevels, finalScore });
                 
                 onGameComplete && onGameComplete({
                   results: finalResults,
@@ -397,13 +384,7 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
                   totalQuestions: totalLevels
                 });
               }}>
-                {isCorrect ? 'Complete Tower! 🏆' : 'Finish Challenge 🏁'}
-              </button>
-            )}
-            
-            {!isCorrect && currentLevel < totalLevels && (
-              <button className="retry-btn" onClick={restartLevel}>
-                Try Again 🔄
+                Complete Tower! 🏆
               </button>
             )}
           </div>

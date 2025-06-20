@@ -18,6 +18,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [dashboardRefreshTrigger, setDashboardRefreshTrigger] = useState(0);
 
   // Additional auth check - redirect if not authenticated and not loading
   useEffect(() => {
@@ -46,6 +47,12 @@ const Dashboard = () => {
   const handleTakeQuiz = (quizId = null) => {
     setActiveTab('quizzes');
     // If quizId is provided, could pass it to QuizManager to start specific quiz
+  };
+
+  const handleQuizCompleted = () => {
+    // Trigger refresh of dashboard data when a quiz is completed
+    console.log('Quiz completed, refreshing dashboard data');
+    setDashboardRefreshTrigger(prev => prev + 1);
   };
 
   // Show loading state while checking authentication
@@ -163,7 +170,7 @@ const Dashboard = () => {
               <div className="dashboard-grid">
                 <div className="dashboard-main-content">
                   <ProgressTracker />
-                  <RecentQuizzes onTakeQuiz={handleTakeQuiz} />
+                  <RecentQuizzes onTakeQuiz={handleTakeQuiz} refreshTrigger={dashboardRefreshTrigger} />
                 </div>
                 
                 <div className="dashboard-sidebar-content">
@@ -223,7 +230,7 @@ const Dashboard = () => {
                 <h2>Quiz Center</h2>
                 <p>Take quizzes based on your uploaded content and track your progress.</p>
               </div>
-              <QuizManager />
+              <QuizManager onQuizCompleted={handleQuizCompleted} />
             </div>
           )}
         </div>

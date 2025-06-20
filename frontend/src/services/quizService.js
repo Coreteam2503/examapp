@@ -104,7 +104,7 @@ const quizService = {
   /**
    * Submit quiz attempt and get results
    */
-  submitQuizAttempt: async (quizId, answers, timeElapsed, quiz = null) => {
+  submitQuizAttempt: async (quizId, answers, timeElapsed, quiz = null, gameData = null) => {
     try {
       // Normalize answers before submission if quiz data is available
       let normalizedAnswers = answers;
@@ -114,12 +114,30 @@ const quizService = {
         console.log('Normalized answers:', normalizedAnswers);
       }
       
-      const response = await apiClient.post('/quiz-attempts', {
+      const submissionData = {
         quizId,
         answers: normalizedAnswers,
         timeElapsed,
         completedAt: new Date().toISOString()
-      });
+      };
+      
+      // Add game-specific data if this is a game format
+      if (gameData) {
+        submissionData.gameFormat = gameData.gameFormat;
+        submissionData.gameResults = gameData.gameResults;
+        submissionData.isGameFormat = true;
+        
+        // For game formats, use the pre-calculated score
+        if (gameData.score !== undefined) {
+          submissionData.score = gameData.score;
+          submissionData.correctAnswers = gameData.correctAnswers;
+          submissionData.totalQuestions = gameData.totalQuestions;
+        }
+        
+        console.log('Submitting game format quiz attempt:', submissionData);
+      }
+      
+      const response = await apiClient.post('/quiz-attempts', submissionData);
       return response.data;
     } catch (error) {
       console.error('Error submitting quiz attempt:', error);
@@ -178,6 +196,21 @@ const quizService = {
     } catch (error) {
       console.error('Error fetching user statistics:', error);
       throw new Error(error.response?.data?.error || 'Failed to fetch user statistics');
+    }
+  },
+
+  /**
+   * Get recent quiz attempts for dashboard
+   */
+  getRecentQuizAttempts: async (limit = 5) => {
+    try {
+      const response = await apiClient.get('/quiz-attempts/recent', {
+        params: { limit }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching recent quiz attempts:', error);
+      throw new Error(error.response?.data?.error || 'Failed to fetch recent quiz attempts');
     }
   },
 

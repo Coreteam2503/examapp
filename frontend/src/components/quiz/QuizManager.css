@@ -335,6 +335,79 @@
   font-weight: 500;
 }
 
+/* Score highlighting */
+.score-stat .stat-value {
+  font-size: 2.5rem;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Game-specific results */
+.game-specific-results {
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 2px solid #e2e8f0;
+  text-align: left;
+}
+
+.game-specific-results h4 {
+  color: #1e293b;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.game-details {
+  background: #f8fafc;
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+}
+
+.game-details p {
+  margin: 8px 0;
+  color: #374151;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.game-details strong {
+  color: #1e293b;
+  font-weight: 600;
+}
+
+/* Additional game-specific styling */
+.final-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  margin: 15px 0;
+}
+
+.final-stats-grid .stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(102, 126, 234, 0.1);
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.final-stats-grid .stat-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #667eea;
+  margin-bottom: 4px;
+}
+
+.final-stats-grid .stat-label {
+  font-size: 0.8rem;
+  color: #64748b;
+  text-align: center;
+}
+
 .results-actions {
   display: flex;
   gap: 20px;

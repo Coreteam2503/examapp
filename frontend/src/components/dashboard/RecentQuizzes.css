@@ -102,6 +102,24 @@
   color: #2c3e50;
   font-size: 1.1rem;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+}
+
+.game-indicator {
+  font-size: 1rem;
+  margin-right: 0.25rem;
+}
+
+.game-format {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  padding: 0.125rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .quiz-meta {

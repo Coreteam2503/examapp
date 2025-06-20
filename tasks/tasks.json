@@ -13,6 +13,18 @@
       "subtasks": []
     },
     {
+      "id": "68",
+      "title": "Fix Game Format Question Generation Quantity Issue",
+      "description": "Fix critical bug where game formats only generate 1 question regardless of user selection (5, 7, etc.)",
+      "status": "done",
+      "priority": "high",
+      "dependencies": ["66"],
+      "complexity": 2,
+      "details": "Fixed issue where game formats (Hangman, Knowledge Tower, Word Ladder, Memory Grid) were only generating 1 question/level regardless of user selection. Updated QuizTypeSelector to include question count UI for games, modified parameter passing in FileManager and GameFormatController to properly handle numQuestions from multiple sources (req.body.numQuestions, gameOptions.numQuestions, gameOptions.levelsCount). Now users can select 1-10 items for any game format and get the correct quantity generated.",
+      "testStrategy": "Test all four game formats with different question counts (1, 3, 5, 7, 10), verify correct number of words/levels/ladders/patterns are generated, confirm UI shows appropriate labels for each game type",
+      "subtasks": []
+    },
+    {
       "id": "2",
       "title": "Database Setup and Configuration",
       "description": "Initialize SQLite database and configure Knex.js for migrations and queries",
@@ -783,6 +795,18 @@
       "complexity": 3,
       "details": "Update QuizTypeSelector to include new game formats, integrate with existing scoring system, update navigation and routing, ensure mobile compatibility, and perform end-to-end testing.",
       "testStrategy": "Test game format selection, integration with quiz flow, scoring consistency, mobile responsiveness, cross-browser compatibility",
+      "subtasks": []
+    },
+    {
+      "id": "67",
+      "title": "Fix Knowledge Tower Quiz Retry Logic",
+      "description": "Fix issue where final level incorrect answers don't allow retries like other levels",
+      "status": "done",
+      "priority": "high",
+      "dependencies": ["63"],
+      "complexity": 1,
+      "details": "Fixed Knowledge Tower quiz behavior so that incorrect answers on ANY level (including the final level) allow retries. Reordered button logic to prioritize 'Try Again' button for all incorrect answers, ensuring consistent behavior across all levels.",
+      "testStrategy": "Test retry functionality on all levels including final level, verify consistent behavior",
       "subtasks": []
     }
   ]

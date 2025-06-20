@@ -4,7 +4,7 @@ import { apiService, handleApiError } from '../../services/apiService';
 import quizService from '../../services/quizService';
 import './QuizManager.css';
 
-const QuizManager = () => {
+const QuizManager = ({ onQuizCompleted }) => {
   const [quizzes, setQuizzes] = useState([]);
   const [selectedQuiz, setSelectedQuiz] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -53,40 +53,97 @@ const QuizManager = () => {
     try {
       setLoading(true);
       
-      // Submit quiz attempt to backend with normalization
-      console.log('Submitting quiz attempt:', {
-        quizId: selectedQuiz.id,
-        answers: results.answers,
-        timeElapsed: results.timeElapsed
-      });
+      console.log('Quiz completion results received:', results);
       
-      const response = await quizService.submitQuizAttempt(
-        selectedQuiz.id,
-        results.answers,
-        results.timeElapsed,
-        selectedQuiz // Pass quiz data for answer normalization
-      );
-      
-      console.log('Quiz attempt submitted successfully:', response);
-      
-      // Store results with backend response data
-      const backendResults = response.attempt || {};
-      setQuizResults({
-        ...results,
-        attemptId: backendResults.id,
-        score: backendResults.score_percentage || 0,
-        correctAnswers: backendResults.correct_answers || 0,
-        totalQuestions: backendResults.total_questions || results.totalQuestions
-      });
+      // Handle game format results (like Hangman) differently
+      if (results.isGameFormat && results.gameResults) {
+        console.log('Processing game format results:', results.gameResults);
+        
+        // For game formats, use the score directly from game results
+        const gameScore = results.gameResults.score || 0;
+        const correctAnswers = results.gameResults.correctAnswers || results.gameResults.correctWords || 0;
+        const totalQuestions = results.gameResults.totalLevels || results.gameResults.totalWords || results.totalQuestions || 1;
+        
+        // Submit quiz attempt to backend with game-specific data
+        const response = await quizService.submitQuizAttempt(
+          selectedQuiz.id,
+          results.answers,
+          results.timeElapsed,
+          selectedQuiz,
+          {
+            gameFormat: results.gameFormat,
+            gameResults: results.gameResults,
+            score: gameScore,
+            correctAnswers: correctAnswers,
+            totalQuestions: totalQuestions
+          }
+        );
+        
+        console.log('Game quiz attempt submitted successfully:', response);
+        
+        // Store results with proper game score
+        const backendResults = response.attempt || {};
+        setQuizResults({
+          ...results,
+          attemptId: backendResults.id,
+          score: gameScore, // Use game score directly
+          correctAnswers: correctAnswers,
+          totalQuestions: totalQuestions,
+          gameFormat: results.gameFormat,
+          gameResults: results.gameResults,
+          isGameFormat: true
+        });
+      } else {
+        // Traditional quiz format
+        console.log('Submitting traditional quiz attempt:', {
+          quizId: selectedQuiz.id,
+          answers: results.answers,
+          timeElapsed: results.timeElapsed
+        });
+        
+        const response = await quizService.submitQuizAttempt(
+          selectedQuiz.id,
+          results.answers,
+          results.timeElapsed,
+          selectedQuiz // Pass quiz data for answer normalization
+        );
+        
+        console.log('Traditional quiz attempt submitted successfully:', response);
+        
+        // Store results with backend response data
+        const backendResults = response.attempt || {};
+        setQuizResults({
+          ...results,
+          attemptId: backendResults.id,
+          score: backendResults.score_percentage || 0,
+          correctAnswers: backendResults.correct_answers || 0,
+          totalQuestions: backendResults.total_questions || results.totalQuestions
+        });
+      }
       
       setCurrentView('results');
       setError(null);
+      
+      // Notify parent component that quiz was completed
+      if (onQuizCompleted) {
+        onQuizCompleted();
+      }
     } catch (err) {
       console.error('Error submitting quiz attempt:', err);
       setError(`Failed to submit quiz: ${err.message}`);
       
       // Still show results even if submission failed
-      setQuizResults(results);
+      // For game formats, ensure we preserve the game score
+      if (results.isGameFormat && results.gameResults) {
+        setQuizResults({
+          ...results,
+          score: results.gameResults.score || 0,
+          correctAnswers: results.gameResults.correctAnswers || results.gameResults.correctWords || 0,
+          totalQuestions: results.gameResults.totalLevels || results.gameResults.totalWords || results.totalQuestions || 1
+        });
+      } else {
+        setQuizResults(results);
+      }
       setCurrentView('results');
     } finally {
       setLoading(false);
@@ -165,35 +222,114 @@ const QuizManager = () => {
           
           <div className="results-summary">
             <div className="result-card">
-              <h3>Your Performance</h3>
+              <h3>
+                {quizResults.isGameFormat && quizResults.gameFormat === 'hangman' ? '🎯 Hangman Results' : 
+                 quizResults.isGameFormat && quizResults.gameFormat === 'knowledge_tower' ? '🏗️ Knowledge Tower Results' :
+                 'Your Performance'}
+              </h3>
               <div className="result-stats">
                 {quizResults.score !== undefined && (
                   <div className="stat score-stat">
                     <span className="stat-value score-value">
-                      {quizResults.score}%
+                      {Math.round(quizResults.score)}%
                     </span>
-                    <span className="stat-label">Score</span>
+                    <span className="stat-label">Final Score</span>
                   </div>
                 )}
                 <div className="stat">
                   <span className="stat-value">
                     {quizResults.correctAnswers || 0}/{quizResults.totalQuestions}
                   </span>
-                  <span className="stat-label">Correct Answers</span>
-                </div>
-                <div className="stat">
-                  <span className="stat-value">
-                    {quizResults.answeredQuestions}/{quizResults.totalQuestions}
+                  <span className="stat-label">
+                    {quizResults.isGameFormat && quizResults.gameFormat === 'hangman' ? 'Words Guessed' :
+                     quizResults.isGameFormat && quizResults.gameFormat === 'knowledge_tower' ? 'Levels Completed' :
+                     'Correct Answers'}
                   </span>
-                  <span className="stat-label">Questions Answered</span>
                 </div>
+                {!quizResults.isGameFormat && (
+                  <div className="stat">
+                    <span className="stat-value">
+                      {quizResults.answeredQuestions}/{quizResults.totalQuestions}
+                    </span>
+                    <span className="stat-label">Questions Answered</span>
+                  </div>
+                )}
                 <div className="stat">
                   <span className="stat-value">
                     {Math.floor(quizResults.timeElapsed / 60)}:{(quizResults.timeElapsed % 60).toString().padStart(2, '0')}
                   </span>
                   <span className="stat-label">Time Taken</span>
                 </div>
+                {quizResults.isGameFormat && quizResults.gameFormat === 'hangman' && quizResults.gameResults && (
+                  <div className="stat">
+                    <span className="stat-value">
+                      {quizResults.gameResults.totalWrongGuesses || 0}/6
+                    </span>
+                    <span className="stat-label">Wrong Guesses</span>
+                  </div>
+                )}
+                {quizResults.isGameFormat && quizResults.gameFormat === 'hangman' && quizResults.gameResults && (
+                  <div className="stat">
+                    <span className="stat-value">
+                      {quizResults.gameResults.hangmanComplete ? '✅ Survived' : '☠️ Completed'}
+                    </span>
+                    <span className="stat-label">Hangman Status</span>
+                  </div>
+                )}
+                {quizResults.isGameFormat && quizResults.gameFormat === 'knowledge_tower' && quizResults.gameResults && (
+                  <div className="stat">
+                    <span className="stat-value">
+                      {quizResults.gameResults.finalLevel || quizResults.totalQuestions}/{quizResults.totalQuestions}
+                    </span>
+                    <span className="stat-label">Highest Level</span>
+                  </div>
+                )}
+                {quizResults.isGameFormat && quizResults.gameFormat === 'knowledge_tower' && quizResults.gameResults && (
+                  <div className="stat">
+                    <span className="stat-value">
+                      {quizResults.gameResults.completed ? '✅ Completed' : '🏗️ In Progress'}
+                    </span>
+                    <span className="stat-label">Tower Status</span>
+                  </div>
+                )}
               </div>
+              
+              {quizResults.isGameFormat && quizResults.gameFormat === 'hangman' && quizResults.gameResults && (
+                <div className="game-specific-results">
+                  <h4>🎮 Game Details</h4>
+                  <div className="game-details">
+                    <p><strong>Game Status:</strong> {quizResults.gameResults.completed ? 'Completed all words' : 'Exited early'}</p>
+                    {quizResults.gameResults.exitedEarly && (
+                      <p><strong>Note:</strong> You exited the game early, but your progress was saved!</p>
+                    )}
+                    <p><strong>Performance:</strong> 
+                      {quizResults.score >= 90 ? ' 🏆 Excellent!' :
+                       quizResults.score >= 70 ? ' 🌟 Great job!' :
+                       quizResults.score >= 50 ? ' 👍 Good work!' :
+                       ' 💪 Keep practicing!'}
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              {quizResults.isGameFormat && quizResults.gameFormat === 'knowledge_tower' && quizResults.gameResults && (
+                <div className="game-specific-results">
+                  <h4>🏗️ Tower Details</h4>
+                  <div className="game-details">
+                    <p><strong>Tower Status:</strong> {quizResults.gameResults.completed ? 'Successfully climbed to the top!' : 'Challenge in progress'}</p>
+                    <p><strong>Highest Level:</strong> Level {quizResults.gameResults.finalLevel || quizResults.correctAnswers} of {quizResults.totalQuestions}</p>
+                    {quizResults.gameResults.exitedEarly && (
+                      <p><strong>Note:</strong> You exited the tower challenge early, but your progress was saved!</p>
+                    )}
+                    <p><strong>Performance:</strong> 
+                      {quizResults.score >= 90 ? ' 🏆 Master Climber!' :
+                       quizResults.score >= 70 ? ' 🌟 Skilled Climber!' :
+                       quizResults.score >= 50 ? ' 👍 Good Climber!' :
+                       ' 💪 Keep climbing!'}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           

@@ -12,6 +12,7 @@ const QuizTypeSelector = ({ onGenerateQuiz, isLoading, preSelectedFile }) => {
   const [quizFormat, setQuizFormat] = useState('traditional'); // 'traditional' or 'game'
   const [gameFormat, setGameFormat] = useState('hangman');
   const [gameOptions, setGameOptions] = useState({
+    numQuestions: 5,
     maxWrongGuesses: 6,
     levelsCount: 5,
     maxSteps: 8,
@@ -237,16 +238,29 @@ const QuizTypeSelector = ({ onGenerateQuiz, isLoading, preSelectedFile }) => {
           <div className="game-options-config">
             <h5>Game Options:</h5>
             {gameFormat === 'hangman' && (
-              <div className="form-group">
-                <label>Max Wrong Guesses:</label>
-                <input
-                  type="number"
-                  min="3"
-                  max="10"
-                  value={gameOptions.maxWrongGuesses}
-                  onChange={(e) => setGameOptions({...gameOptions, maxWrongGuesses: parseInt(e.target.value)})}
-                  className="form-control small"
-                />
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Number of Words:</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={gameOptions.numQuestions || 5}
+                    onChange={(e) => setGameOptions({...gameOptions, numQuestions: parseInt(e.target.value)})}
+                    className="form-control small"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Max Wrong Guesses:</label>
+                  <input
+                    type="number"
+                    min="3"
+                    max="10"
+                    value={gameOptions.maxWrongGuesses}
+                    onChange={(e) => setGameOptions({...gameOptions, maxWrongGuesses: parseInt(e.target.value)})}
+                    className="form-control small"
+                  />
+                </div>
               </div>
             )}
             
