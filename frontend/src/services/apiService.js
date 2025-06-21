@@ -105,6 +105,7 @@ export const apiService = {
   quizAttempts: {
     submit: (data) => api.post('/quiz-attempts', data),
     getById: (id) => api.get(`/quiz-attempts/${id}`),
+    list: (params) => api.get('/quiz-attempts', { params }),
     getUserAttempts: (params) => api.get('/quiz-attempts', { params }),
     getStatistics: () => api.get('/quiz-attempts/statistics'),
     getDetailedResults: (id) => api.get(`/quiz-attempts/${id}/detailed`),

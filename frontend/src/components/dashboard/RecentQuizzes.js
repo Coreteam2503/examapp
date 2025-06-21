@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import quizService from '../../services/quizService';
+import { apiService } from '../../services/apiService';
 import './RecentQuizzes.css';
 
 const RecentQuizzes = ({ onTakeQuiz, refreshTrigger }) => {
@@ -13,47 +13,23 @@ const RecentQuizzes = ({ onTakeQuiz, refreshTrigger }) => {
   const fetchRecentQuizzes = async () => {
     try {
       setLoading(true);
-      const data = await quizService.getRecentQuizAttempts(5);
+      console.log('Fetching recent quiz attempts...');
+      const response = await apiService.quizAttempts.getRecent({ limit: 5 });
+      const data = response.data;
+      
+      console.log('Recent quiz attempts response:', data);
       
       if (data && Array.isArray(data)) {
-        // Transform the data to match expected format
-        const transformedData = data.map(attempt => ({
-          id: attempt.id,
-          title: attempt.quiz_title || 'Quiz',
-          questionCount: attempt.total_questions || 0,
-          score: attempt.score_percentage || 0,
-          completedAt: attempt.completed_at,
-          maxScore: 100,
-          timeSpent: Math.round(attempt.time_elapsed / 60) || 0, // Convert seconds to minutes
-          gameFormat: attempt.game_format || null
-        }));
-        setRecentQuizzes(transformedData);
+        // Data is already formatted by the backend
+        setRecentQuizzes(data);
       } else {
+        console.log('No recent quiz attempts found');
         setRecentQuizzes([]);
       }
     } catch (error) {
       console.error('Error fetching recent quizzes:', error);
-      // Fallback with mock data for development
-      setRecentQuizzes([
-        {
-          id: 1,
-          title: 'JavaScript Fundamentals',
-          questionCount: 10,
-          score: 85,
-          completedAt: new Date().toISOString(),
-          maxScore: 100,
-          timeSpent: 15
-        },
-        {
-          id: 2,
-          title: 'React Components',
-          questionCount: 8,
-          score: 92,
-          completedAt: new Date(Date.now() - 86400000).toISOString(),
-          maxScore: 100,
-          timeSpent: 12
-        }
-      ]);
+      // Set empty array instead of mock data to show real state
+      setRecentQuizzes([]);
     } finally {
       setLoading(false);
     }

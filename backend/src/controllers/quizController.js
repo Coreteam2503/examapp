@@ -316,6 +316,27 @@ class QuizController {
         return res.status(404).json({ error: 'Quiz not found' });
       }
 
+      // For game formats with missing questions, redirect to game controller
+      if (quiz.game_format && quiz.game_format !== 'traditional' && (!quiz.questions || quiz.questions.length === 0)) {
+        console.log(`🎮 [getQuizById] Game format ${quiz.game_format} with no questions, using game controller`);
+        try {
+          const { getGameById } = require('./gameFormatController');
+          // Create a mock request/response to use the game controller
+          const gameReq = { params: { id }, user: { userId } };
+          const gameRes = {
+            json: (data) => {
+              console.log(`✅ [getQuizById] Retrieved game data with ${data.questions?.length || 0} questions`);
+              return res.json(data);
+            },
+            status: (code) => ({ json: (data) => res.status(code).json(data) })
+          };
+          return await getGameById(gameReq, gameRes);
+        } catch (gameError) {
+          console.error('Error using game controller:', gameError);
+          // Continue with original quiz data
+        }
+      }
+
       res.json(quiz);
 
     } catch (error) {
@@ -397,9 +418,21 @@ class QuizController {
       .where('quiz_id', quizId)
       .orderBy('question_number');
 
+    console.log(`📋 [getCompleteQuizData] Quiz ${quizId} - Format: ${quiz.game_format || 'traditional'}, Questions count: ${questions.length}`);
+
+    // Handle missing questions - ensure we always have data
+    if (!questions || questions.length === 0) {
+      console.log(`⚠️ [getCompleteQuizData] No questions found for quiz ${quizId}`);
+      // For game formats, we might need fallback data, but for traditional quizzes this is expected behavior
+      if (quiz.game_format && quiz.game_format !== 'traditional') {
+        console.log(`🔄 [getCompleteQuizData] This is a game format (${quiz.game_format}) with no questions - this should be handled by gameFormatController`);
+      }
+    }
+
     return {
       ...quiz,
       metadata: quiz.metadata ? JSON.parse(quiz.metadata) : {},
+      game_options: quiz.game_options ? JSON.parse(quiz.game_options) : {},
       questions: questions.map(question => ({
         ...question,
         options: question.options ? JSON.parse(question.options) : null,
@@ -409,6 +442,10 @@ class QuizController {
         items: question.items ? JSON.parse(question.items) : null,
         correctOrder: question.correct_order ? JSON.parse(question.correct_order) : null,
         text: question.formatted_text || question.question_text,
+        // Parse game-specific data safely
+        word_data: question.word_data ? (typeof question.word_data === 'string' ? JSON.parse(question.word_data) : question.word_data) : null,
+        pattern_data: question.pattern_data ? (typeof question.pattern_data === 'string' ? JSON.parse(question.pattern_data) : question.pattern_data) : null,
+        ladder_steps: question.ladder_steps ? (typeof question.ladder_steps === 'string' ? JSON.parse(question.ladder_steps) : question.ladder_steps) : null,
         // Ensure consistent boolean handling for true/false questions
         correct_answer: question.type === 'true_false' && typeof question.correct_answer === 'string' 
           ? question.correct_answer === 'True' || question.correct_answer === 'true' || question.correct_answer === 'True'

@@ -32,13 +32,78 @@ class QuizAttemptController {
         return res.status(404).json({ error: 'Quiz not found' });
       }
 
-      // Get quiz questions
-      const questions = await knex('questions')
+      // Get quiz questions (handle game formats specially)
+      let questions = await knex('questions')
         .where('quiz_id', quizId)
         .orderBy('question_number');
 
-      if (questions.length === 0) {
+      console.log(`📊 Quiz submission debug:`, {
+        questionsFound: questions.length,
+        isGameFormat,
+        gameFormat,
+        quizGameFormat: quiz.game_format,
+        hasGameResults: !!gameResults
+      });
+
+      // For ANY game format OR when isGameFormat is true, handle missing questions
+      const isGameQuiz = isGameFormat || 
+                        (quiz.game_format && quiz.game_format !== 'traditional') ||
+                        gameFormat;
+                        
+      if (questions.length === 0 && isGameQuiz) {
+        console.log(`🎮 Quiz submission: Game format detected, no stored questions found. Creating virtual questions for scoring.`);
+        
+        // Use the number of questions from multiple possible sources
+        const expectedQuestions = gameResults?.totalQuestions || 
+                                gameResults?.totalWords || 
+                                gameResults?.totalLevels || 
+                                gameResults?.results?.length ||
+                                quiz.total_questions || 
+                                Object.keys(answers || {}).length ||
+                                5; // Fallback to 5 if nothing else available
+        
+        console.log(`🔢 Expected questions calculation:`, {
+          gameResultsTotal: gameResults?.totalQuestions,
+          gameResultsWords: gameResults?.totalWords,
+          gameResultsLevels: gameResults?.totalLevels,
+          gameResultsArray: gameResults?.results?.length,
+          quizTotal: quiz.total_questions,
+          answersCount: Object.keys(answers || {}).length,
+          finalExpected: expectedQuestions
+        });
+        
+        // Create virtual questions for scoring purposes
+        questions = Array.from({ length: expectedQuestions }, (_, index) => ({
+          id: `virtual_${quizId}_${index}`,
+          quiz_id: quizId,
+          question_number: index + 1,
+          type: gameFormat || quiz.game_format || 'game',
+          question_text: `Virtual game question ${index + 1}`,
+          correct_answer: 'correct',
+          virtual_question: true
+        }));
+        
+        console.log(`✅ Created ${questions.length} virtual questions for game scoring`);
+      }
+
+      // Only fail for traditional quizzes with no questions
+      if (questions.length === 0 && !isGameQuiz) {
+        console.log(`❌ Traditional quiz has no questions, failing submission`);
         return res.status(400).json({ error: 'Quiz has no questions' });
+      }
+
+      // Final safety check
+      if (questions.length === 0) {
+        console.log(`⚠️ No questions found and unable to create virtual questions. Using minimal fallback.`);
+        questions = [{
+          id: `emergency_${quizId}`,
+          quiz_id: quizId,
+          question_number: 1,
+          type: 'game',
+          question_text: 'Emergency question',
+          correct_answer: 'correct',
+          virtual_question: true
+        }];
       }
 
       // Calculate score (with game format handling)
@@ -47,6 +112,25 @@ class QuizAttemptController {
         : this.calculateScore(questions, answers);
         
       console.log('Score calculation result:', scoreData);
+      
+      // HANGMAN DEBUG: Enhanced logging for game format scoring
+      if (gameFormat === 'hangman' || (quiz.game_format === 'hangman')) {
+        console.log('🎯 HANGMAN BACKEND SCORE DEBUG:', {
+          quizId,
+          userId,
+          gameFormat: gameFormat || quiz.game_format,
+          isGameFormat,
+          questionsLength: questions.length,
+          gameResults: gameResults ? {
+            score: gameResults.score,
+            correctWords: gameResults.correctWords,
+            totalWords: gameResults.totalWords,
+            completed: gameResults.completed
+          } : 'No game results',
+          calculatedScore: scoreData,
+          submissionTime: new Date().toISOString()
+        });
+      }
 
       // Create attempt record
       const [attemptId] = await knex('attempts').insert({
@@ -61,34 +145,45 @@ class QuizAttemptController {
         score_percentage: scoreData.scorePercentage,
         created_at: new Date()
       });
+      
+      // HANGMAN DEBUG: Verify database save
+      if (gameFormat === 'hangman' || (quiz.game_format === 'hangman')) {
+        const verifyAttempt = await knex('attempts')
+          .where({ id: attemptId })
+          .first();
+        
+        console.log('✅ HANGMAN ATTEMPT VERIFICATION:', {
+          attemptId,
+          savedScore: verifyAttempt.score_percentage,
+          expectedScore: scoreData.scorePercentage,
+          saveSuccessful: verifyAttempt.score_percentage === scoreData.scorePercentage,
+          dbRecord: {
+            id: verifyAttempt.id,
+            quiz_id: verifyAttempt.quiz_id,
+            user_id: verifyAttempt.user_id,
+            score_percentage: verifyAttempt.score_percentage,
+            correct_answers: verifyAttempt.correct_answers,
+            total_questions: verifyAttempt.total_questions,
+            completed_at: verifyAttempt.completed_at
+          }
+        });
+      }
 
       // Store individual answers (handle both game and traditional formats)
+      // For virtual questions (game formats), we don't store individual answers in DB
       const answerRecords = [];
       
       if (isGameFormat) {
-        // For game formats, use the transformed answers
-        for (const [answerId, answerData] of Object.entries(answers)) {
-          // Store game-specific data in user_answer as JSON if needed
-          let userAnswerData = answerData.answer;
-          if (answerData.gameSpecific) {
-            userAnswerData = JSON.stringify({
-              answer: answerData.answer,
-              gameData: answerData.gameSpecific
-            });
-          }
-          
-          answerRecords.push({
-            attempt_id: attemptId,
-            question_id: answerId,
-            user_answer: typeof userAnswerData === 'object' ? JSON.stringify(userAnswerData) : userAnswerData,
-            is_correct: answerData.isCorrect || false,
-            time_spent: answerData.timeSpent || 0,
-            created_at: new Date()
-          });
-        }
+        // For game formats, only store summary data, not individual virtual question answers
+        console.log('Game format submission - storing summary data only');
+        // We don't store individual answers for game formats since they use virtual questions
+        // The attempt record itself contains the score and summary
       } else {
-        // Traditional quiz format
+        // Traditional quiz format - store individual answers
         for (const question of questions) {
+          // Skip virtual questions
+          if (question.virtual_question) continue;
+          
           const userAnswer = answers[question.id];
           if (userAnswer) {
             console.log('Comparing answers:', {

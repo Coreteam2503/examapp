@@ -138,7 +138,8 @@ const HangmanGame = ({ gameData, onGameComplete, onAnswerChange }) => {
               timeElapsed: timeElapsed,
               completed: true,
               score: finalScore,
-              correctAnswers: correctWords, // Use correctWords instead of correctWords
+              correctAnswers: correctWords, // Backend expects this field name
+              correctWords: correctWords, // Keep this for compatibility
               totalWordsCompleted: updatedResults.length,
               totalWrongGuesses: totalWrongGuesses,
               hangmanComplete: totalWrongGuesses < maxTotalWrongGuesses
@@ -223,7 +224,8 @@ const HangmanGame = ({ gameData, onGameComplete, onAnswerChange }) => {
         timeElapsed: timeElapsed,
         completed: false, // Mark as incomplete/exited
         score: finalScore,
-        correctAnswers: correctWords, // Use correctAnswers for consistency
+        correctAnswers: correctWords, // Backend expects this field name
+        correctWords: correctWords, // Keep this for compatibility
         totalWordsCompleted: totalWordsAttempted,
         exitedEarly: true,
         totalWrongGuesses: totalWrongGuesses,
@@ -501,7 +503,8 @@ const HangmanGame = ({ gameData, onGameComplete, onAnswerChange }) => {
                     timeElapsed: timeElapsed,
                     completed: false, // Lost due to hangman
                     score: finalScore,
-                    correctAnswers: correctWords, // Use correctAnswers
+                    correctAnswers: correctWords, // Backend expects this field name
+                    correctWords: correctWords, // Keep this for compatibility
                     totalWordsCompleted: finalResults.length,
                     totalWrongGuesses: totalWrongGuesses,
                     hangmanComplete: false
@@ -552,7 +555,8 @@ const HangmanGame = ({ gameData, onGameComplete, onAnswerChange }) => {
                       timeElapsed: timeElapsed,
                       completed: true,
                       score: finalScore,
-                      correctAnswers: correctWords, // Use correctAnswers
+                      correctAnswers: correctWords, // Backend expects this field name
+                      correctWords: correctWords, // Keep this for compatibility
                       totalWordsCompleted: finalResults.length,
                       totalWrongGuesses: totalWrongGuesses,
                       hangmanComplete: totalWrongGuesses < maxTotalWrongGuesses

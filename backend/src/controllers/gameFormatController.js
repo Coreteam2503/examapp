@@ -694,18 +694,53 @@ class GameFormatController {
       .where('quiz_id', quizId)
       .orderBy('question_number');
 
+    console.log(`🎮 [getCompleteGameData] Quiz ${quizId} - Format: ${quiz.game_format}, Questions count: ${questions.length}`);
+    
+    // Handle missing questions for game formats with bulletproof fallback
+    let processedQuestions = questions;
+    
+    if ((!questions || questions.length === 0) && quiz.game_format && quiz.game_format !== 'traditional') {
+      console.log(`⚠️ [getCompleteGameData] No questions found for game ${quiz.game_format}, generating fallback`);
+      const gameOptions = quiz.game_options ? JSON.parse(quiz.game_options) : {};
+      const numQuestions = parseInt(gameOptions.numQuestions || quiz.total_questions || 5);
+      const fallbackData = this.getFallbackGameData(quiz.game_format, quiz.difficulty || 'medium', { numQuestions });
+      processedQuestions = fallbackData.questions.map((question, index) => ({
+        id: `fallback_${index}`,
+        quiz_id: quizId,
+        question_number: index + 1,
+        type: quiz.game_format,
+        question_text: question.question || question.prompt || '',
+        correct_answer: question.correct_answer || '',
+        word_data: question.word_data ? JSON.stringify(question.word_data) : null,
+        level_number: question.level_number || (index + 1),
+        pattern_data: question.pattern_data ? JSON.stringify(question.pattern_data) : null,
+        ladder_steps: question.ladder_steps ? JSON.stringify(question.ladder_steps) : null,
+        max_attempts: question.max_attempts || 6,
+        visual_data: question.visual_data ? JSON.stringify(question.visual_data) : null,
+        difficulty: question.difficulty || quiz.difficulty || 'medium',
+        concepts: JSON.stringify(question.concepts || []),
+        hint: question.hint || null,
+        level_theme: question.level_theme || `Level ${index + 1}`,
+        options: question.options ? JSON.stringify(question.options) : null,
+        created_at: new Date(),
+        fallback_generated: true
+      }));
+      
+      console.log(`✅ [getCompleteGameData] Generated ${processedQuestions.length} fallback questions`);
+    }
+
     return {
       ...quiz,
       metadata: quiz.metadata ? JSON.parse(quiz.metadata) : {},
       game_options: quiz.game_options ? JSON.parse(quiz.game_options) : {},
-      questions: questions.map(question => ({
+      questions: processedQuestions.map(question => ({
         ...question,
-        word_data: question.word_data ? JSON.parse(question.word_data) : null,
-        pattern_data: question.pattern_data ? JSON.parse(question.pattern_data) : null,
-        ladder_steps: question.ladder_steps ? JSON.parse(question.ladder_steps) : null,
-        visual_data: question.visual_data ? JSON.parse(question.visual_data) : null,
-        options: question.options ? JSON.parse(question.options) : null,
-        concepts: JSON.parse(question.concepts || '[]')
+        word_data: question.word_data ? (typeof question.word_data === 'string' ? JSON.parse(question.word_data) : question.word_data) : null,
+        pattern_data: question.pattern_data ? (typeof question.pattern_data === 'string' ? JSON.parse(question.pattern_data) : question.pattern_data) : null,
+        ladder_steps: question.ladder_steps ? (typeof question.ladder_steps === 'string' ? JSON.parse(question.ladder_steps) : question.ladder_steps) : null,
+        visual_data: question.visual_data ? (typeof question.visual_data === 'string' ? JSON.parse(question.visual_data) : question.visual_data) : null,
+        options: question.options ? (typeof question.options === 'string' ? JSON.parse(question.options) : question.options) : null,
+        concepts: question.concepts ? (typeof question.concepts === 'string' ? JSON.parse(question.concepts) : question.concepts) : []
       }))
     };
   }

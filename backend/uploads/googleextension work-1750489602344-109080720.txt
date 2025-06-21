@@ -1,0 +1,12 @@
+How to Install:
+
+ Open Chrome and go to chrome://extensions/
+ Enable "Developer mode" (toggle in top right)
+ Select your folder: C:\Users\jcupp\coderepos\google extension
+ The extension will appear in your Chrome toolbar
+
+How to Use:
+
+ Click the extension icon in your Chrome toolbar
+ Click the "Visit Google" button
+ Google will open in a new tab

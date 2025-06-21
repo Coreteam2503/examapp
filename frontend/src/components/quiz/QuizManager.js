@@ -11,6 +11,7 @@ const QuizManager = ({ onQuizCompleted }) => {
   const [error, setError] = useState(null);
   const [currentView, setCurrentView] = useState('list'); // 'list', 'taking', 'results'
   const [quizResults, setQuizResults] = useState(null);
+  const [quizScores, setQuizScores] = useState({}); // Store scores for each quiz
 
   useEffect(() => {
     loadQuizzes();
@@ -20,7 +21,12 @@ const QuizManager = ({ onQuizCompleted }) => {
     try {
       setLoading(true);
       const response = await apiService.quizzes.list({ page: 1, limit: 10 });
-      setQuizzes(response.data.quizzes || []);
+      const quizList = response.data.quizzes || [];
+      setQuizzes(quizList);
+      
+      // Load scores for each quiz
+      await loadQuizScores(quizList);
+      
       setError(null);
     } catch (err) {
       console.error('Error loading quizzes:', err);
@@ -28,6 +34,60 @@ const QuizManager = ({ onQuizCompleted }) => {
       setError(errorResponse.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadQuizScores = async (quizList) => {
+    try {
+      console.log('📊 Loading quiz scores for', quizList.length, 'quizzes...');
+      const scores = {};
+      
+      // Get user's attempts for all quizzes
+      const attemptsResponse = await apiService.quizAttempts.list({ limit: 100 });
+      const attempts = attemptsResponse.data.attempts || [];
+      
+      console.log('📊 Found', attempts.length, 'total attempts');
+      
+      // Group attempts by quiz_id and find best score for each quiz
+      quizList.forEach(quiz => {
+        const quizAttempts = attempts.filter(attempt => attempt.quiz_id === quiz.id);
+        console.log(`📊 Quiz ${quiz.id} (${quiz.title}): ${quizAttempts.length} attempts`);
+        
+        if (quizAttempts.length > 0) {
+          // Find best score
+          const bestAttempt = quizAttempts.reduce((best, current) => {
+            return (current.score_percentage || 0) > (best.score_percentage || 0) ? current : best;
+          });
+          
+          const bestScore = Math.round(bestAttempt.score_percentage || 0);
+          console.log(`🏆 Quiz ${quiz.id} best score: ${bestScore}% (from attempt ${bestAttempt.id})`);
+          
+          // HANGMAN DEBUG: Extra logging for game format quizzes
+          if (quiz.game_format === 'hangman') {
+            console.log(`🎯 HANGMAN QUIZ ${quiz.id} SCORE LOADING:`, {
+              quizTitle: quiz.title,
+              totalAttempts: quizAttempts.length,
+              bestScore: bestScore,
+              bestAttemptId: bestAttempt.id,
+              allScores: quizAttempts.map(a => ({ id: a.id, score: a.score_percentage, completedAt: a.completed_at }))
+            });
+          }
+          
+          scores[quiz.id] = {
+            bestScore: bestScore,
+            attempts: quizAttempts.length,
+            lastAttempt: bestAttempt.completed_at
+          };
+        } else {
+          console.log(`⚪ Quiz ${quiz.id} has no attempts yet`);
+        }
+      });
+      
+      setQuizScores(scores);
+      console.log('✅ Quiz scores loaded:', scores);
+    } catch (err) {
+      console.error('❌ Error loading quiz scores:', err);
+      // Don't fail the whole component if scores can't be loaded
     }
   };
 
@@ -64,6 +124,14 @@ const QuizManager = ({ onQuizCompleted }) => {
         const correctAnswers = results.gameResults.correctAnswers || results.gameResults.correctWords || 0;
         const totalQuestions = results.gameResults.totalLevels || results.gameResults.totalWords || results.totalQuestions || 1;
         
+        console.log('🎯 HANGMAN SCORE SUBMISSION:', {
+          quizId: selectedQuiz.id,
+          gameScore,
+          correctAnswers,
+          totalQuestions,
+          gameFormat: results.gameFormat
+        });
+        
         // Submit quiz attempt to backend with game-specific data
         const response = await quizService.submitQuizAttempt(
           selectedQuiz.id,
@@ -80,6 +148,31 @@ const QuizManager = ({ onQuizCompleted }) => {
         );
         
         console.log('Game quiz attempt submitted successfully:', response);
+        
+        // FIX #2: Immediately update quiz score in local state for instant feedback
+        const quizId = selectedQuiz.id;
+        setQuizScores(prevScores => {
+          const currentBest = prevScores[quizId]?.bestScore || 0;
+          const newBestScore = Math.max(currentBest, gameScore);
+          const newScores = {
+            ...prevScores,
+            [quizId]: {
+              bestScore: newBestScore,
+              attempts: (prevScores[quizId]?.attempts || 0) + 1,
+              lastAttempt: new Date().toISOString()
+            }
+          };
+          console.log(`🎯 SCORE UPDATE DEBUG:`, {
+            quizId,
+            gameScore,
+            currentBest,
+            newBestScore,
+            previousScores: prevScores,
+            newScores,
+            updateSuccess: newScores[quizId].bestScore === newBestScore
+          });
+          return newScores;
+        });
         
         // Store results with proper game score
         const backendResults = response.attempt || {};
@@ -128,6 +221,14 @@ const QuizManager = ({ onQuizCompleted }) => {
       if (onQuizCompleted) {
         onQuizCompleted();
       }
+      
+      // FIX #1: Add longer delay before refreshing to ensure backend has processed the submission
+      console.log('⏳ Waiting for backend to process submission before refreshing scores...');
+      setTimeout(async () => {
+        console.log('🔄 Refreshing quiz scores after completion...');
+        await loadQuizzes();
+        console.log('✅ Quiz scores refreshed');
+      }, 3000); // Wait 3 seconds for backend processing (increased from 1.5s)
     } catch (err) {
       console.error('Error submitting quiz attempt:', err);
       setError(`Failed to submit quiz: ${err.message}`);
@@ -337,7 +438,23 @@ const QuizManager = ({ onQuizCompleted }) => {
             <button onClick={() => setCurrentView('taking')} className="retake-btn">
               Retake Quiz
             </button>
-            <button onClick={goBackToList} className="done-btn">
+            <button 
+              onClick={async () => {
+                console.log('🔄 Force refreshing scores...');
+                setLoading(true);
+                await loadQuizzes();
+                setLoading(false);
+                goBackToList();
+              }} 
+              className="refresh-scores-btn"
+              title="Force refresh scores and return to quiz list"
+            >
+              🔄 Refresh Scores & Return
+            </button>
+            <button 
+              onClick={goBackToList} 
+              className="done-btn"
+            >
               Done
             </button>
           </div>
@@ -372,7 +489,19 @@ const QuizManager = ({ onQuizCompleted }) => {
     <div className="quiz-manager-container">
       <div className="quiz-list-header">
         <h1>Your Quizzes</h1>
-        <p>Select a quiz to start practicing</p>
+        <div className="header-actions">
+          <p>Select a quiz to start practicing</p>
+          <button 
+            onClick={() => {
+              console.log('🔄 Manual refresh triggered');
+              loadQuizzes();
+            }} 
+            className="refresh-btn"
+            title="Refresh scores"
+          >
+            🔄 Refresh
+          </button>
+        </div>
       </div>
 
       {quizzes.length === 0 ? (
@@ -408,18 +537,36 @@ const QuizManager = ({ onQuizCompleted }) => {
               
               <div className="quiz-card-content">
                 <div className="quiz-info">
-                <span className="quiz-questions">
-                {quiz.total_questions} questions
-                </span>
-                <span className="quiz-difficulty">
-                {quiz.difficulty}
-                </span>
-                  {quiz.game_format && quiz.game_format !== 'traditional' && (
-                  <span className="quiz-game-format">
-                    🎮 {quiz.game_format.replace('_', ' ').toUpperCase()}
-                  </span>
-                )}
-              </div>
+                  <div>
+                    <span className="quiz-questions">
+                      {quiz.total_questions} questions
+                    </span>
+                    <span className="quiz-difficulty">
+                      {quiz.difficulty}
+                    </span>
+                    {quiz.game_format && quiz.game_format !== 'traditional' && (
+                      <span className="quiz-game-format">
+                        🎮 {quiz.game_format.replace('_', ' ').toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  {quizScores[quiz.id] ? (
+                    <div className="quiz-score-info">
+                      <span className="best-score">
+                        🏆 Best: {quizScores[quiz.id].bestScore}%
+                      </span>
+                      <span className="attempts-count">
+                        📊 {quizScores[quiz.id].attempts} attempt{quizScores[quiz.id].attempts !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="quiz-score-info">
+                      <span className="no-attempts">
+                        🎯 No attempts yet
+                      </span>
+                    </div>
+                  )}
+                </div>
                 
                 <div className="quiz-meta">
                   <span className="quiz-file">
