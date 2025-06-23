@@ -319,14 +319,30 @@ class GameFormatController {
     
     switch (gameFormat) {
       case 'hangman':
-        const words = ['PROGRAMMING', 'FUNCTION', 'VARIABLE', 'ALGORITHM', 'DATABASE', 'NETWORK', 'SECURITY', 'TESTING'];
+        const words = [
+          'PROGRAMMING', 'FUNCTION', 'VARIABLE', 'ALGORITHM', 'DATABASE', 'NETWORK', 'SECURITY', 'TESTING',
+          'JAVASCRIPT', 'PYTHON', 'FRAMEWORK', 'LIBRARY', 'DEBUGGING', 'COMPILER', 'INTERFACE', 'PROTOCOL',
+          'ENCRYPTION', 'BOOLEAN', 'INTEGER', 'STRING', 'ARRAY', 'OBJECT', 'CLASS', 'METHOD', 'INHERITANCE'
+        ];
+        const categories = [
+          'Programming', 'Data Types', 'Security', 'Algorithms', 'Networks', 'Development', 'Languages', 'Concepts'
+        ];
+        const hints = [
+          'Process of creating software', 'Reusable block of code', 'Storage container for data', 'Step-by-step procedure',
+          'Organized collection of data', 'System of interconnected computers', 'Protection of digital information', 'Validation process',
+          'Popular web programming language', 'High-level programming language', 'Structured foundation for development', 'Collection of pre-written code',
+          'Process of finding and fixing errors', 'Program that translates code', 'Connection point between systems', 'Set of rules for communication',
+          'Process of encoding information', 'True or false value', 'Whole number data type', 'Sequence of characters',
+          'Ordered collection of elements', 'Data structure with properties', 'Template for creating objects', 'Function belonging to a class',
+          'Acquiring properties from parent class'
+        ];
         for (let i = 0; i < numQuestions; i++) {
           const word = words[i % words.length];
           questions.push({
             word_data: {
               word: word,
-              category: "Technology",
-              hint: `A ${word.toLowerCase()}-related programming concept`
+              category: categories[i % categories.length],
+              hint: hints[i % hints.length]
             },
             correct_answer: word,
             max_attempts: gameOptions.maxWrongGuesses || 6,
@@ -337,15 +353,33 @@ class GameFormatController {
         break;
         
       case 'knowledge_tower':
-        const themes = ['Fundamentals', 'Intermediate', 'Advanced', 'Expert', 'Master'];
+        const themes = [
+          'Fundamentals', 'Data Types', 'Control Flow', 'Functions', 'Objects', 'Algorithms', 'Data Structures',
+          'Error Handling', 'Testing', 'Design Patterns', 'Databases', 'Networks', 'Security', 'Performance',
+          'Architecture', 'APIs', 'Version Control', 'DevOps', 'Cloud Computing', 'Machine Learning',
+          'Web Development', 'Mobile Development', 'Game Development', 'Advanced Concepts', 'Best Practices'
+        ];
+        const questionTemplates = [
+          { q: "What is the primary purpose of variables?", opts: ["Store data", "Display colors", "Create sounds", "Generate numbers"], ans: "Store data" },
+          { q: "Which data type represents whole numbers?", opts: ["Integer", "String", "Boolean", "Array"], ans: "Integer" },
+          { q: "What does a for loop do?", opts: ["Repeats code", "Stores data", "Creates functions", "Deletes files"], ans: "Repeats code" },
+          { q: "What is a function?", opts: ["Reusable code block", "Data container", "Color scheme", "File type"], ans: "Reusable code block" },
+          { q: "What is an object in programming?", opts: ["Data with properties", "A color", "A number", "A file"], ans: "Data with properties" },
+          { q: "What is the purpose of algorithms?", opts: ["Solve problems step-by-step", "Store files", "Display images", "Play music"], ans: "Solve problems step-by-step" },
+          { q: "What is an array?", opts: ["Ordered list of items", "Single number", "Color value", "Text file"], ans: "Ordered list of items" },
+          { q: "What is error handling?", opts: ["Managing code failures", "Creating errors", "Deleting code", "Changing colors"], ans: "Managing code failures" },
+          { q: "What is the purpose of testing?", opts: ["Verify code works correctly", "Delete code", "Change colors", "Add music"], ans: "Verify code works correctly" },
+          { q: "What are design patterns?", opts: ["Reusable solutions to common problems", "Color schemes", "File formats", "Music notes"], ans: "Reusable solutions to common problems" }
+        ];
         for (let i = 0; i < numQuestions; i++) {
+          const template = questionTemplates[i % questionTemplates.length];
           questions.push({
             level_number: i + 1,
-            question: `Level ${i + 1}: What is a key concept in programming?`,
-            options: ["Variables store data", "Functions are colors", "Loops are shapes", "Classes are numbers"],
-            correct_answer: "Variables store data",
+            question: `Level ${i + 1}: ${template.q}`,
+            options: template.opts,
+            correct_answer: template.ans,
             level_theme: themes[i % themes.length],
-            difficulty: i < 2 ? 'easy' : i < 4 ? 'medium' : 'hard',
+            difficulty: i < 8 ? 'easy' : i < 16 ? 'medium' : 'hard',
             concepts: ["programming", "basics"]
           });
         }
@@ -353,42 +387,175 @@ class GameFormatController {
         
       case 'word_ladder':
         const ladders = [
-          { start: 'CODE', end: 'NODE', steps: ['CODE', 'COVE', 'NOVE', 'NODE'] },
-          { start: 'LOOP', end: 'POOL', steps: ['LOOP', 'LOOM', 'POOM', 'POOL'] },
-          { start: 'DATA', end: 'BASE', steps: ['DATA', 'BATA', 'BABE', 'BASE'] }
+          { start: 'CODE', end: 'NODE', steps: ['CODE', 'COVE', 'NOVE', 'NODE'], hints: ['Programming instructions', 'Small bay', 'New type', 'Network point'] },
+          { start: 'LOOP', end: 'POOL', steps: ['LOOP', 'LOOM', 'POOM', 'POOL'], hints: ['Repetition structure', 'Weaving device', 'Sound effect', 'Water collection'] },
+          { start: 'DATA', end: 'BASE', steps: ['DATA', 'BATA', 'BABE', 'BASE'], hints: ['Information', 'Shoe brand', 'Young child', 'Foundation'] },
+          { start: 'FILE', end: 'PILE', steps: ['FILE', 'FILL', 'PILL', 'PILE'], hints: ['Document', 'Complete', 'Medicine', 'Stack'] },
+          { start: 'BYTE', end: 'TYPE', steps: ['BYTE', 'BYPE', 'TYRE', 'TYPE'], hints: ['Data unit', 'Letter form', 'Wheel cover', 'Category'] },
+          { start: 'DISK', end: 'RISK', steps: ['DISK', 'DUSK', 'RUSK', 'RISK'], hints: ['Storage device', 'Evening', 'Hard biscuit', 'Danger'] },
+          { start: 'MAIL', end: 'FAIL', steps: ['MAIL', 'MAID', 'PAID', 'FAIL'], hints: ['Messages', 'Helper', 'Compensated', 'Unsuccessful'] },
+          { start: 'PORT', end: 'POST', steps: ['PORT', 'PONT', 'POST'], hints: ['Harbor', 'Bridge', 'Mail'] },
+          { start: 'SORT', end: 'PORT', steps: ['SORT', 'SPORT', 'PORT'], hints: ['Arrange', 'Game', 'Harbor'] },
+          { start: 'SAVE', end: 'WAVE', steps: ['SAVE', 'WAVE'], hints: ['Preserve', 'Ocean motion'] }
         ];
+        
+        // Add programming code fix ladders
+        const programmingLadders = [
+          {
+            type: 'programming',
+            buggyCode: 'pritn("Hello")',
+            correctCode: 'print("Hello")',
+            codeSteps: ['pritn("Hello")', 'print("Hello")'],
+            codeHints: ['Fix the typo in function name', 'Correct spelling of print']
+          },
+          {
+            type: 'programming',
+            buggyCode: 'for i in range(5)\n  print(i)',
+            correctCode: 'for i in range(5):\n    print(i)',
+            codeSteps: ['for i in range(5)\n  print(i)', 'for i in range(5):\n  print(i)', 'for i in range(5):\n    print(i)'],
+            codeHints: ['Add missing colon after range', 'Fix indentation for print statement']
+          },
+          {
+            type: 'programming',
+            buggyCode: 'x = [1,2,3\nprint(x[0])',
+            correctCode: 'x = [1,2,3]\nprint(x[0])',
+            codeSteps: ['x = [1,2,3\nprint(x[0])', 'x = [1,2,3]\nprint(x[0])'],
+            codeHints: ['Add missing closing bracket', 'Complete the list definition']
+          },
+          {
+            type: 'programming',
+            buggyCode: 'def hello()\n    return "Hi"',
+            correctCode: 'def hello():\n    return "Hi"',
+            codeSteps: ['def hello()\n    return "Hi"', 'def hello():\n    return "Hi"'],
+            codeHints: ['Add missing colon after function definition']
+          },
+          {
+            type: 'programming',
+            buggyCode: 'if x = 5:\n    print("Five")',
+            correctCode: 'if x == 5:\n    print("Five")',
+            codeSteps: ['if x = 5:\n    print("Five")', 'if x == 5:\n    print("Five")'],
+            codeHints: ['Use == for comparison instead of = for assignment']
+          }
+        ];
+        
         for (let i = 0; i < numQuestions; i++) {
-          const ladder = ladders[i % ladders.length];
-          questions.push({
-            ladder_steps: {
-              startWord: ladder.start,
-              endWord: ladder.end,
-              steps: ladder.steps,
-              hints: [`Transform ${ladder.start}`, 'Change one letter', 'Keep changing', `Reach ${ladder.end}`]
-            },
-            correct_answer: ladder.end,
-            difficulty: difficulty,
-            concepts: ["programming", "word games"]
-          });
+          // Mix regular word ladders with programming code fix ladders
+          const useProgramming = i % 2 === 1; // Every other question is programming
+          
+          if (useProgramming && i < programmingLadders.length) {
+            const progLadder = programmingLadders[i % programmingLadders.length];
+            questions.push({
+              ladder_steps: {
+                type: 'programming',
+                buggyCode: progLadder.buggyCode,
+                correctCode: progLadder.correctCode,
+                codeSteps: progLadder.codeSteps,
+                codeHints: progLadder.codeHints
+              },
+              correct_answer: progLadder.correctCode,
+              difficulty: difficulty,
+              concepts: ["programming", "debugging", "syntax"]
+            });
+          } else {
+            const ladder = ladders[i % ladders.length];
+            questions.push({
+              ladder_steps: {
+                startWord: ladder.start,
+                endWord: ladder.end,
+                steps: ladder.steps,
+                hints: ladder.hints
+              },
+              correct_answer: ladder.end,
+              difficulty: difficulty,
+              concepts: ["programming", "word games"]
+            });
+          }
         }
         break;
         
       case 'memory_grid':
+        const gridPatterns = [
+          {
+            grid: [["🔧", "💻", "📝"], ["💻", "🔧", "📝"], ["📝", "💻", "🔧"]],
+            sequence: [0, 4, 8],
+            symbols: ["🔧", "💻", "📝"]
+          },
+          {
+            grid: [["⚡", "🔒", "🌐"], ["🌐", "⚡", "🔒"], ["🔒", "🌐", "⚡"]],
+            sequence: [1, 3, 7],
+            symbols: ["⚡", "🔒", "🌐"]
+          },
+          {
+            grid: [["📊", "🗃️", "🔍"], ["🔍", "📊", "🗃️"], ["🗃️", "🔍", "📊"]],
+            sequence: [2, 5, 6],
+            symbols: ["📊", "🗃️", "🔍"]
+          },
+          {
+            grid: [["🎯", "🚀", "💡"], ["💡", "🎯", "🚀"], ["🚀", "💡", "🎯"]],
+            sequence: [0, 3, 8],
+            symbols: ["🎯", "🚀", "💡"]
+          },
+          {
+            grid: [["🔄", "📈", "⚙️"], ["⚙️", "🔄", "📈"], ["📈", "⚙️", "🔄"]],
+            sequence: [1, 4, 7],
+            symbols: ["🔄", "📈", "⚙️"]
+          }
+        ];
+        
+        // Add programming patterns for some questions
+        const programmingPatterns = [
+          {
+            type: 'programming',
+            grid: [
+              [{ type: 'CODE', content: 'for i in range(5):' }, { type: 'OUTPUT', content: '0, 1, 2, 3, 4' }],
+              [{ type: 'CODE', content: 'print("Hello")' }, { type: 'OUTPUT', content: 'Hello' }],
+              [{ type: 'CODE', content: 'x = 5 + 3' }, { type: 'OUTPUT', content: '8' }],
+              [{ type: 'CODE', content: 'len([1,2,3])' }, { type: 'OUTPUT', content: '3' }]
+            ],
+            pairs: [[0, 1], [2, 3], [4, 5], [6, 7]]
+          },
+          {
+            type: 'programming',
+            grid: [
+              [{ type: 'FUNCTION', content: 'map()' }, { type: 'DESCRIPTION', content: 'Applies function to items' }],
+              [{ type: 'FUNCTION', content: 'filter()' }, { type: 'DESCRIPTION', content: 'Filters items by condition' }],
+              [{ type: 'FUNCTION', content: 'reduce()' }, { type: 'DESCRIPTION', content: 'Reduces to single value' }],
+              [{ type: 'FUNCTION', content: 'sort()' }, { type: 'DESCRIPTION', content: 'Sorts items in order' }]
+            ],
+            pairs: [[0, 1], [2, 3], [4, 5], [6, 7]]
+          },
+          {
+            type: 'programming',
+            grid: [
+              [{ type: 'ERROR', content: 'SyntaxError' }, { type: 'CAUSE', content: 'Missing parenthesis' }],
+              [{ type: 'ERROR', content: 'TypeError' }, { type: 'CAUSE', content: 'Wrong data type' }],
+              [{ type: 'ERROR', content: 'IndexError' }, { type: 'CAUSE', content: 'Index out of range' }],
+              [{ type: 'ERROR', content: 'KeyError' }, { type: 'CAUSE', content: 'Key not found' }]
+            ],
+            pairs: [[0, 1], [2, 3], [4, 5], [6, 7]]
+          }
+        ];
+        
         for (let i = 0; i < numQuestions; i++) {
-          questions.push({
-            pattern_data: {
-              grid: [
-                ["🔧", "💻", "📝"],
-                ["💻", "🔧", "📝"],
-                ["📝", "💻", "🔧"]
-              ],
-              sequence: [0, 4, 8],
-              symbols: ["🔧", "💻", "📝"]
-            },
-            correct_answer: `[0,4,8]`,
-            difficulty: difficulty,
-            concepts: ["patterns", "memory", "programming"]
-          });
+          // Mix regular memory patterns with programming patterns
+          const useProgramming = i % 3 === 2; // Every 3rd question is programming
+          
+          if (useProgramming && i < programmingPatterns.length) {
+            questions.push({
+              pattern_data: programmingPatterns[i % programmingPatterns.length],
+              correct_answer: JSON.stringify(programmingPatterns[i % programmingPatterns.length].pairs),
+              difficulty: difficulty,
+              concepts: ["programming", "matching", "concepts"]
+            });
+          } else {
+            const pattern = gridPatterns[i % gridPatterns.length];
+            questions.push({
+              pattern_data: pattern,
+              correct_answer: JSON.stringify(pattern.sequence),
+              difficulty: difficulty,
+              concepts: ["patterns", "memory", "programming"]
+            });
+          }
         }
         break;
         

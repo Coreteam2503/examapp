@@ -10,6 +10,8 @@ const WordLadderGame = ({ gameData, onGameComplete, onAnswerChange }) => {
   const [attempts, setAttempts] = useState(0);
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [gameStarted, setGameStarted] = useState(false);
+  const [showExitConfirmation, setShowExitConfirmation] = useState(false);
+  const [gameResults, setGameResults] = useState(null);
 
   // Extract ladder data from gameData
   const ladderData = gameData?.questions?.[0]?.ladder_steps || gameData?.ladder_steps;
@@ -18,6 +20,12 @@ const WordLadderGame = ({ gameData, onGameComplete, onAnswerChange }) => {
   const solutionSteps = ladderData?.steps || [startWord, endWord];
   const hints = ladderData?.hints || ['Transform each letter one at a time'];
   const maxSteps = gameData?.game_options?.maxSteps || 8;
+
+  // Determine game mode and setup variables
+  const gameMode = ladderData?.type === 'programming' ? 'programming' : 'word';
+  const codeHints = ladderData?.codeHints || hints;
+  const codeSteps = ladderData?.codeSteps || solutionSteps;
+  const correctCode = ladderData?.correctCode || endWord;
 
   // Timer effect
   useEffect(() => {
@@ -104,30 +112,46 @@ const WordLadderGame = ({ gameData, onGameComplete, onAnswerChange }) => {
 
     // Check if completed
     if (normalizedGuess === endWord.toUpperCase()) {
+      const success = true;
+      const finalScore = calculateScore(newPath.length - 1, attempts, timeElapsed);
+      const results = {
+        success,
+        userPath: newPath,
+        attempts,
+        timeElapsed,
+        steps: newPath.length - 1,
+        score: finalScore,
+        wordsGuessed: newPath.length - 1,
+        wrongGuesses: attempts - (newPath.length - 1),
+        status: 'Completed'
+      };
+      
       setIsCompleted(true);
+      setGameResults(results);
+      
       if (onGameComplete) {
-        onGameComplete({
-          success: true,
-          userPath: newPath,
-          attempts,
-          timeElapsed,
-          steps: newPath.length - 1,
-          score: calculateScore(newPath.length - 1, attempts, timeElapsed)
-        });
+        onGameComplete(results);
       }
     } else if (newPath.length >= maxSteps) {
       // Too many steps
+      const results = {
+        success: false,
+        userPath: newPath,
+        attempts,
+        timeElapsed,
+        steps: newPath.length - 1,
+        score: 0,
+        wordsGuessed: newPath.length - 1,
+        wrongGuesses: attempts - (newPath.length - 1),
+        status: 'Failed',
+        message: 'Too many steps! Try a shorter path.'
+      };
+      
       setIsCompleted(true);
+      setGameResults(results);
+      
       if (onGameComplete) {
-        onGameComplete({
-          success: false,
-          userPath: newPath,
-          attempts,
-          timeElapsed,
-          steps: newPath.length - 1,
-          score: 0,
-          message: 'Too many steps! Try a shorter path.'
-        });
+        onGameComplete(results);
       }
     }
 
@@ -150,12 +174,44 @@ const WordLadderGame = ({ gameData, onGameComplete, onAnswerChange }) => {
     setIsCompleted(false);
     setAttempts(0);
     setShowHint(false);
+    setGameResults(null);
   };
 
   const startGame = () => {
     setGameStarted(true);
     setUserPath([startWord]);
     setCurrentGuess('');
+  };
+
+  const handleExitGame = () => {
+    setShowExitConfirmation(true);
+  };
+
+  const confirmExitGame = () => {
+    const results = {
+      success: false,
+      userPath,
+      attempts,
+      timeElapsed,
+      steps: userPath.length - 1,
+      score: 0,
+      wordsGuessed: userPath.length - 1,
+      wrongGuesses: attempts - (userPath.length - 1),
+      status: 'Exited early',
+      completed: false,
+      exitedEarly: true
+    };
+    
+    setGameResults(results);
+    setIsCompleted(true);
+    
+    if (onGameComplete) {
+      onGameComplete(results);
+    }
+  };
+
+  const cancelExitGame = () => {
+    setShowExitConfirmation(false);
   };
 
   const formatTime = (seconds) => {
@@ -168,7 +224,7 @@ const WordLadderGame = ({ gameData, onGameComplete, onAnswerChange }) => {
     return (
       <div className="word-ladder-container">
         <div className="game-intro">
-          <h2>🪜 Word Ladder Challenge</h2>
+          <h2>Word Ladder Challenge</h2>
           <div className="game-rules">
             <h3>How to Play:</h3>
             <ul>
@@ -191,11 +247,103 @@ const WordLadderGame = ({ gameData, onGameComplete, onAnswerChange }) => {
     );
   }
 
+  // Results Screen
+  if (isCompleted && gameResults) {
+    return (
+      <div className="word-ladder-container">
+        <div className="score-screen">
+          <div className="score-header">
+            <div className="game-icon">
+              <span className="icon-circle">🪜</span>
+            </div>
+            <h2 className="game-title">Word Ladder Results</h2>
+          </div>
+          
+          <div className="score-stats">
+            <div className="primary-stat">
+              <div className="stat-value">{gameResults.score}%</div>
+              <div className="stat-label">Final Score</div>
+            </div>
+            
+            <div className="secondary-stats">
+              <div className="stat-item">
+                <div className="stat-value">{gameResults.wordsGuessed}/{maxSteps - 1}</div>
+                <div className="stat-label">Words Guessed</div>
+              </div>
+              <div className="stat-item">
+                <div className="stat-value">{formatTime(gameResults.timeElapsed)}</div>
+                <div className="stat-label">Time Taken</div>
+              </div>
+              <div className="stat-item">
+                <div className="stat-value">{gameResults.wrongGuesses}/{maxSteps}</div>
+                <div className="stat-label">Wrong Guesses</div>
+              </div>
+            </div>
+            
+            <div className="status-indicator">
+              <div className={`status-badge ${gameResults.success ? 'completed' : 'survived'}`}>
+                ✓
+              </div>
+              <div className="status-text">
+                {gameResults.success ? 'Completed' : 
+                 gameResults.status === 'Exited early' ? 'Survived' : 'Survived'}
+              </div>
+              <div className="status-subtitle">
+                Word Ladder Status
+              </div>
+            </div>
+          </div>
+          
+          <div className="game-details">
+            <div className="details-header">
+              <span className="details-icon">🎮</span>
+              <span className="details-title">Game Details</span>
+            </div>
+            
+            <div className="details-content">
+              <div className="detail-row">
+                <span className="detail-label">Game Status:</span>
+                <span className="detail-value">{gameResults.status}</span>
+              </div>
+              
+              <div className="detail-row">
+                <span className="detail-label">Note:</span>
+                <span className="detail-value">
+                  {gameResults.status === 'Exited early' 
+                    ? 'You exited the game early, but your progress was saved!'
+                    : gameResults.success 
+                      ? 'Congratulations! You completed the word ladder successfully!'
+                      : gameResults.message || 'Keep practicing to improve your word ladder skills!'}
+                </span>
+              </div>
+              
+              <div className="detail-row">
+                <span className="detail-label">Performance:</span>
+                <span className="detail-value performance-note">
+                  💪 {gameResults.score >= 80 ? 'Excellent!' : 
+                   gameResults.score >= 60 ? 'Good work!' : 
+                   gameResults.score >= 40 ? 'Keep practicing!' : 
+                   'Study the patterns and try again!'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="completion-actions">
+            <button className="play-again-btn" onClick={handleReset}>
+              🔄 Play Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="word-ladder-container">
       <div className="game-header">
         <div className="game-info">
-          <h2>🪜 Word Ladder</h2>
+          <h2>Word Ladder</h2>
           <div className="goal">
             <span className="start-word">{startWord}</span>
             <span className="arrow">→</span>
@@ -215,6 +363,15 @@ const WordLadderGame = ({ gameData, onGameComplete, onAnswerChange }) => {
             <span className="stat-label">Time:</span>
             <span className="stat-value">{formatTime(timeElapsed)}</span>
           </div>
+        </div>
+        <div className="game-actions">
+          <button 
+            className="exit-game-btn"
+            onClick={handleExitGame}
+            title="Exit Game"
+          >
+            Exit Quiz
+          </button>
         </div>
       </div>
 
@@ -260,53 +417,27 @@ const WordLadderGame = ({ gameData, onGameComplete, onAnswerChange }) => {
           className="hint-btn"
           onClick={() => setShowHint(!showHint)}
         >
-          💡 {showHint ? 'Hide' : 'Show'} Hint
+          {showHint ? 'Hide' : 'Show'} Hint
         </button>
         <button 
           className="reset-btn"
           onClick={handleReset}
         >
-          🔄 Reset
+          Reset
         </button>
       </div>
 
       {showHint && (
         <div className="hint-section">
-          <h4>💡 Hint:</h4>
-          <p>{hints[Math.min(currentStep, hints.length - 1)]}</p>
-          {solutionSteps.length > 2 && (
-            <p><strong>Optimal path has {solutionSteps.length - 1} steps</strong></p>
+          <h4>Hint:</h4>
+          <p>{gameMode === 'programming' ? codeHints[Math.min(currentStep, codeHints.length - 1)] : hints[Math.min(currentStep, hints.length - 1)]}</p>
+          {(gameMode === 'programming' ? codeSteps.length > 2 : solutionSteps.length > 2) && (
+            <p><strong>Optimal solution has {gameMode === 'programming' ? codeSteps.length - 1 : solutionSteps.length - 1} steps</strong></p>
           )}
         </div>
       )}
 
-      {isCompleted && (
-        <div className="completion-message">
-          <h3>
-            {userPath[userPath.length - 1].toUpperCase() === endWord.toUpperCase() 
-              ? '🎉 Congratulations!' 
-              : '😅 Challenge Failed'
-            }
-          </h3>
-          <p>
-            {userPath[userPath.length - 1].toUpperCase() === endWord.toUpperCase()
-              ? `You completed the ladder in ${userPath.length - 1} steps with ${attempts} attempts!`
-              : 'You used too many steps. Try finding a shorter path!'
-            }
-          </p>
-          <div className="solution-hint">
-            <h4>One possible solution:</h4>
-            <div className="solution-path">
-              {solutionSteps.map((word, index) => (
-                <span key={index} className="solution-word">
-                  {word}
-                  {index < solutionSteps.length - 1 && ' → '}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 };

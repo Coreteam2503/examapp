@@ -88,11 +88,12 @@ const FileManager = () => {
       
       if (format === 'game') {
         console.log('Generating game format with options:', options);
-        // Generate game format
+        // Generate game format - ensure numQuestions is passed
         response = await apiService.games.generate({
           uploadId: selectedFileForQuiz.id,
           gameFormat: options.gameFormat,
           difficulty: options.difficulty,
+          numQuestions: options.numQuestions, // Explicitly pass numQuestions
           gameOptions: options.gameOptions
         });
         

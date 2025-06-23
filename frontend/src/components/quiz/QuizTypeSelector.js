@@ -75,12 +75,33 @@ const QuizTypeSelector = ({ onGenerateQuiz, isLoading, preSelectedFile }) => {
     }
 
     if (quizFormat === 'game') {
-      // Generate game format
+      // Generate game format - ensure numQuestions is properly passed
+      const finalGameOptions = { ...gameOptions };
+      
+      // Set numQuestions based on game type to ensure proper parameter passing
+      if (gameFormat === 'hangman') {
+        finalGameOptions.numQuestions = gameOptions.numQuestions || 5;
+      } else if (gameFormat === 'knowledge_tower') {
+        finalGameOptions.numQuestions = gameOptions.levelsCount || 5;
+        finalGameOptions.levelsCount = gameOptions.levelsCount || 5;
+      } else if (gameFormat === 'word_ladder') {
+        finalGameOptions.numQuestions = gameOptions.numQuestions || 5;
+      } else if (gameFormat === 'memory_grid') {
+        finalGameOptions.numQuestions = gameOptions.numQuestions || 5;
+      }
+      
+      console.log('🎮 Generating game with options:', {
+        gameFormat,
+        gameOptions: finalGameOptions,
+        numQuestions: finalGameOptions.numQuestions
+      });
+      
       const options = {
         uploadId: selectedFile,
         gameFormat,
         difficulty,
-        gameOptions
+        numQuestions: finalGameOptions.numQuestions, // Explicitly pass at top level
+        gameOptions: finalGameOptions
       };
       onGenerateQuiz(options, 'game');
     } else {
@@ -244,7 +265,7 @@ const QuizTypeSelector = ({ onGenerateQuiz, isLoading, preSelectedFile }) => {
                   <input
                     type="number"
                     min="1"
-                    max="10"
+                    max="25"
                     value={gameOptions.numQuestions || 5}
                     onChange={(e) => setGameOptions({...gameOptions, numQuestions: parseInt(e.target.value)})}
                     className="form-control small"
@@ -270,7 +291,7 @@ const QuizTypeSelector = ({ onGenerateQuiz, isLoading, preSelectedFile }) => {
                 <input
                   type="number"
                   min="3"
-                  max="10"
+                  max="25"
                   value={gameOptions.levelsCount}
                   onChange={(e) => setGameOptions({...gameOptions, levelsCount: parseInt(e.target.value)})}
                   className="form-control small"
@@ -279,21 +300,45 @@ const QuizTypeSelector = ({ onGenerateQuiz, isLoading, preSelectedFile }) => {
             )}
             
             {gameFormat === 'word_ladder' && (
-              <div className="form-group">
-                <label>Max Steps:</label>
-                <input
-                  type="number"
-                  min="5"
-                  max="15"
-                  value={gameOptions.maxSteps}
-                  onChange={(e) => setGameOptions({...gameOptions, maxSteps: parseInt(e.target.value)})}
-                  className="form-control small"
-                />
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Number of Ladders:</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="25"
+                    value={gameOptions.numQuestions || 5}
+                    onChange={(e) => setGameOptions({...gameOptions, numQuestions: parseInt(e.target.value)})}
+                    className="form-control small"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Max Steps per Ladder:</label>
+                  <input
+                    type="number"
+                    min="5"
+                    max="15"
+                    value={gameOptions.maxSteps}
+                    onChange={(e) => setGameOptions({...gameOptions, maxSteps: parseInt(e.target.value)})}
+                    className="form-control small"
+                  />
+                </div>
               </div>
             )}
             
             {gameFormat === 'memory_grid' && (
               <div className="form-row">
+                <div className="form-group">
+                  <label>Number of Patterns:</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="25"
+                    value={gameOptions.numQuestions || 5}
+                    onChange={(e) => setGameOptions({...gameOptions, numQuestions: parseInt(e.target.value)})}
+                    className="form-control small"
+                  />
+                </div>
                 <div className="form-group">
                   <label>Grid Size:</label>
                   <select
@@ -345,7 +390,7 @@ const QuizTypeSelector = ({ onGenerateQuiz, isLoading, preSelectedFile }) => {
               id="num-questions"
               type="number" 
               min="3" 
-              max="20" 
+              max="25" 
               value={numQuestions}
               onChange={(e) => setNumQuestions(parseInt(e.target.value))}
               className="form-control"
