@@ -2,63 +2,45 @@ import React, { useState, useEffect } from 'react';
 import './MemoryGridGame.css';
 
 const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
-  const [gameState, setGameState] = useState('intro'); // 'intro', 'memorize', 'recall', 'complete'
+  const [gameState, setGameState] = useState('intro');
   const [currentLevel, setCurrentLevel] = useState(0);
-  const [showPattern, setShowPattern] = useState(true);
-  const [userSequence, setUserSequence] = useState([]);
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
   const [timeElapsed, setTimeElapsed] = useState(0);
-  const [memoryTimer, setMemoryTimer] = useState(0);
-  const [selectedCells, setSelectedCells] = useState(new Set());
   const [matchedPairs, setMatchedPairs] = useState(new Set());
   const [firstSelection, setFirstSelection] = useState(null);
-  const [wrongMatches, setWrongMatches] = useState(0);
-  const [showExitConfirmation, setShowExitConfirmation] = useState(false);
+  const [secondSelection, setSecondSelection] = useState(null);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [showGameOverAlert, setShowGameOverAlert] = useState(false);
 
-  // Extract game data with better error handling - moved before useEffects
-  const patterns = gameData?.questions?.map(q => {
-    try {
-      return typeof q.pattern_data === 'string' ? JSON.parse(q.pattern_data) : q.pattern_data;
-    } catch (e) {
-      console.warn('Failed to parse pattern_data:', q.pattern_data);
-      return null;
-    }
-  }).filter(Boolean) || gameData?.patterns || [
+  const programmingContent = [
     {
-      grid: [
-        ["A", "B", "A", "C"],
-        ["C", "A", "B", "A"],
-        ["B", "C", "A", "B"],
-        ["A", "B", "C", "A"]
+      type: 'programming',
+      leftColumn: [
+        { content: 'str(42)' },
+        { content: 'print("Hello World")' },
+        { content: 'max([1, 5, 3])' },
+        { content: 'x = 5' },
+        { content: '"Hi" * 3' },
+        { content: 'bool(0)' }
       ],
-      sequence: [0, 5, 10, 15],
-      symbols: ["A", "B", "C"]
+      rightColumn: [
+        { content: 'Returns: False' },
+        { content: 'Outputs: 5' },
+        { content: 'Returns: 5' },
+        { content: 'Outputs: Hello World' },
+        { content: 'Result: HiHiHi' },
+        { content: 'Returns: 42' }
+      ],
+      pairs: [[0, 5], [1, 3], [2, 2], [3, 1], [4, 4], [5, 0]]
     }
   ];
 
-  const gridSize = gameData?.metadata?.gridSize || 4;
-  const memoryTime = gameData?.metadata?.memoryTime || 5;
-  
-  // Detect game mode based on pattern data structure
-  const gameMode = currentLevel < patterns.length && patterns[currentLevel]?.type === 'programming' ? 'programming' : 'memory';
-  
-  // Ensure we have a valid current pattern with fallback
-  const currentPattern = patterns[currentLevel] || patterns[0] || {
-    grid: [
-      ["A", "B", "A", "C"],
-      ["C", "A", "B", "A"],
-      ["B", "C", "A", "B"],
-      ["A", "B", "C", "A"]
-    ],
-    sequence: [0, 5, 10, 15],
-    symbols: ["A", "B", "C"]
-  };
+  const currentPattern = programmingContent[currentLevel] || programmingContent[0];
 
-  // Timer effects - ALL useEffects must come after state declarations
   useEffect(() => {
     let interval;
-    if (gameState !== 'intro' && gameState !== 'complete') {
+    if (gameState === 'playing') {
       interval = setInterval(() => {
         setTimeElapsed(prev => prev + 1);
       }, 1000);
@@ -66,269 +48,165 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
     return () => clearInterval(interval);
   }, [gameState]);
 
-  // Memory timer for showing pattern
-  useEffect(() => {
-    let interval;
-    if (gameState === 'memorize' && showPattern) {
-      setMemoryTimer(memoryTime);
-      interval = setInterval(() => {
-        setMemoryTimer(prev => {
-          if (prev <= 1) {
-            setShowPattern(false);
-            setGameState('recall');
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [gameState, showPattern, memoryTime]);
-
-  // Notify parent of answer changes
   useEffect(() => {
     if (onAnswerChange) {
       onAnswerChange({
         currentLevel,
-        userSequence,
         score,
         lives,
         timeElapsed,
-        gameState
+        gameState,
+        matchedPairs: matchedPairs.size
       });
     }
-  }, [currentLevel, userSequence, score, lives, timeElapsed, gameState, onAnswerChange]);
-
-  // Validation after ALL hooks are declared
-  if (!gameData) {
-    console.error('MemoryGridGame: gameData is required');
-    return (
-      <div className="memory-grid-container">
-        <div className="error-message">
-          Game data not available. Please try generating the game again.
-        </div>
-      </div>
-    );
-  }
+  }, [currentLevel, score, lives, timeElapsed, gameState, matchedPairs, onAnswerChange]);
 
   const startGame = () => {
-    if (gameMode === 'programming') {
-      setGameState('recall'); // Programming mode starts directly in recall
-      setShowPattern(false);
-    } else {
-      setGameState('memorize');
-      setShowPattern(true);
-    }
-    setUserSequence([]);
-    setSelectedCells(new Set());
-    setMatchedPairs(new Set());
-    setFirstSelection(null);
-    setWrongMatches(0);
+    setGameState('playing');
     setCurrentLevel(0);
     setScore(0);
     setLives(3);
     setTimeElapsed(0);
+    setMatchedPairs(new Set());
+    setFirstSelection(null);
+    setSecondSelection(null);
+    setShowFeedback(false);
+    setShowGameOverAlert(false);
   };
 
-  const handleCellClick = (index) => {
-    if (gameState !== 'recall') return;
+  const handleCardClick = (column, index) => {
+    if (gameState !== 'playing' || showFeedback) return;
     
-    if (gameMode === 'programming') {
-      handleProgrammingCellClick(index);
-    } else {
-      handleMemoryCellClick(index);
-    }
-  };
-  
-  const handleMemoryCellClick = (index) => {
-    if (selectedCells.has(index)) return;
-
-    const newSequence = [...userSequence, index];
-    const newSelected = new Set([...selectedCells, index]);
+    const cardId = `${column}-${index}`;
     
-    setUserSequence(newSequence);
-    setSelectedCells(newSelected);
-
-    // Check if sequence matches expected pattern so far
-    const expectedSequence = currentPattern?.sequence || [];
-    const isCorrectSoFar = newSequence.every((val, idx) => {
-      return idx < expectedSequence.length && val === expectedSequence[idx];
-    });
-
-    if (!isCorrectSoFar) {
-      // Wrong sequence
-      handleWrongAnswer();
-      return;
-    }
-
-    // Check if pattern is complete
-    if (newSequence.length === expectedSequence.length) {
-      handleLevelComplete();
-    }
-  };
-  
-  const handleProgrammingCellClick = (index) => {
-    if (matchedPairs.has(index)) return; // Already matched
+    if (matchedPairs.has(cardId)) return;
     
     if (firstSelection === null) {
-      // First card selection
-      setFirstSelection(index);
-    } else if (firstSelection === index) {
-      // Clicked same card, deselect
+      setFirstSelection(cardId);
+    } else if (firstSelection === cardId) {
       setFirstSelection(null);
     } else {
-      // Second card selection, check for match
-      const pairs = currentPattern?.pairs || [];
-      const isMatch = pairs.some(pair => 
-        (pair[0] === firstSelection && pair[1] === index) ||
-        (pair[1] === firstSelection && pair[0] === index)
-      );
+      setSecondSelection(cardId);
+      setShowFeedback(true);
       
-      if (isMatch) {
-        // Correct match
-        const newMatched = new Set([...matchedPairs, firstSelection, index]);
-        setMatchedPairs(newMatched);
-        setFirstSelection(null);
-        
-        // Check if all pairs are matched
-        const flatGrid = currentPattern.grid?.flat() || [];
-        if (newMatched.size === flatGrid.length) {
-          handleLevelComplete();
-        }
+      setTimeout(() => {
+        checkMatch(firstSelection, cardId);
+      }, 600);
+    }
+  };
+
+  const checkMatch = (first, second) => {
+    const [firstCol, firstIdx] = first.split('-');
+    const [secondCol, secondIdx] = second.split('-');
+    
+    if (firstCol === secondCol) {
+      handleWrongMatch();
+      return;
+    }
+    
+    const leftIdx = firstCol === 'left' ? parseInt(firstIdx) : parseInt(secondIdx);
+    const rightIdx = firstCol === 'right' ? parseInt(firstIdx) : parseInt(secondIdx);
+    
+    const isValidPair = currentPattern.pairs.some(pair => 
+      pair[0] === leftIdx && pair[1] === rightIdx
+    );
+    
+    if (isValidPair) {
+      const newMatched = new Set([...matchedPairs, first, second]);
+      setMatchedPairs(newMatched);
+      setScore(prev => prev + 100);
+      
+      const totalCards = currentPattern.leftColumn.length + currentPattern.rightColumn.length;
+      
+      if (newMatched.size === totalCards) {
+        handleLevelComplete();
       } else {
-        // Wrong match
-        const newWrongMatches = wrongMatches + 1;
-        setWrongMatches(newWrongMatches);
-        setFirstSelection(null);
-        
-        // Show wrong match feedback briefly
-        setTimeout(() => {
-          // Reset visual feedback
-        }, 500);
-        
-        if (newWrongMatches >= 3) {
-          // Game over after 3 wrong matches
-          alert('Game Over! You made 3 wrong matches.');
-          setGameState('complete');
-          if (onGameComplete) {
-            onGameComplete({
-              success: false,
-              score,
-              levels: currentLevel + 1,
-              timeElapsed,
-              wrongMatches: newWrongMatches,
-              accuracy: calculateAccuracy()
-            });
-          }
-        }
+        resetSelections();
       }
+    } else {
+      handleWrongMatch();
+    }
+  };
+
+  const handleWrongMatch = () => {
+    const newLives = lives - 1;
+    setLives(newLives);
+    
+    if (newLives <= 0) {
+      setTimeout(() => {
+        setShowGameOverAlert(true);
+      }, 1000);
+    } else {
+      setTimeout(() => {
+        resetSelections();
+      }, 1000);
     }
   };
 
   const handleLevelComplete = () => {
-    const levelScore = calculateLevelScore();
-    setScore(prev => prev + levelScore);
-
-    if (currentLevel < patterns.length - 1) {
-      // Next level
-      setTimeout(() => {
-        setCurrentLevel(prev => prev + 1);
-        const nextGameMode = patterns[currentLevel + 1]?.type === 'programming' ? 'programming' : 'memory';
-        
-        if (nextGameMode === 'programming') {
-          setGameState('recall');
-          setShowPattern(false);
-        } else {
-          setGameState('memorize');
-          setShowPattern(true);
-        }
-        
-        setUserSequence([]);
-        setSelectedCells(new Set());
-        setMatchedPairs(new Set());
-        setFirstSelection(null);
-        setWrongMatches(0);
-      }, 1000);
-    } else {
-      // Game complete
+    setTimeout(() => {
       setGameState('complete');
       if (onGameComplete) {
         onGameComplete({
           success: true,
-          score: score + levelScore,
-          levels: patterns.length,
-          timeElapsed,
-          accuracy: calculateAccuracy()
-        });
-      }
-    }
-  };
-
-  const handleWrongAnswer = () => {
-    setLives(prev => prev - 1);
-    
-    if (lives <= 1) {
-      // Game over
-      setGameState('complete');
-      if (onGameComplete) {
-        onGameComplete({
-          success: false,
           score,
-          levels: currentLevel + 1,
+          levels: programmingContent.length,
           timeElapsed,
           accuracy: calculateAccuracy()
         });
       }
-    } else {
-      // Reset current level
-      setTimeout(() => {
-        setGameState('memorize');
-        setShowPattern(true);
-        setUserSequence([]);
-        setSelectedCells(new Set());
-      }, 1000);
-    }
+    }, 1500);
   };
 
-  const calculateLevelScore = () => {
-    const baseScore = 100;
-    const timeBonus = Math.max(0, 50 - Math.floor(timeElapsed / 5));
-    const levelMultiplier = currentLevel + 1;
-    return Math.round((baseScore + timeBonus) * levelMultiplier);
+  const resetSelections = () => {
+    setFirstSelection(null);
+    setSecondSelection(null);
+    setShowFeedback(false);
   };
 
   const calculateAccuracy = () => {
-    const sequenceLength = currentPattern?.sequence?.length || 1;
-    const totalAttempts = userSequence.length + (lives < 3 ? (3 - lives) * sequenceLength : 0);
-    const correctAttempts = userSequence.filter((val, idx) => {
-      const expectedSequence = currentPattern?.sequence || [];
-      return idx < expectedSequence.length && val === expectedSequence[idx];
-    }).length;
-    return totalAttempts > 0 ? Math.round((correctAttempts / totalAttempts) * 100) : 100;
+    const wrongMatches = 3 - lives;
+    const correctMatches = matchedPairs.size / 2;
+    const totalAttempts = correctMatches + wrongMatches;
+    
+    return totalAttempts > 0 ? Math.round((correctMatches / totalAttempts) * 100) : 100;
   };
 
   const resetGame = () => {
     setGameState('intro');
     setCurrentLevel(0);
-    setShowPattern(true);
-    setUserSequence([]);
-    setSelectedCells(new Set());
-    setMatchedPairs(new Set());
-    setFirstSelection(null);
-    setWrongMatches(0);
     setScore(0);
     setLives(3);
     setTimeElapsed(0);
+    setMatchedPairs(new Set());
+    setFirstSelection(null);
+    setSecondSelection(null);
+    setShowFeedback(false);
+    setShowGameOverAlert(false);
   };
-  
-  const handleExitGame = () => {
-    setShowExitConfirmation(true);
+
+  const handleGameOverRetake = () => {
+    setShowGameOverAlert(false);
+    startGame();
   };
-  
-  const confirmExitGame = () => {
+
+  const handleGameOverExit = () => {
+    setShowGameOverAlert(false);
     setGameState('complete');
-    setShowExitConfirmation(false);
-    
+    if (onGameComplete) {
+      onGameComplete({
+        success: false,
+        score,
+        levels: currentLevel + 1,
+        timeElapsed,
+        accuracy: calculateAccuracy(),
+        reason: 'No lives remaining'
+      });
+    }
+  };
+
+  const handleExitGame = () => {
+    setGameState('complete');
     if (onGameComplete) {
       onGameComplete({
         success: false,
@@ -341,10 +219,6 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
       });
     }
   };
-  
-  const cancelExitGame = () => {
-    setShowExitConfirmation(false);
-  };
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -352,140 +226,65 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const renderGrid = () => {
-    const grid = currentPattern?.grid;
+  const renderCard = (item, column, index) => {
+    if (!item) return null;
     
-    // Ensure grid exists and is properly formatted
-    if (!grid || !Array.isArray(grid) || grid.length === 0) {
-      console.error('Invalid grid data:', grid);
-      return (
-        <div className="memory-grid error">
-          <div className="error-message">Invalid grid data</div>
-        </div>
-      );
-    }
-    
-    // Safely flatten the grid
-    let flatGrid;
-    try {
-      flatGrid = grid.flat();
-    } catch (error) {
-      console.error('Error flattening grid:', error);
-      return (
-        <div className="memory-grid error">
-          <div className="error-message">Error processing grid</div>
-        </div>
-      );
-    }
-    
-    if (!flatGrid || flatGrid.length === 0) {
-      console.error('Empty flat grid');
-      return (
-        <div className="memory-grid error">
-          <div className="error-message">Empty grid</div>
-        </div>
-      );
-    }
-    
-    if (gameMode === 'programming') {
-      return renderProgrammingGrid(flatGrid);
-    } else {
-      return renderMemoryGrid(flatGrid);
-    }
-  };
-  
-  const renderMemoryGrid = (flatGrid) => {
+    const cardId = `${column}-${index}`;
+    const isSelected = firstSelection === cardId || secondSelection === cardId;
+    const isMatched = matchedPairs.has(cardId);
+    const isClickable = !isMatched && gameState === 'playing' && !showFeedback;
+
     return (
-      <div className="memory-grid" style={{ gridTemplateColumns: `repeat(${gridSize}, 1fr)` }}>
-        {flatGrid.map((symbol, index) => {
-          const isInSequence = currentPattern.sequence.includes(index);
-          const isSelected = selectedCells.has(index);
-          const shouldHighlight = showPattern && isInSequence;
-          
-          return (
-            <div
-              key={index}
-              className={`grid-cell ${shouldHighlight ? 'highlight' : ''} ${isSelected ? 'selected' : ''} ${gameState === 'recall' ? 'clickable' : ''}`}
-              onClick={() => handleCellClick(index)}
-            >
-              {showPattern || isSelected ? symbol : '?'}
-            </div>
-          );
-        })}
+      <div
+        key={cardId}
+        className={`memory-card ${
+          isMatched ? 'matched' : ''
+        } ${
+          isSelected ? 'selected' : ''
+        } ${
+          isClickable ? 'clickable' : ''
+        }`}
+        onClick={() => isClickable && handleCardClick(column, index)}
+      >
+        <div className="card-text">{item.content}</div>
       </div>
     );
   };
-  
-  const renderProgrammingGrid = (flatGrid) => {
-    return (
-      <div className="programming-grid" style={{ gridTemplateColumns: `repeat(${Math.ceil(Math.sqrt(flatGrid.length))}, 1fr)` }}>
-        {flatGrid.map((item, index) => {
-          const isMatched = matchedPairs.has(index);
-          const isSelected = firstSelection === index;
-          const isClickable = !isMatched && gameState === 'recall';
-          
-          return (
-            <div
-              key={index}
-              className={`programming-card ${
-                isMatched ? 'matched' : ''
-              } ${
-                isSelected ? 'selected' : ''
-              } ${
-                isClickable ? 'clickable' : ''
-              }`}
-              onClick={() => isClickable && handleCellClick(index)}
-            >
-              <div className="card-content">
-                {typeof item === 'object' ? (
-                  <>
-                    <div className="card-type">{item.type}</div>
-                    <div className="card-text">{item.content}</div>
-                  </>
-                ) : (
-                  <div className="card-text">{item}</div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
+
+  const renderLives = () => {
+    const hearts = [];
+    for (let i = 0; i < 3; i++) {
+      if (i < lives) {
+        hearts.push(<span key={i} style={{color: '#e74c3c'}}>&hearts;</span>);
+      } else {
+        hearts.push(<span key={i} style={{color: '#bdc3c7'}}>&hearts;</span>);
+      }
+    }
+    return hearts;
   };
 
   if (gameState === 'intro') {
     return (
       <div className="memory-grid-container">
         <div className="game-intro">
-          <h2>Brain {gameMode === 'programming' ? 'Programming' : 'Memory'} Grid Challenge</h2>
+          <h2>Programming Memory Grid Challenge</h2>
           <div className="game-rules">
             <h3>How to Play:</h3>
-            {gameMode === 'programming' ? (
-              <ul>
-                <li>Match programming <strong>code snippets</strong> with their <strong>outputs</strong> or <strong>descriptions</strong></li>
-                <li>Click two cards to see if they form a correct pair</li>
-                <li>You have <strong>3 lives</strong> - wrong matches cost a life</li>
-                <li>After <strong>3 wrong matches</strong>, the game ends</li>
-                <li>Match all pairs to complete the level</li>
-              </ul>
-            ) : (
-              <ul>
-                <li>Study the pattern of highlighted symbols for {memoryTime} seconds</li>
-                <li>When the timer ends, click the cells in the <strong>correct sequence</strong></li>
-                <li>Remember both the <strong>symbols</strong> and their <strong>order</strong></li>
-                <li>You have <strong>3 lives</strong> - make them count!</li>
-                <li>Complete all levels to win</li>
-              </ul>
-            )}
+            <ul>
+              <li>Match programming code snippets with their outputs or corrected versions</li>
+              <li>Click one card from the left column and one from the right column</li>
+              <li>You have 3 lives - wrong matches cost a life</li>
+              <li>After 3 wrong matches, the game ends</li>
+              <li>Match all pairs to complete each level</li>
+            </ul>
           </div>
           <div className="game-preview">
-            <p>Grid Size: <strong>{gameMode === 'programming' ? 'Variable' : `${gridSize} × ${gridSize}`}</strong></p>
-            {gameMode !== 'programming' && <p>Memory Time: <strong>{memoryTime} seconds</strong></p>}
-            <p>Levels: <strong>{patterns.length}</strong></p>
-            <p>Mode: <strong>{gameMode === 'programming' ? 'Programming Matching' : 'Memory Sequence'}</strong></p>
+            <p>Total Levels: <strong>{programmingContent.length}</strong></p>
+            <p>Lives: <strong>3</strong></p>
+            <p>Challenge: <strong>Programming Code Matching</strong></p>
           </div>
           <button className="start-game-btn" onClick={startGame}>
-            Start {gameMode === 'programming' ? 'Programming' : 'Memory'} Challenge
+            Start Programming Challenge
           </button>
         </div>
       </div>
@@ -494,25 +293,24 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
 
   if (gameState === 'complete') {
     const success = lives > 0;
-    const exitedEarly = userSequence.length === 0 && currentLevel === 0;
-    const levelsCompleted = currentLevel + (success ? 1 : 0);
+    const levelsCompleted = success ? programmingContent.length : currentLevel + 1;
     const finalScore = calculateAccuracy();
     
     return (
       <div className="memory-grid-container">
-        <div className="tower-results">
+        <div className="results-screen">
           <div className="results-header">
-            <div className="game-icon">🧠</div>
-            <h2>Memory Grid Results</h2>
+            <div className="game-icon">&#x1F4BB;</div>
+            <h2>Programming Memory Grid Results</h2>
           </div>
           
           <div className="results-stats">
             <div className="stat-item">
               <div className="stat-value">{finalScore}%</div>
-              <div className="stat-label">Final Score</div>
+              <div className="stat-label">Accuracy</div>
             </div>
             <div className="stat-item">
-              <div className="stat-value">{levelsCompleted}/{patterns.length}</div>
+              <div className="stat-value">{levelsCompleted}/{programmingContent.length}</div>
               <div className="stat-label">Levels Completed</div>
             </div>
             <div className="stat-item">
@@ -520,44 +318,8 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
               <div className="stat-label">Time Taken</div>
             </div>
             <div className="stat-item">
-              <div className="stat-value">{currentLevel + 1}/{patterns.length}</div>
-              <div className="stat-label">Highest Level</div>
-            </div>
-          </div>
-
-          <div className="game-details">
-            <div className="game-details-header">
-              <div className="details-icon">🧠</div>
-              <h3>Grid Details</h3>
-            </div>
-            <div className="details-content">
-              <div className="detail-row">
-                <span className="detail-label">Grid Status:</span>
-                <span className="detail-value">
-                  {exitedEarly ? 'Challenge in progress' : 
-                   success ? 'Challenge completed' : 'Challenge failed'}
-                </span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Highest Level:</span>
-                <span className="detail-value">Level {currentLevel + 1} of {patterns.length}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Note:</span>
-                <span className="detail-value">
-                  {exitedEarly 
-                    ? 'You exited the memory grid challenge early, but your progress was saved!'
-                    : success 
-                      ? 'Great job completing the memory challenge!' 
-                      : 'Keep practicing to improve your memory skills!'}
-                </span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Performance:</span>
-                <span className="detail-value">
-                  💪 {finalScore >= 80 ? 'Keep climbing!' : 'Keep practicing!'}
-                </span>
-              </div>
+              <div className="stat-value">{score}</div>
+              <div className="stat-label">Final Score</div>
             </div>
           </div>
 
@@ -566,50 +328,12 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
               Retake Quiz
             </button>
             <button 
-              className="refresh-btn"
-              onClick={() => {
-                console.log('Memory Grid: Refresh Scores & Return clicked');
-                // Navigate directly to quizzes tab
-                window.location.href = '/dashboard';
-                // Force quizzes tab to be active after navigation
-                setTimeout(() => {
-                  console.log('Memory Grid: Setting quizzes tab active');
-                  // Try multiple methods to ensure quizzes tab is activated
-                  const quizzesBtn = document.querySelector('button[class*="nav-btn"]:nth-child(4)');
-                  if (quizzesBtn) {
-                    quizzesBtn.click();
-                  }
-                  // Also dispatch the custom event
-                  window.dispatchEvent(new CustomEvent('navigateToQuizzes'));
-                  // Force hash navigation as backup
-                  window.location.hash = '#quizzes';
-                }, 200);
-              }}
-            >
-              🗘 Refresh Scores & Return
-            </button>
-            <button 
               className="done-btn" 
               onClick={() => {
-                console.log('Memory Grid: Done button clicked');
-                // Navigate directly to quizzes tab
                 window.location.href = '/dashboard';
-                // Force quizzes tab to be active after navigation
-                setTimeout(() => {
-                  console.log('Memory Grid: Setting quizzes tab active');
-                  // Try multiple methods to ensure quizzes tab is activated
-                  const quizzesBtn = document.querySelector('button[class*="nav-btn"]:nth-child(4)');
-                  if (quizzesBtn) {
-                    quizzesBtn.click();
-                  }
-                  // Also dispatch the custom event
-                  window.dispatchEvent(new CustomEvent('navigateToQuizzes'));
-                  // Force hash navigation as backup
-                  window.location.hash = '#quizzes';
-                }, 200);
               }}
             >
-              Done
+              Back to Dashboard
             </button>
           </div>
         </div>
@@ -617,13 +341,55 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
     );
   }
 
+  // Game Over Alert Component
+  const GameOverAlert = () => {
+    if (!showGameOverAlert) return null;
+
+    return (
+      <div className="game-over-overlay">
+        <div className="game-over-dialog">
+          <div className="game-over-header">
+            <div className="game-over-icon">&#x274C;</div>
+            <h3>Game Over</h3>
+          </div>
+          <div className="game-over-content">
+            <p>You've used all 3 lives! Would you like to try again or exit to the score screen?</p>
+            <div className="game-over-stats">
+              <div className="stat-row">
+                <span className="stat-label">Score:</span>
+                <span className="stat-value">{score}</span>
+              </div>
+              <div className="stat-row">
+                <span className="stat-label">Time:</span>
+                <span className="stat-value">{formatTime(timeElapsed)}</span>
+              </div>
+              <div className="stat-row">
+                <span className="stat-label">Matches:</span>
+                <span className="stat-value">{matchedPairs.size / 2}</span>
+              </div>
+            </div>
+          </div>
+          <div className="game-over-actions">
+            <button className="retake-game-btn" onClick={handleGameOverRetake}>
+              &#x1F501; Retake Quiz
+            </button>
+            <button className="exit-to-score-btn" onClick={handleGameOverExit}>
+              &#x1F6AA; Exit
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="memory-grid-container">
+      <GameOverAlert />
       <div className="game-header">
         <div className="game-info">
-          <h2>Brain {gameMode === 'programming' ? 'Programming' : 'Memory'} Grid</h2>
+          <h2>Programming Memory Grid</h2>
           <div className="level-info">
-            Level {currentLevel + 1} of {patterns.length}
+            Level {currentLevel + 1} of {programmingContent.length}
           </div>
         </div>
         <div className="game-stats">
@@ -631,19 +397,12 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
             <span className="stat-label">Score:</span>
             <span className="stat-value">{score}</span>
           </div>
-          {gameMode === 'programming' ? (
-            <div className="stat">
-              <span className="stat-label">Wrong Matches:</span>
-              <span className="stat-value">{wrongMatches}/3</span>
-            </div>
-          ) : (
-            <div className="stat">
-              <span className="stat-label">Lives:</span>
-              <span className="stat-value">
-                {'♥'.repeat(lives)}{'♡'.repeat(3 - lives)}
-              </span>
-            </div>
-          )}
+          <div className="stat">
+            <span className="stat-label">Lives:</span>
+            <span className="stat-value">
+              {renderLives()}
+            </span>
+          </div>
           <div className="stat">
             <span className="stat-label">Time:</span>
             <span className="stat-value">{formatTime(timeElapsed)}</span>
@@ -660,130 +419,44 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
         </div>
       </div>
 
-      <div className="game-content">
-        {gameState === 'memorize' && gameMode !== 'programming' && (
-          <div className="memorize-phase">
-            <div className="phase-header">
-              <h3>Memorize the Pattern</h3>
-              <div className="countdown-timer">
-                <div className="timer-circle">
-                  <span className="timer-text">{memoryTimer}</span>
-                </div>
-                <p>Study the highlighted sequence!</p>
-              </div>
-            </div>
+      <div className="main-game-area">
+        <div className="column-headers">
+          <div className="column-header left-header">
+            <span className="header-icon">&#x1F4BB;</span>
+            <span className="header-text">Code Snippets</span>
           </div>
-        )}
-
-        {gameState === 'recall' && (
-          <div className="recall-phase">
-            <div className="phase-header">
-              {gameMode === 'programming' ? (
-                <>
-                  <h3>Match Programming Pairs</h3>
-                  <div className="programming-progress">
-                    <p>Match code with output/description: {matchedPairs.size/2}/{(currentPattern.grid?.flat().length || 0)/2} pairs</p>
-                    <div className="progress-bar">
-                      <div 
-                        className="progress-fill"
-                        style={{ width: `${((matchedPairs.size/2) / ((currentPattern.grid?.flat().length || 0)/2)) * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <h3>Recall the Sequence</h3>
-                  <div className="sequence-progress">
-                    <p>Click the cells in order: {userSequence.length}/{currentPattern.sequence.length}</p>
-                    <div className="progress-bar">
-                      <div 
-                        className="progress-fill"
-                        style={{ width: `${(userSequence.length / currentPattern.sequence.length) * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
+          <div className="column-header right-header">
+            <span className="header-icon">&#x1F4CB;</span>
+            <span className="header-text">Outputs / Solutions</span>
           </div>
-        )}
-
-        <div className="grid-container">
-          {renderGrid()}
         </div>
 
-        {gameMode !== 'programming' && (
-          <div className="sequence-display">
-            <h4>Your Sequence:</h4>
-            <div className="sequence-cells">
-              {userSequence.map((index, pos) => {
-                const grid = currentPattern?.grid;
-                let symbol = '?';
-                
-                if (grid && Array.isArray(grid)) {
-                  try {
-                    const flatGrid = grid.flat();
-                    symbol = flatGrid[index] || '?';
-                  } catch (error) {
-                    console.error('Error accessing grid symbol:', error);
-                    symbol = '?';
-                  }
-                }
-                
-                const isCorrect = currentPattern?.sequence && index === currentPattern.sequence[pos];
-                return (
-                  <div key={pos} className={`sequence-cell ${isCorrect ? 'correct' : 'incorrect'}`}>
-                    {symbol}
-                  </div>
-                );
-              })}
-              {userSequence.length < (currentPattern?.sequence?.length || 0) && (
-                <div className="sequence-cell next">?</div>
+        <div className="game-grid">
+          <div className="left-column">
+            <div className="cards-container">
+              {currentPattern.leftColumn.map((item, index) => 
+                renderCard(item, 'left', index)
               )}
             </div>
           </div>
-        )}
+
+          <div className="vertical-divider"></div>
+
+          <div className="right-column">
+            <div className="cards-container">
+              {currentPattern.rightColumn.map((item, index) => 
+                renderCard(item, 'right', index)
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="tip-container">
+          <div className="tip-box">
+            &#x1F4A1; <strong>Tip:</strong> Match items from the left column with their corresponding answers in the right column!
+          </div>
+        </div>
       </div>
-      
-      {/* Exit Confirmation Dialog */}
-      {showExitConfirmation && (
-        <div className="exit-confirmation-overlay">
-          <div className="exit-confirmation-dialog">
-            <div className="exit-confirmation-content">
-              <h3>🚨 Exit Memory Grid Challenge?</h3>
-              <p>Are you sure you want to exit the Memory Grid game?</p>
-              <div className="exit-current-progress">
-                <p><strong>Current Progress:</strong></p>
-                <ul>
-                  <li>Current Level: {currentLevel + 1}/{patterns.length}</li>
-                  <li>Levels completed: {currentLevel}</li>
-                  <li>Time elapsed: {formatTime(timeElapsed)}</li>
-                  <li>Current score: {calculateAccuracy()}%</li>
-                </ul>
-                <p className="exit-warning">
-                  ⚠️ Your progress will be saved, but the quiz will be marked as incomplete.
-                </p>
-              </div>
-              <div className="exit-confirmation-actions">
-                <button 
-                  className="exit-cancel-btn"
-                  onClick={cancelExitGame}
-                >
-                  ❌ Cancel
-                </button>
-                <button 
-                  className="exit-confirm-btn"
-                  onClick={confirmExitGame}
-                >
-                  🚨 Exit Quiz
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
     </div>
   );
 };

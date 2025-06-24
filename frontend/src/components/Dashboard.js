@@ -16,7 +16,7 @@ const Dashboard = () => {
   const { user, isAuthenticated, loading } = useAuth();
   const dispatch = useAuthDispatch();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('quizzes'); // Changed default from 'overview' to 'quizzes'
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dashboardRefreshTrigger, setDashboardRefreshTrigger] = useState(0);
 
@@ -144,12 +144,6 @@ const Dashboard = () => {
       <nav className={`dashboard-nav ${mobileMenuOpen ? 'mobile-open' : ''}`}>
         <div className="nav-content">
           <button 
-            className={`nav-btn ${activeTab === 'overview' ? 'active' : ''}`}
-            onClick={() => { setActiveTab('overview'); setMobileMenuOpen(false); }}
-          >
-            Overview
-          </button>
-          <button 
             className={`nav-btn ${activeTab === 'upload' ? 'active' : ''}`}
             onClick={() => { setActiveTab('upload'); setMobileMenuOpen(false); }}
           >
@@ -165,60 +159,13 @@ const Dashboard = () => {
             className={`nav-btn ${activeTab === 'quizzes' ? 'active' : ''}`}
             onClick={() => { setActiveTab('quizzes'); setMobileMenuOpen(false); }}
           >
-            Quizzes
+            Your Quizzes
           </button>
         </div>
       </nav>
 
       <main className="dashboard-main">
         <div className="dashboard-content">
-          {activeTab === 'overview' && (
-            <div className="overview-section">
-              <div className="welcome-banner">
-                <div className="welcome-content">
-                  <h2>Welcome back, {user?.email?.split('@')[0]}!</h2>
-                  <p>Ready to continue your learning journey? Let's see how you're doing.</p>
-                </div>
-              </div>
-
-              {/* Main dashboard content with new components */}
-              <div className="dashboard-grid">
-                <div className="dashboard-main-content">
-                  <ProgressTracker />
-                  <RecentQuizzes onTakeQuiz={handleTakeQuiz} refreshTrigger={dashboardRefreshTrigger} />
-                </div>
-                
-                <div className="dashboard-sidebar-content">
-                  <QuickActions setActiveTab={setActiveTab} user={user} />
-                  <div className="user-summary-card">
-                    <h3>Account Summary</h3>
-                    <div className="summary-details">
-                      <div className="summary-item">
-                        <span className="summary-label">Email:</span>
-                        <span className="summary-value">{user?.email}</span>
-                      </div>
-                      <div className="summary-item">
-                        <span className="summary-label">Role:</span>
-                        <span className="summary-value">{user?.role}</span>
-                      </div>
-                      <div className="summary-item">
-                        <span className="summary-label">Member since:</span>
-                        <span className="summary-value">
-                          {new Date(user?.created_at || Date.now()).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Performance stats section */}
-              <div className="analytics-section">
-                <PerformanceStats />
-              </div>
-            </div>
-          )}
-
           {activeTab === 'upload' && (
             <div className="tab-content">
               <div className="tab-header">
@@ -242,7 +189,7 @@ const Dashboard = () => {
           {activeTab === 'quizzes' && (
             <div className="tab-content">
               <div className="tab-header">
-                <h2>Quiz Center</h2>
+                <h2>Your Quizzes</h2>
                 <p>Take quizzes based on your uploaded content and track your progress.</p>
               </div>
               <QuizManager onQuizCompleted={handleQuizCompleted} />

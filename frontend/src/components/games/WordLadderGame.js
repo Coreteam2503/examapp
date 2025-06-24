@@ -326,13 +326,8 @@ const WordLadderGame = ({ gameData, onGameComplete, onAnswerChange }) => {
               className="refresh-btn"
               onClick={() => {
                 console.log('Word Ladder: Refresh Scores & Return clicked');
-                // Navigate to dashboard and trigger quizzes tab
+                // Navigate directly to dashboard (now defaults to quizzes)
                 window.location.href = '/dashboard';
-                // Also dispatch the event for immediate tab switching if already on dashboard
-                setTimeout(() => {
-                  console.log('Word Ladder: Dispatching navigateToQuizzes event');
-                  window.dispatchEvent(new CustomEvent('navigateToQuizzes'));
-                }, 100);
               }}
             >
               🗘 Refresh Scores & Return
@@ -341,13 +336,8 @@ const WordLadderGame = ({ gameData, onGameComplete, onAnswerChange }) => {
               className="done-btn" 
               onClick={() => {
                 console.log('Word Ladder: Done button clicked');
-                // Navigate to dashboard and trigger quizzes tab
+                // Navigate directly to dashboard (now defaults to quizzes)
                 window.location.href = '/dashboard';
-                // Also dispatch the event for immediate tab switching if already on dashboard
-                setTimeout(() => {
-                  console.log('Word Ladder: Dispatching navigateToQuizzes event');
-                  window.dispatchEvent(new CustomEvent('navigateToQuizzes'));
-                }, 100);
               }}
             >
               Done
