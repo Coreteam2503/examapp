@@ -204,6 +204,7 @@ const WordLadderGame = ({ gameData, onGameComplete, onAnswerChange }) => {
     
     setGameResults(results);
     setIsCompleted(true);
+    setShowExitConfirmation(false);
     
     if (onGameComplete) {
       onGameComplete(results);
@@ -249,89 +250,107 @@ const WordLadderGame = ({ gameData, onGameComplete, onAnswerChange }) => {
 
   // Results Screen
   if (isCompleted && gameResults) {
+    const finalScore = gameResults.score;
+    const wordsCompleted = gameResults.wordsGuessed;
+    const isSuccessful = gameResults.success;
+    
     return (
       <div className="word-ladder-container">
-        <div className="score-screen">
-          <div className="score-header">
-            <div className="game-icon">
-              <span className="icon-circle">🪜</span>
-            </div>
-            <h2 className="game-title">Word Ladder Results</h2>
+        <div className="tower-results">
+          <div className="results-header">
+            <div className="game-icon">🪜</div>
+            <h2>Word Ladder Results</h2>
           </div>
           
-          <div className="score-stats">
-            <div className="primary-stat">
-              <div className="stat-value">{gameResults.score}%</div>
+          <div className="results-stats">
+            <div className="stat-item">
+              <div className="stat-value">{finalScore}%</div>
               <div className="stat-label">Final Score</div>
             </div>
-            
-            <div className="secondary-stats">
-              <div className="stat-item">
-                <div className="stat-value">{gameResults.wordsGuessed}/{maxSteps - 1}</div>
-                <div className="stat-label">Words Guessed</div>
-              </div>
-              <div className="stat-item">
-                <div className="stat-value">{formatTime(gameResults.timeElapsed)}</div>
-                <div className="stat-label">Time Taken</div>
-              </div>
-              <div className="stat-item">
-                <div className="stat-value">{gameResults.wrongGuesses}/{maxSteps}</div>
-                <div className="stat-label">Wrong Guesses</div>
-              </div>
+            <div className="stat-item">
+              <div className="stat-value">{wordsCompleted}/{maxSteps - 1}</div>
+              <div className="stat-label">Words Guessed</div>
             </div>
-            
-            <div className="status-indicator">
-              <div className={`status-badge ${gameResults.success ? 'completed' : 'survived'}`}>
-                ✓
-              </div>
-              <div className="status-text">
-                {gameResults.success ? 'Completed' : 
-                 gameResults.status === 'Exited early' ? 'Survived' : 'Survived'}
-              </div>
-              <div className="status-subtitle">
-                Word Ladder Status
-              </div>
+            <div className="stat-item">
+              <div className="stat-value">{formatTime(gameResults.timeElapsed)}</div>
+              <div className="stat-label">Time Taken</div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-value">{gameResults.steps}/{maxSteps - 1}</div>
+              <div className="stat-label">Highest Step</div>
             </div>
           </div>
           
           <div className="game-details">
-            <div className="details-header">
-              <span className="details-icon">🎮</span>
-              <span className="details-title">Game Details</span>
+            <div className="game-details-header">
+              <div className="details-icon">🪜</div>
+              <h3>Ladder Details</h3>
             </div>
             
             <div className="details-content">
               <div className="detail-row">
-                <span className="detail-label">Game Status:</span>
-                <span className="detail-value">{gameResults.status}</span>
+                <span className="detail-label">Ladder Status:</span>
+                <span className="detail-value">
+                  {gameResults.status === 'Exited early' ? 'Challenge in progress' :
+                   isSuccessful ? 'Challenge completed' : 'Challenge failed'}
+                </span>
               </div>
-              
+              <div className="detail-row">
+                <span className="detail-label">Best Steps:</span>
+                <span className="detail-value">Step {gameResults.steps} of {maxSteps - 1}</span>
+              </div>
               <div className="detail-row">
                 <span className="detail-label">Note:</span>
                 <span className="detail-value">
                   {gameResults.status === 'Exited early' 
-                    ? 'You exited the game early, but your progress was saved!'
-                    : gameResults.success 
+                    ? 'You exited the word ladder challenge early, but your progress was saved!'
+                    : isSuccessful 
                       ? 'Congratulations! You completed the word ladder successfully!'
                       : gameResults.message || 'Keep practicing to improve your word ladder skills!'}
                 </span>
               </div>
-              
               <div className="detail-row">
                 <span className="detail-label">Performance:</span>
-                <span className="detail-value performance-note">
-                  💪 {gameResults.score >= 80 ? 'Excellent!' : 
-                   gameResults.score >= 60 ? 'Good work!' : 
-                   gameResults.score >= 40 ? 'Keep practicing!' : 
-                   'Study the patterns and try again!'}
+                <span className="detail-value">
+                  💪 {finalScore >= 80 ? 'Keep climbing!' : 'Keep practicing!'}
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="completion-actions">
-            <button className="play-again-btn" onClick={handleReset}>
-              🔄 Play Again
+          <div className="results-actions">
+            <button className="retake-btn" onClick={handleReset}>
+              Retake Quiz
+            </button>
+            <button 
+              className="refresh-btn"
+              onClick={() => {
+                console.log('Word Ladder: Refresh Scores & Return clicked');
+                // Navigate to dashboard and trigger quizzes tab
+                window.location.href = '/dashboard';
+                // Also dispatch the event for immediate tab switching if already on dashboard
+                setTimeout(() => {
+                  console.log('Word Ladder: Dispatching navigateToQuizzes event');
+                  window.dispatchEvent(new CustomEvent('navigateToQuizzes'));
+                }, 100);
+              }}
+            >
+              🗘 Refresh Scores & Return
+            </button>
+            <button 
+              className="done-btn" 
+              onClick={() => {
+                console.log('Word Ladder: Done button clicked');
+                // Navigate to dashboard and trigger quizzes tab
+                window.location.href = '/dashboard';
+                // Also dispatch the event for immediate tab switching if already on dashboard
+                setTimeout(() => {
+                  console.log('Word Ladder: Dispatching navigateToQuizzes event');
+                  window.dispatchEvent(new CustomEvent('navigateToQuizzes'));
+                }, 100);
+              }}
+            >
+              Done
             </button>
           </div>
         </div>
@@ -436,7 +455,44 @@ const WordLadderGame = ({ gameData, onGameComplete, onAnswerChange }) => {
           )}
         </div>
       )}
-
+      
+      {/* Exit Confirmation Dialog */}
+      {showExitConfirmation && (
+        <div className="exit-confirmation-overlay">
+          <div className="exit-confirmation-dialog">
+            <div className="exit-confirmation-content">
+              <h3>🚨 Exit Word Ladder Challenge?</h3>
+              <p>Are you sure you want to exit the Word Ladder game?</p>
+              <div className="exit-current-progress">
+                <p><strong>Current Progress:</strong></p>
+                <ul>
+                  <li>Steps taken: {userPath.length - 1}/{maxSteps - 1}</li>
+                  <li>Attempts: {attempts}</li>
+                  <li>Time elapsed: {formatTime(timeElapsed)}</li>
+                  <li>Current word: {userPath[userPath.length - 1] || 'None'}</li>
+                </ul>
+                <p className="exit-warning">
+                  ⚠️ Your progress will be saved, but the quiz will be marked as incomplete.
+                </p>
+              </div>
+              <div className="exit-confirmation-actions">
+                <button 
+                  className="exit-cancel-btn"
+                  onClick={cancelExitGame}
+                >
+                  ❌ Cancel
+                </button>
+                <button 
+                  className="exit-confirm-btn"
+                  onClick={confirmExitGame}
+                >
+                  🚨 Exit Quiz
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

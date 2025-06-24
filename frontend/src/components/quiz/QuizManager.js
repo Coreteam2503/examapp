@@ -124,7 +124,7 @@ const QuizManager = ({ onQuizCompleted }) => {
         const correctAnswers = results.gameResults.correctAnswers || results.gameResults.correctWords || 0;
         const totalQuestions = results.gameResults.totalLevels || results.gameResults.totalWords || results.totalQuestions || 1;
         
-        console.log('🎯 HANGMAN SCORE SUBMISSION:', {
+        console.log('🎯 GAME SCORE SUBMISSION:', {
           quizId: selectedQuiz.id,
           gameScore,
           correctAnswers,
@@ -186,6 +186,17 @@ const QuizManager = ({ onQuizCompleted }) => {
           gameResults: results.gameResults,
           isGameFormat: true
         });
+        
+        // IMPORTANT: For Memory Grid and Word Ladder games, DON'T switch to results view
+        // Let the games display their own results screens
+        if (results.gameFormat === 'memory_grid' || results.gameFormat === 'word_ladder') {
+          console.log(`🎮 ${results.gameFormat} completed - staying in game view to show game results`);
+          // Don't change currentView, let the game show its own results
+          // The game will handle displaying its own results screen
+        } else {
+          // For other games (like Hangman, Knowledge Tower), show QuizManager results
+          setCurrentView('results');
+        }
       } else {
         // Traditional quiz format
         console.log('Submitting traditional quiz attempt:', {
@@ -212,9 +223,10 @@ const QuizManager = ({ onQuizCompleted }) => {
           correctAnswers: backendResults.correct_answers || 0,
           totalQuestions: backendResults.total_questions || results.totalQuestions
         });
+        
+        setCurrentView('results');
       }
       
-      setCurrentView('results');
       setError(null);
       
       // Notify parent component that quiz was completed
@@ -242,10 +254,15 @@ const QuizManager = ({ onQuizCompleted }) => {
           correctAnswers: results.gameResults.correctAnswers || results.gameResults.correctWords || 0,
           totalQuestions: results.gameResults.totalLevels || results.gameResults.totalWords || results.totalQuestions || 1
         });
+        
+        // For Memory Grid and Word Ladder, don't switch to QuizManager results view
+        if (results.gameFormat !== 'memory_grid' && results.gameFormat !== 'word_ladder') {
+          setCurrentView('results');
+        }
       } else {
         setQuizResults(results);
+        setCurrentView('results');
       }
-      setCurrentView('results');
     } finally {
       setLoading(false);
     }

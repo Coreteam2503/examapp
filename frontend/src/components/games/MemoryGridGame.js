@@ -326,15 +326,13 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
   };
   
   const confirmExitGame = () => {
-    // Calculate final results from current progress
-    const finalScore = score;
     setGameState('complete');
     setShowExitConfirmation(false);
     
     if (onGameComplete) {
       onGameComplete({
         success: false,
-        score: finalScore,
+        score,
         levels: currentLevel + 1,
         timeElapsed,
         completed: false,
@@ -497,85 +495,121 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
   if (gameState === 'complete') {
     const success = lives > 0;
     const exitedEarly = userSequence.length === 0 && currentLevel === 0;
+    const levelsCompleted = currentLevel + (success ? 1 : 0);
+    const finalScore = calculateAccuracy();
+    
     return (
       <div className="memory-grid-container">
-        <div className="score-screen">
-          <div className="score-header">
-            <div className="game-icon">
-              <span className="icon-circle">🧠</span>
-            </div>
-            <h2 className="game-title">Memory Grid Results</h2>
+        <div className="tower-results">
+          <div className="results-header">
+            <div className="game-icon">🧠</div>
+            <h2>Memory Grid Results</h2>
           </div>
           
-          <div className="score-stats">
-            <div className="primary-stat">
-              <div className="stat-value">{calculateAccuracy()}%</div>
+          <div className="results-stats">
+            <div className="stat-item">
+              <div className="stat-value">{finalScore}%</div>
               <div className="stat-label">Final Score</div>
             </div>
-            
-            <div className="secondary-stats">
-              <div className="stat-item">
-                <div className="stat-value">{userSequence.length}/{patterns[currentLevel]?.sequence?.length || 0}</div>
-                <div className="stat-label">Patterns Completed</div>
-              </div>
-              <div className="stat-item">
-                <div className="stat-value">{formatTime(timeElapsed)}</div>
-                <div className="stat-label">Time Taken</div>
-              </div>
-              <div className="stat-item">
-                <div className="stat-value">{wrongMatches || Math.max(0, 3 - lives)}/{gameMode === 'programming' ? '3' : '6'}</div>
-                <div className="stat-label">Wrong Guesses</div>
-              </div>
+            <div className="stat-item">
+              <div className="stat-value">{levelsCompleted}/{patterns.length}</div>
+              <div className="stat-label">Levels Completed</div>
             </div>
-            
-            <div className="status-indicator">
-              <div className={`status-badge ${success && !exitedEarly ? 'completed' : 'survived'}`}>
-                {success && !exitedEarly ? '✓' : '✓'}
-              </div>
-              <div className="status-text">
-                {success && !exitedEarly ? 'Completed' : 'Survived'}
-              </div>
-              <div className="status-subtitle">
-                {success && !exitedEarly ? 'Memory Grid Status' : 'Memory Grid Status'}
-              </div>
+            <div className="stat-item">
+              <div className="stat-value">{formatTime(timeElapsed)}</div>
+              <div className="stat-label">Time Taken</div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-value">{currentLevel + 1}/{patterns.length}</div>
+              <div className="stat-label">Highest Level</div>
             </div>
           </div>
-          
+
           <div className="game-details">
-            <div className="details-header">
-              <span className="details-icon">🎮</span>
-              <span className="details-title">Game Details</span>
+            <div className="game-details-header">
+              <div className="details-icon">🧠</div>
+              <h3>Grid Details</h3>
             </div>
-            
             <div className="details-content">
               <div className="detail-row">
-                <span className="detail-label">Game Status:</span>
-                <span className="detail-value">{exitedEarly ? 'Exited early' : success ? 'Completed' : 'Game over'}</span>
+                <span className="detail-label">Grid Status:</span>
+                <span className="detail-value">
+                  {exitedEarly ? 'Challenge in progress' : 
+                   success ? 'Challenge completed' : 'Challenge failed'}
+                </span>
               </div>
-              
+              <div className="detail-row">
+                <span className="detail-label">Highest Level:</span>
+                <span className="detail-value">Level {currentLevel + 1} of {patterns.length}</span>
+              </div>
               <div className="detail-row">
                 <span className="detail-label">Note:</span>
                 <span className="detail-value">
                   {exitedEarly 
-                    ? 'You exited the game early, but your progress was saved!' 
+                    ? 'You exited the memory grid challenge early, but your progress was saved!'
                     : success 
-                    ? 'Great job completing the memory challenge!' 
-                    : 'Keep practicing to improve your memory skills!'}
+                      ? 'Great job completing the memory challenge!' 
+                      : 'Keep practicing to improve your memory skills!'}
                 </span>
               </div>
-              
               <div className="detail-row">
                 <span className="detail-label">Performance:</span>
-                <span className="detail-value performance-note">
-                  💪 {calculateAccuracy() > 80 ? 'Excellent memory!' : calculateAccuracy() > 60 ? 'Good progress!' : 'Keep practicing!'}
+                <span className="detail-value">
+                  💪 {finalScore >= 80 ? 'Keep climbing!' : 'Keep practicing!'}
                 </span>
               </div>
             </div>
           </div>
-          
-          <div className="completion-actions">
-            <button className="play-again-btn" onClick={resetGame}>
-              🔄 Play Again
+
+          <div className="results-actions">
+            <button className="retake-btn" onClick={resetGame}>
+              Retake Quiz
+            </button>
+            <button 
+              className="refresh-btn"
+              onClick={() => {
+                console.log('Memory Grid: Refresh Scores & Return clicked');
+                // Navigate directly to quizzes tab
+                window.location.href = '/dashboard';
+                // Force quizzes tab to be active after navigation
+                setTimeout(() => {
+                  console.log('Memory Grid: Setting quizzes tab active');
+                  // Try multiple methods to ensure quizzes tab is activated
+                  const quizzesBtn = document.querySelector('button[class*="nav-btn"]:nth-child(4)');
+                  if (quizzesBtn) {
+                    quizzesBtn.click();
+                  }
+                  // Also dispatch the custom event
+                  window.dispatchEvent(new CustomEvent('navigateToQuizzes'));
+                  // Force hash navigation as backup
+                  window.location.hash = '#quizzes';
+                }, 200);
+              }}
+            >
+              🗘 Refresh Scores & Return
+            </button>
+            <button 
+              className="done-btn" 
+              onClick={() => {
+                console.log('Memory Grid: Done button clicked');
+                // Navigate directly to quizzes tab
+                window.location.href = '/dashboard';
+                // Force quizzes tab to be active after navigation
+                setTimeout(() => {
+                  console.log('Memory Grid: Setting quizzes tab active');
+                  // Try multiple methods to ensure quizzes tab is activated
+                  const quizzesBtn = document.querySelector('button[class*="nav-btn"]:nth-child(4)');
+                  if (quizzesBtn) {
+                    quizzesBtn.click();
+                  }
+                  // Also dispatch the custom event
+                  window.dispatchEvent(new CustomEvent('navigateToQuizzes'));
+                  // Force hash navigation as backup
+                  window.location.hash = '#quizzes';
+                }, 200);
+              }}
+            >
+              Done
             </button>
           </div>
         </div>
@@ -712,6 +746,43 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
         )}
       </div>
       
+      {/* Exit Confirmation Dialog */}
+      {showExitConfirmation && (
+        <div className="exit-confirmation-overlay">
+          <div className="exit-confirmation-dialog">
+            <div className="exit-confirmation-content">
+              <h3>🚨 Exit Memory Grid Challenge?</h3>
+              <p>Are you sure you want to exit the Memory Grid game?</p>
+              <div className="exit-current-progress">
+                <p><strong>Current Progress:</strong></p>
+                <ul>
+                  <li>Current Level: {currentLevel + 1}/{patterns.length}</li>
+                  <li>Levels completed: {currentLevel}</li>
+                  <li>Time elapsed: {formatTime(timeElapsed)}</li>
+                  <li>Current score: {calculateAccuracy()}%</li>
+                </ul>
+                <p className="exit-warning">
+                  ⚠️ Your progress will be saved, but the quiz will be marked as incomplete.
+                </p>
+              </div>
+              <div className="exit-confirmation-actions">
+                <button 
+                  className="exit-cancel-btn"
+                  onClick={cancelExitGame}
+                >
+                  ❌ Cancel
+                </button>
+                <button 
+                  className="exit-confirm-btn"
+                  onClick={confirmExitGame}
+                >
+                  🚨 Exit Quiz
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

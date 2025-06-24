@@ -28,6 +28,21 @@ const Dashboard = () => {
     }
   }, [isAuthenticated, loading, navigate]);
 
+  // Listen for navigation events from game components
+  useEffect(() => {
+    const handleNavigateToQuizzes = () => {
+      console.log('Received navigateToQuizzes event, switching to quizzes tab');
+      setActiveTab('quizzes');
+      setMobileMenuOpen(false);
+    };
+
+    window.addEventListener('navigateToQuizzes', handleNavigateToQuizzes);
+    
+    return () => {
+      window.removeEventListener('navigateToQuizzes', handleNavigateToQuizzes);
+    };
+  }, []);
+
   const handleLogout = () => {
     authActions.logout(dispatch)();
     navigate('/login');

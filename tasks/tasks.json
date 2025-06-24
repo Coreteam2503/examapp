@@ -13,6 +13,30 @@
       "subtasks": []
     },
     {
+      "id": "71",
+      "title": "Game Score Screen and Exit Button Styling",
+      "description": "Style score screens and Exit Quiz buttons to match reference design for Memory Grid and Word Ladder games",
+      "status": "done",
+      "priority": "high",
+      "dependencies": ["65", "64"],
+      "complexity": 2,
+      "details": "Updated Memory Grid and Word Ladder games to display styled score screens matching reference design when users click 'Exit Quiz'. Implemented new score screen layout with game icon, primary/secondary stats, status indicators, and game details section. Styled Exit Quiz buttons with red gradient and proper hover effects. Removed exit confirmation dialogs for direct score screen navigation. Cleaned up unused code and CSS.",
+      "testStrategy": "Test Exit Quiz button styling and functionality, verify score screen displays correctly, confirm code cleanup",
+      "subtasks": []
+    },
+    {
+      "id": "72",
+      "title": "Fix Memory Grid and Word Ladder Results Screen Display",
+      "description": "Fix issue where Memory Grid and Word Ladder games show old generic quiz results instead of game-specific results screens",
+      "status": "done",
+      "priority": "high",
+      "dependencies": ["71"],
+      "complexity": 2,
+      "details": "Fixed QuizManager to prevent switching to generic results view for Memory Grid and Word Ladder games, allowing them to display their own beautifully styled game-specific results screens (similar to Hangman). Added 'Back to Quizzes' navigation buttons to both games' results screens with proper styling and Dashboard integration. Updated CSS for consistent button layouts and responsive design.",
+      "testStrategy": "Test Memory Grid and Word Ladder completion to verify game-specific results screens display, test Back to Quizzes navigation, confirm score submission still works",
+      "subtasks": []
+    },
+    {
       "id": "68",
       "title": "Fix Game Format Question Generation Quantity Issue",
       "description": "Fix critical bug where game formats only generate 1 question regardless of user selection (5, 7, etc.)",
