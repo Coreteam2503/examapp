@@ -739,6 +739,306 @@
   box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
 }
 
+/* Grid Details Section - Clean Style (matching Word Ladder) */
+.grid-details {
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 20px;
+  margin: 20px 0;
+}
+
+.grid-details-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.grid-icon {
+  font-size: 1.2rem;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 8px 0;
+}
+
+.detail-label {
+  font-weight: 600;
+  color: #6c757d;
+  flex-shrink: 0;
+  margin-right: 15px;
+}
+
+.detail-value {
+  text-align: right;
+  color: #333;
+  flex-grow: 1;
+}
+
+.performance-icon {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Score Screen (matching Word Ladder) */
+.score-screen {
+  max-width: 600px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.score-header {
+  text-align: center;
+  padding: 30px 20px 20px;
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+}
+
+.score-header .game-icon {
+  font-size: 3rem;
+  margin-bottom: 15px;
+  display: block;
+}
+
+.score-header h2 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.score-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  padding: 20px;
+  text-align: center;
+}
+
+.score-stats .stat-item {
+  padding: 15px 10px;
+  border-right: 1px solid #e9ecef;
+}
+
+.score-stats .stat-item:last-child {
+  border-right: none;
+}
+
+.score-stats .stat-item .stat-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #28a745;
+  margin-bottom: 5px;
+  display: block;
+}
+
+.score-stats .stat-item .stat-label {
+  font-size: 0.9rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.score-actions {
+  padding: 20px;
+  text-align: center;
+  background: #f8f9fa;
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.retake-quiz-btn {
+  background: linear-gradient(135deg, #6c757d, #495057);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 25px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+}
+
+.retake-quiz-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+}
+
+.refresh-scores-btn {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 25px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+}
+
+.refresh-scores-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
+}
+
+.done-btn {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 25px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.done-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+}
+
+/* Exit Confirmation Dialog (matching Word Ladder) */
+.exit-confirmation-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.exit-confirmation-dialog {
+  background: white;
+  border-radius: 15px;
+  padding: 25px;
+  max-width: 450px;
+  width: 90%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  animation: dialogAppear 0.3s ease-out;
+}
+
+@keyframes dialogAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.exit-confirmation-content h3 {
+  margin: 0 0 25px 0;
+  color: #333;
+  font-size: 1.3rem;
+  text-align: center;
+  font-weight: 600;
+}
+
+.exit-confirmation-content p {
+  margin: 0 0 20px 0;
+  color: #6c757d;
+  text-align: center;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+.current-progress {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 15px 0;
+}
+
+.current-progress h4 {
+  margin: 0 0 10px 0;
+  color: #333;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.current-progress ul {
+  margin: 0;
+  padding-left: 20px;
+  color: #555;
+}
+
+.current-progress li {
+  margin: 5px 0;
+  font-size: 0.9rem;
+}
+
+.progress-warning {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  color: #856404;
+  padding: 10px;
+  border-radius: 6px;
+  margin-top: 12px;
+  font-size: 0.85rem;
+  text-align: center;
+  font-weight: 500;
+}
+
+.exit-confirmation-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.exit-cancel-btn, .exit-confirm-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 25px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 100px;
+}
+
+.exit-cancel-btn {
+  background: #6c757d;
+  color: white;
+  box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+}
+
+.exit-cancel-btn:hover {
+  background: #5a6268;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+}
+
+.exit-confirm-btn {
+  background: #dc3545;
+  color: white;
+  box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+}
+
+.exit-confirm-btn:hover {
+  background: #c82333;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .memory-grid-container {
@@ -799,7 +1099,7 @@
     font-size: 2rem;
   }
   
-  .results-stats {
+  .score-stats {
     -ms-grid-columns: 1fr 1fr;
     grid-template-columns: repeat(2, 1fr);
   }
@@ -828,6 +1128,20 @@
     -ms-flex-pack: center;
     justify-content: center;
   }
+  
+  .exit-confirmation-dialog {
+    width: 95%;
+    margin: 20px;
+  }
+  
+  .exit-confirmation-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .exit-cancel-btn, .exit-confirm-btn {
+    width: 100%;
+  }
 }
 
 @media (max-width: 480px) {
@@ -848,7 +1162,7 @@
     font-size: 0.75rem;
   }
   
-  .results-stats {
+  .score-stats {
     -ms-grid-columns: 1fr;
     grid-template-columns: 1fr;
   }
@@ -882,6 +1196,29 @@
   .retake-game-btn,
   .exit-to-score-btn {
     padding: 14px 20px;
+    font-size: 0.95rem;
+  }
+  
+  .exit-confirmation-dialog {
+    width: 100%;
+    margin: 10px;
+    border-radius: 15px;
+  }
+  
+  .exit-confirmation-content {
+    padding: 20px 15px;
+  }
+  
+  .exit-confirmation-content h3 {
+    font-size: 1.2rem;
+  }
+  
+  .exit-confirmation-content p {
+    font-size: 0.9rem;
+  }
+  
+  .exit-cancel-btn, .exit-confirm-btn {
+    padding: 12px 20px;
     font-size: 0.95rem;
   }
 }

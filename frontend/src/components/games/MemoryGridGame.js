@@ -12,6 +12,7 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
   const [secondSelection, setSecondSelection] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showGameOverAlert, setShowGameOverAlert] = useState(false);
+  const [showExitConfirmation, setShowExitConfirmation] = useState(false); // NEW: Custom modal state
 
   const programmingContent = [
     {
@@ -72,6 +73,7 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
     setSecondSelection(null);
     setShowFeedback(false);
     setShowGameOverAlert(false);
+    setShowExitConfirmation(false);
   };
 
   const handleCardClick = (column, index) => {
@@ -183,6 +185,7 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
     setSecondSelection(null);
     setShowFeedback(false);
     setShowGameOverAlert(false);
+    setShowExitConfirmation(false);
   };
 
   const handleGameOverRetake = () => {
@@ -205,7 +208,14 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
     }
   };
 
+  // FIXED: Replace alert() with custom modal
   const handleExitGame = () => {
+    setShowExitConfirmation(true); // Show custom modal instead of alert
+  };
+
+  // NEW: Handle modal actions
+  const confirmExitQuiz = () => {
+    setShowExitConfirmation(false);
     setGameState('complete');
     if (onGameComplete) {
       onGameComplete({
@@ -218,6 +228,10 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
         accuracy: calculateAccuracy()
       });
     }
+  };
+
+  const cancelExitQuiz = () => {
+    setShowExitConfirmation(false);
   };
 
   const formatTime = (seconds) => {
@@ -298,33 +312,56 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
     
     return (
       <div className="memory-grid-container">
-        <div className="results-screen">
-          <div className="results-header">
-            <div className="game-icon">&#x1F4BB;</div>
-            <h2>Programming Memory Grid Results</h2>
+        <div className="score-screen">
+          <div className="score-header">
+            <div className="game-icon">🧠</div>
+            <h2>Memory Grid Results</h2>
           </div>
           
-          <div className="results-stats">
+          <div className="score-stats">
             <div className="stat-item">
               <div className="stat-value">{finalScore}%</div>
-              <div className="stat-label">Accuracy</div>
+              <div className="stat-label">Final Score</div>
             </div>
             <div className="stat-item">
-              <div className="stat-value">{levelsCompleted}/{programmingContent.length}</div>
-              <div className="stat-label">Levels Completed</div>
+              <div className="stat-value">{matchedPairs.size / 2}/{currentPattern.pairs.length}</div>
+              <div className="stat-label">Pairs Matched</div>
             </div>
             <div className="stat-item">
               <div className="stat-value">{formatTime(timeElapsed)}</div>
               <div className="stat-label">Time Taken</div>
             </div>
             <div className="stat-item">
-              <div className="stat-value">{score}</div>
-              <div className="stat-label">Final Score</div>
+              <div className="stat-value">{levelsCompleted}/{programmingContent.length}</div>
+              <div className="stat-label">Levels Done</div>
             </div>
           </div>
 
-          <div className="results-actions">
-            <button className="retake-btn" onClick={resetGame}>
+          <div className="grid-details">
+            <div className="grid-details-header">
+              <div className="grid-icon">🧠</div>
+              <span>Grid Details</span>
+            </div>
+            <div className="detail-item">
+              <span className="detail-label">Grid Status:</span>
+              <span className="detail-value">{success ? 'Completed successfully!' : 'Challenge in progress'}</span>
+            </div>
+            <div className="detail-item">
+              <span className="detail-label">Best Pairs:</span>
+              <span className="detail-value">{matchedPairs.size / 2} of {currentPattern.pairs.length}</span>
+            </div>
+            <div className="detail-item">
+              <span className="detail-label">Note:</span>
+              <span className="detail-value">{success ? 'Congratulations! You matched all programming pairs!' : 'You exited the memory grid challenge early, but your progress was saved!'}</span>
+            </div>
+            <div className="detail-item">
+              <span className="detail-label">Performance:</span>
+              <span className="detail-value performance-icon">👍 {finalScore >= 80 ? 'Excellent work!' : finalScore >= 60 ? 'Good effort!' : 'Keep practicing!'}</span>
+            </div>
+          </div>
+
+          <div className="score-actions">
+            <button className="retake-quiz-btn" onClick={resetGame}>
               Retake Quiz
             </button>
             <button 
@@ -333,7 +370,7 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
                 window.location.href = '/dashboard';
               }}
             >
-              Back to Dashboard
+              Back to Quizzes
             </button>
           </div>
         </div>
@@ -374,8 +411,47 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
               &#x1F501; Retake Quiz
             </button>
             <button className="exit-to-score-btn" onClick={handleGameOverExit}>
-              &#x1F6AA; Exit
+              &#x1F6AA; Exit Quiz
             </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // NEW: Custom Exit Confirmation Modal (replacing alert)
+  const ExitConfirmationModal = () => {
+    if (!showExitConfirmation) return null;
+
+    return (
+      <div className="exit-confirmation-overlay">
+        <div className="exit-confirmation-dialog">
+          <div className="exit-confirmation-content">
+            <h3>🚨 Exit Memory Grid Challenge?</h3>
+            <p>Are you sure you want to exit the quiz?</p>
+            
+            <div className="current-progress">
+              <h4>Current Progress:</h4>
+              <ul>
+                <li>Pairs matched: {matchedPairs.size / 2}/{currentPattern.pairs.length}</li>
+                <li>Lives remaining: {lives}/3</li>
+                <li>Time elapsed: {formatTime(timeElapsed)}</li>
+                <li>Current score: {score}</li>
+              </ul>
+              
+              <div className="progress-warning">
+                ⚠️ Your progress will be saved, but the quiz will be marked as incomplete.
+              </div>
+            </div>
+            
+            <div className="exit-confirmation-actions">
+              <button className="exit-cancel-btn" onClick={cancelExitQuiz}>
+                ❌ Continue Playing
+              </button>
+              <button className="exit-confirm-btn" onClick={confirmExitQuiz}>
+                📊 Exit Quiz
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -385,6 +461,7 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
   return (
     <div className="memory-grid-container">
       <GameOverAlert />
+      <ExitConfirmationModal />
       <div className="game-header">
         <div className="game-info">
           <h2>Programming Memory Grid</h2>
