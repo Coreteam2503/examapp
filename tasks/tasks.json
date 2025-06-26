@@ -880,6 +880,18 @@
       "details": "Fix two critical issues: 1) Remove repeated alert popups every 1 second after Exit button click, replace with single-use custom modal with 'Retake Quiz' and 'Exit Quiz' options. 2) Update Memory Grid score/result screen styling to match Word Ladder design including font weight, size, color for Grid Status, Best Pairs, Note, Performance sections. Remove extra borders and horizontal lines. Reuse existing components without adding new ones.",
       "testStrategy": "Test Exit Quiz button behavior, verify no repeated alerts, confirm custom modal appears only once, test score screen styling matches Word Ladder, verify responsive design",
       "subtasks": []
-    }
+      },
+      {
+        "id": "75",
+        "title": "Fix Word Ladder and Memory Grid Question Generation Quantity",
+        "description": "Fix issue where Word Ladder and Memory Grid modules always generate only 5 questions regardless of user selection (7, 10, etc.)",
+        "status": "done",
+        "priority": "high",
+        "dependencies": ["74"],
+        "complexity": 2,
+        "details": "Fixed question generation logic in both Word Ladder and Memory Grid components to properly respect user-selected question count. Enhanced Word Ladder with 20 diverse programming questions that cycle to meet any count (1-20+). Updated Memory Grid with 10 different programming pattern sets that generate multiple levels based on user selection. Both components now correctly generate the exact number of questions/levels selected by the user instead of being hardcoded to 5.",
+        "testStrategy": "Test both games with different question counts (1, 3, 5, 7, 10, 15), verify correct number of questions/levels are generated, confirm question variety and no repetition issues, test level progression in Memory Grid",
+        "subtasks": []
+      }
   ]
 }

@@ -13,8 +13,8 @@ const WordLadderGame = ({ gameData, onGameComplete }) => {
   const [ladderSteps, setLadderSteps] = useState(0);
   const [avatarCharacter, setAvatarCharacter] = useState(Math.random() > 0.5 ? '👦' : '👧');
 
-  // Generate programming-focused questions dynamically
-  const generateProgrammingQuestions = () => {
+  // Generate programming-focused questions dynamically based on gameData
+  const generateProgrammingQuestions = (numQuestions = 5) => {
     const programmingQuestions = [
       {
         id: 1,
@@ -56,13 +56,144 @@ const WordLadderGame = ({ gameData, onGameComplete }) => {
         options: ['O(n)', 'O(log n)', 'O(n²)', 'O(1)'],
         correctAnswer: 'O(log n)',
         hint: 'Binary search divides the search space in half with each comparison, making it logarithmic in time complexity.'
+      },
+      {
+        id: 6,
+        type: 'mcq',
+        question: 'Which of the following is a valid variable name in Python?',
+        options: ['2variable', '_my_var', 'my-var', 'class'],
+        correctAnswer: '_my_var',
+        hint: 'Variable names in Python can start with letters or underscores, but not numbers or contain hyphens.'
+      },
+      {
+        id: 7,
+        type: 'fill_blank',
+        question: 'Complete the Python code to create a list:\n\nmy_list = [1, 2, 3]\nprint(_______(my_list))',
+        correctAnswer: 'len',
+        hint: 'The len() function returns the number of items in a sequence.'
+      },
+      {
+        id: 8,
+        type: 'true_false',
+        question: 'In JavaScript, the === operator checks for both value and type equality.',
+        correctAnswer: true,
+        hint: 'The === operator (strict equality) checks both value and type, while == only checks value.'
+      },
+      {
+        id: 9,
+        type: 'mcq',
+        question: 'What does HTML stand for?',
+        options: ['High Tech Modern Language', 'HyperText Markup Language', 'Home Tool Markup Language', 'Hyperlink and Text Markup Language'],
+        correctAnswer: 'HyperText Markup Language',
+        hint: 'HTML is the standard markup language for creating web pages.'
+      },
+      {
+        id: 10,
+        type: 'fill_blank',
+        question: 'Complete the CSS rule:\n\n.container {\n  display: _______;\n}',
+        correctAnswer: 'flex',
+        hint: 'Flexbox is a popular CSS layout method for creating flexible layouts.'
+      },
+      {
+        id: 11,
+        type: 'mcq',
+        question: 'What is the purpose of the return statement in a function?',
+        options: ['To print output', 'To send back a value', 'To create variables', 'To delete data'],
+        correctAnswer: 'To send back a value',
+        hint: 'The return statement is used to send a value back from a function to the code that called it.'
+      },
+      {
+        id: 12,
+        type: 'true_false',
+        question: 'In most programming languages, arrays start indexing from 1.',
+        correctAnswer: false,
+        hint: 'Most programming languages use zero-based indexing, meaning arrays start from index 0.'
+      },
+      {
+        id: 13,
+        type: 'fill_blank',
+        question: 'Complete the Python conditional statement:\n\nif x > 5:\n    print("Greater")\n____:\n    print("Not greater")',
+        correctAnswer: 'else',
+        hint: 'The else keyword is used to execute code when the if condition is false.'
+      },
+      {
+        id: 14,
+        type: 'mcq',
+        question: 'Which data structure follows Last In, First Out (LIFO) principle?',
+        options: ['Queue', 'Stack', 'Array', 'Tree'],
+        correctAnswer: 'Stack',
+        hint: 'A stack follows LIFO principle where the last element added is the first one to be removed.'
+      },
+      {
+        id: 15,
+        type: 'matching',
+        question: 'Match the loop types with their descriptions:',
+        pairs: [
+          { left: 'for loop', right: 'Iterates over a sequence' },
+          { left: 'while loop', right: 'Repeats while condition is true' },
+          { left: 'do-while loop', right: 'Executes at least once' }
+        ],
+        hint: 'Different loop types serve different purposes: for loops iterate over sequences, while loops check conditions, and do-while loops guarantee at least one execution.'
+      },
+      {
+        id: 16,
+        type: 'true_false',
+        question: 'SQL stands for Structured Query Language.',
+        correctAnswer: true,
+        hint: 'SQL is indeed Structured Query Language, used for managing relational databases.'
+      },
+      {
+        id: 17,
+        type: 'mcq',
+        question: 'What is the primary purpose of version control systems like Git?',
+        options: ['To compile code', 'To track changes in files', 'To design user interfaces', 'To test applications'],
+        correctAnswer: 'To track changes in files',
+        hint: 'Version control systems track changes in files over time, allowing multiple developers to collaborate.'
+      },
+      {
+        id: 18,
+        type: 'fill_blank',
+        question: 'Complete the HTTP status code meaning:\n\n200 means _______, 404 means Not Found',
+        correctAnswer: 'OK',
+        hint: 'HTTP status code 200 indicates that the request was successful.'
+      },
+      {
+        id: 19,
+        type: 'mcq',
+        question: 'Which principle focuses on hiding internal implementation details?',
+        options: ['Inheritance', 'Polymorphism', 'Encapsulation', 'Abstraction'],
+        correctAnswer: 'Encapsulation',
+        hint: 'Encapsulation is about bundling data and methods together and hiding internal details from outside access.'
+      },
+      {
+        id: 20,
+        type: 'true_false',
+        question: 'Machine learning is a subset of artificial intelligence.',
+        correctAnswer: true,
+        hint: 'Machine learning is indeed a subset of AI that focuses on learning from data without explicit programming.'
       }
     ];
 
-    return programmingQuestions;
+    // Generate additional questions if needed to meet the requested count
+    const baseQuestions = [...programmingQuestions];
+    const result = [];
+    
+    // Fill up to numQuestions by repeating and modifying questions if necessary
+    for (let i = 0; i < numQuestions; i++) {
+      const baseQuestion = baseQuestions[i % baseQuestions.length];
+      const questionCopy = {
+        ...baseQuestion,
+        id: i + 1  // Ensure unique IDs
+      };
+      result.push(questionCopy);
+    }
+
+    return result;
   };
 
-  const questions = generateProgrammingQuestions();
+  // Get the number of questions from gameData
+  const numQuestions = gameData?.questions?.length || gameData?.metadata?.totalQuestions || gameData?.game_options?.numQuestions || 5;
+  const questions = generateProgrammingQuestions(numQuestions);
 
   // Timer effect
   useEffect(() => {

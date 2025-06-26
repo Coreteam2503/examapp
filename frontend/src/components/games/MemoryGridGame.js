@@ -14,29 +14,228 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
   const [showGameOverAlert, setShowGameOverAlert] = useState(false);
   const [showExitConfirmation, setShowExitConfirmation] = useState(false); // NEW: Custom modal state
 
-  const programmingContent = [
-    {
-      type: 'programming',
-      leftColumn: [
-        { content: 'str(42)' },
-        { content: 'print("Hello World")' },
-        { content: 'max([1, 5, 3])' },
-        { content: 'x = 5' },
-        { content: '"Hi" * 3' },
-        { content: 'bool(0)' }
-      ],
-      rightColumn: [
-        { content: 'Returns: False' },
-        { content: 'Outputs: 5' },
-        { content: 'Returns: 5' },
-        { content: 'Outputs: Hello World' },
-        { content: 'Result: HiHiHi' },
-        { content: 'Returns: 42' }
-      ],
-      pairs: [[0, 5], [1, 3], [2, 2], [3, 1], [4, 4], [5, 0]]
-    }
-  ];
+  // Generate programming content dynamically based on gameData
+  const generateProgrammingContent = (numQuestions = 5) => {
+    const baseContent = [
+      {
+        type: 'programming',
+        leftColumn: [
+          { content: 'str(42)' },
+          { content: 'print("Hello World")' },
+          { content: 'max([1, 5, 3])' },
+          { content: 'x = 5' },
+          { content: '"Hi" * 3' },
+          { content: 'bool(0)' }
+        ],
+        rightColumn: [
+          { content: 'Returns: "42"' },
+          { content: 'Outputs: Hello World' },
+          { content: 'Returns: 5' },
+          { content: 'Assigns value 5' },
+          { content: 'Result: HiHiHi' },
+          { content: 'Returns: False' }
+        ],
+        pairs: [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5]]
+      },
+      {
+        type: 'programming',
+        leftColumn: [
+          { content: 'len([1, 2, 3])' },
+          { content: 'type("hello")' },
+          { content: 'range(3)' },
+          { content: 'int("5")' },
+          { content: 'list((1, 2))' },
+          { content: 'abs(-10)' }
+        ],
+        rightColumn: [
+          { content: 'Returns: 3' },
+          { content: 'Returns: <class \'str\'>' },
+          { content: 'Returns: range(0, 3)' },
+          { content: 'Returns: 5' },
+          { content: 'Returns: [1, 2]' },
+          { content: 'Returns: 10' }
+        ],
+        pairs: [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5]]
+      },
+      {
+        type: 'programming',
+        leftColumn: [
+          { content: 'def add(a, b):' },
+          { content: 'class Car:' },
+          { content: 'import math' },
+          { content: 'for i in range(2):' },
+          { content: 'if x > 0:' },
+          { content: 'try:' }
+        ],
+        rightColumn: [
+          { content: 'Function definition' },
+          { content: 'Class definition' },
+          { content: 'Module import' },
+          { content: 'Loop structure' },
+          { content: 'Conditional statement' },
+          { content: 'Exception handling' }
+        ],
+        pairs: [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5]]
+      },
+      {
+        type: 'programming',
+        leftColumn: [
+          { content: 'SyntaxError' },
+          { content: 'IndexError' },
+          { content: 'TypeError' },
+          { content: 'ValueError' },
+          { content: 'KeyError' },
+          { content: 'AttributeError' }
+        ],
+        rightColumn: [
+          { content: 'Invalid syntax' },
+          { content: 'Index out of range' },
+          { content: 'Wrong data type' },
+          { content: 'Invalid value' },
+          { content: 'Key not found' },
+          { content: 'Attribute missing' }
+        ],
+        pairs: [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5]]
+      },
+      {
+        type: 'programming',
+        leftColumn: [
+          { content: 'HTML' },
+          { content: 'CSS' },
+          { content: 'JavaScript' },
+          { content: 'Python' },
+          { content: 'SQL' },
+          { content: 'JSON' }
+        ],
+        rightColumn: [
+          { content: 'Markup language' },
+          { content: 'Styling language' },
+          { content: 'Scripting language' },
+          { content: 'Programming language' },
+          { content: 'Query language' },
+          { content: 'Data format' }
+        ],
+        pairs: [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5]]
+      },
+      {
+        type: 'programming',
+        leftColumn: [
+          { content: 'GET' },
+          { content: 'POST' },
+          { content: 'PUT' },
+          { content: 'DELETE' },
+          { content: 'PATCH' },
+          { content: 'HEAD' }
+        ],
+        rightColumn: [
+          { content: 'Retrieve data' },
+          { content: 'Create new data' },
+          { content: 'Update entire resource' },
+          { content: 'Remove resource' },
+          { content: 'Partial update' },
+          { content: 'Get headers only' }
+        ],
+        pairs: [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5]]
+      },
+      {
+        type: 'programming',
+        leftColumn: [
+          { content: 'O(1)' },
+          { content: 'O(log n)' },
+          { content: 'O(n)' },
+          { content: 'O(n log n)' },
+          { content: 'O(n²)' },
+          { content: 'O(2^n)' }
+        ],
+        rightColumn: [
+          { content: 'Constant time' },
+          { content: 'Logarithmic time' },
+          { content: 'Linear time' },
+          { content: 'Linearithmic time' },
+          { content: 'Quadratic time' },
+          { content: 'Exponential time' }
+        ],
+        pairs: [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5]]
+      },
+      {
+        type: 'programming',
+        leftColumn: [
+          { content: 'Array' },
+          { content: 'LinkedList' },
+          { content: 'Stack' },
+          { content: 'Queue' },
+          { content: 'HashMap' },
+          { content: 'Tree' }
+        ],
+        rightColumn: [
+          { content: 'Indexed collection' },
+          { content: 'Node-based structure' },
+          { content: 'LIFO structure' },
+          { content: 'FIFO structure' },
+          { content: 'Key-value pairs' },
+          { content: 'Hierarchical structure' }
+        ],
+        pairs: [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5]]
+      },
+      {
+        type: 'programming',
+        leftColumn: [
+          { content: 'git add' },
+          { content: 'git commit' },
+          { content: 'git push' },
+          { content: 'git pull' },
+          { content: 'git branch' },
+          { content: 'git merge' }
+        ],
+        rightColumn: [
+          { content: 'Stage changes' },
+          { content: 'Save changes' },
+          { content: 'Upload changes' },
+          { content: 'Download changes' },
+          { content: 'Create branch' },
+          { content: 'Combine branches' }
+        ],
+        pairs: [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5]]
+      },
+      {
+        type: 'programming',
+        leftColumn: [
+          { content: 'React' },
+          { content: 'Vue' },
+          { content: 'Angular' },
+          { content: 'Express' },
+          { content: 'Django' },
+          { content: 'Flask' }
+        ],
+        rightColumn: [
+          { content: 'JavaScript library' },
+          { content: 'Progressive framework' },
+          { content: 'Full framework' },
+          { content: 'Node.js framework' },
+          { content: 'Python framework' },
+          { content: 'Micro framework' }
+        ],
+        pairs: [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5]]
+      }
+    ];
 
+    // Generate content for the requested number of questions
+    const result = [];
+    for (let i = 0; i < numQuestions; i++) {
+      const basePattern = baseContent[i % baseContent.length];
+      result.push({
+        ...basePattern,
+        id: i // Add unique ID for each pattern
+      });
+    }
+    
+    return result;
+  };
+
+  // Get the number of questions from gameData
+  const numQuestions = gameData?.questions?.length || gameData?.metadata?.totalQuestions || gameData?.game_options?.numQuestions || 5;
+  const programmingContent = generateProgrammingContent(numQuestions);
+  
   const currentPattern = programmingContent[currentLevel] || programmingContent[0];
 
   useEffect(() => {
@@ -147,15 +346,27 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
 
   const handleLevelComplete = () => {
     setTimeout(() => {
-      setGameState('complete');
-      if (onGameComplete) {
-        onGameComplete({
-          success: true,
-          score,
-          levels: programmingContent.length,
-          timeElapsed,
-          accuracy: calculateAccuracy()
-        });
+      // Check if there are more levels
+      if (currentLevel + 1 < programmingContent.length) {
+        // Move to next level
+        setCurrentLevel(prev => prev + 1);
+        setMatchedPairs(new Set());
+        setFirstSelection(null);
+        setSecondSelection(null);
+        setShowFeedback(false);
+        setLives(3); // Reset lives for new level
+      } else {
+        // All levels completed
+        setGameState('complete');
+        if (onGameComplete) {
+          onGameComplete({
+            success: true,
+            score,
+            levels: programmingContent.length,
+            timeElapsed,
+            accuracy: calculateAccuracy()
+          });
+        }
       }
     }, 1500);
   };
