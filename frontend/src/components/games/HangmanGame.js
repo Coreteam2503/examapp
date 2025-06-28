@@ -21,20 +21,26 @@ const HangmanGame = ({ gameData, onGameComplete, onAnswerChange }) => {
   if (currentWord) {
     // Handle different data structures
     if (currentWord.word_data) {
-      // If word_data exists as object
+      let word_data;
+      
+      // If word_data exists as string, parse it
       if (typeof currentWord.word_data === 'string') {
         try {
-          const parsedData = JSON.parse(currentWord.word_data);
-          word = parsedData.word || '';
-          hint = parsedData.hint || '';
-          category = parsedData.category || '';
+          word_data = JSON.parse(currentWord.word_data);
+          console.log('✅ Parsed word_data from string:', word_data);
         } catch (e) {
-          console.warn('Failed to parse word_data:', currentWord.word_data);
+          console.warn('❌ Failed to parse word_data string:', currentWord.word_data);
+          word_data = null;
         }
       } else if (typeof currentWord.word_data === 'object') {
-        word = currentWord.word_data.word || '';
-        hint = currentWord.word_data.hint || '';
-        category = currentWord.word_data.category || '';
+        word_data = currentWord.word_data;
+        console.log('✅ Using word_data object:', word_data);
+      }
+      
+      if (word_data) {
+        word = word_data.word || '';
+        hint = word_data.hint || '';
+        category = word_data.category || '';
       }
     } else {
       // Fallback to direct properties
@@ -44,7 +50,7 @@ const HangmanGame = ({ gameData, onGameComplete, onAnswerChange }) => {
     }
   }
   
-  console.log('Hangman game data:', { currentWord, word, hint, category });
+  console.log('🎯 Hangman game data:', { currentWord, word, hint, category });
   const maxTotalWrongGuesses = 6; // Total wrong guesses allowed for entire quiz
   
   const totalWords = gameData?.questions?.length || 0;

@@ -386,90 +386,99 @@ class GameFormatController {
         break;
         
       case 'word_ladder':
-        const ladders = [
-          { start: 'CODE', end: 'NODE', steps: ['CODE', 'COVE', 'NOVE', 'NODE'], hints: ['Programming instructions', 'Small bay', 'New type', 'Network point'] },
-          { start: 'LOOP', end: 'POOL', steps: ['LOOP', 'LOOM', 'POOM', 'POOL'], hints: ['Repetition structure', 'Weaving device', 'Sound effect', 'Water collection'] },
-          { start: 'DATA', end: 'BASE', steps: ['DATA', 'BATA', 'BABE', 'BASE'], hints: ['Information', 'Shoe brand', 'Young child', 'Foundation'] },
-          { start: 'FILE', end: 'PILE', steps: ['FILE', 'FILL', 'PILL', 'PILE'], hints: ['Document', 'Complete', 'Medicine', 'Stack'] },
-          { start: 'BYTE', end: 'TYPE', steps: ['BYTE', 'BYPE', 'TYRE', 'TYPE'], hints: ['Data unit', 'Letter form', 'Wheel cover', 'Category'] },
-          { start: 'DISK', end: 'RISK', steps: ['DISK', 'DUSK', 'RUSK', 'RISK'], hints: ['Storage device', 'Evening', 'Hard biscuit', 'Danger'] },
-          { start: 'MAIL', end: 'FAIL', steps: ['MAIL', 'MAID', 'PAID', 'FAIL'], hints: ['Messages', 'Helper', 'Compensated', 'Unsuccessful'] },
-          { start: 'PORT', end: 'POST', steps: ['PORT', 'PONT', 'POST'], hints: ['Harbor', 'Bridge', 'Mail'] },
-          { start: 'SORT', end: 'PORT', steps: ['SORT', 'SPORT', 'PORT'], hints: ['Arrange', 'Game', 'Harbor'] },
-          { start: 'SAVE', end: 'WAVE', steps: ['SAVE', 'WAVE'], hints: ['Preserve', 'Ocean motion'] }
-        ];
-        
-        // Add programming code fix ladders
-        const programmingLadders = [
+        // Create code analysis questions instead of word transformations
+        const codeAnalysisQuestions = [
           {
-            type: 'programming',
-            buggyCode: 'pritn("Hello")',
-            correctCode: 'print("Hello")',
-            codeSteps: ['pritn("Hello")', 'print("Hello")'],
-            codeHints: ['Fix the typo in function name', 'Correct spelling of print']
+            question: "What does this function accomplish?",
+            code_snippet: "def filter_positive(numbers):\n    return [x for x in numbers if x > 0]",
+            options: ["A) Returns only positive numbers", "B) Sorts the numbers", "C) Counts positive numbers", "D) Doubles all numbers"],
+            correct_answer: "A",
+            explanation: "This list comprehension filters and returns only positive numbers from the input list",
+            question_type: "functionality",
+            concepts: ["list comprehension", "filtering"]
           },
           {
-            type: 'programming',
-            buggyCode: 'for i in range(5)\n  print(i)',
-            correctCode: 'for i in range(5):\n    print(i)',
-            codeSteps: ['for i in range(5)\n  print(i)', 'for i in range(5):\n  print(i)', 'for i in range(5):\n    print(i)'],
-            codeHints: ['Add missing colon after range', 'Fix indentation for print statement']
+            question: "What will be the output of this code?",
+            code_snippet: "data = {'a': 1, 'b': 2}\nprint(len(data))",
+            options: ["A) {'a': 1, 'b': 2}", "B) 2", "C) 3", "D) Error"],
+            correct_answer: "B",
+            explanation: "len() returns the number of key-value pairs in the dictionary",
+            question_type: "output",
+            concepts: ["dictionaries", "built-in functions"]
           },
           {
-            type: 'programming',
-            buggyCode: 'x = [1,2,3\nprint(x[0])',
-            correctCode: 'x = [1,2,3]\nprint(x[0])',
-            codeSteps: ['x = [1,2,3\nprint(x[0])', 'x = [1,2,3]\nprint(x[0])'],
-            codeHints: ['Add missing closing bracket', 'Complete the list definition']
+            question: "Which concept is demonstrated here?",
+            code_snippet: "class Vehicle:\n    def __init__(self, brand):\n        self.brand = brand\n\nclass Car(Vehicle):\n    pass",
+            options: ["A) Encapsulation", "B) Inheritance", "C) Polymorphism", "D) Abstraction"],
+            correct_answer: "B",
+            explanation: "Car class inherits from Vehicle class, demonstrating inheritance",
+            question_type: "concept",
+            concepts: ["inheritance", "classes"]
           },
           {
-            type: 'programming',
-            buggyCode: 'def hello()\n    return "Hi"',
-            correctCode: 'def hello():\n    return "Hi"',
-            codeSteps: ['def hello()\n    return "Hi"', 'def hello():\n    return "Hi"'],
-            codeHints: ['Add missing colon after function definition']
+            question: "What is the purpose of the try-except block?",
+            code_snippet: "try:\n    value = int(user_input)\nexcept ValueError:\n    value = 0",
+            options: ["A) Optimize performance", "B) Handle invalid input", "C) Format output", "D) Loop through data"],
+            correct_answer: "B",
+            explanation: "try-except handles ValueError when int() conversion fails",
+            question_type: "error_handling",
+            concepts: ["exception handling", "type conversion"]
           },
           {
-            type: 'programming',
-            buggyCode: 'if x = 5:\n    print("Five")',
-            correctCode: 'if x == 5:\n    print("Five")',
-            codeSteps: ['if x = 5:\n    print("Five")', 'if x == 5:\n    print("Five")'],
-            codeHints: ['Use == for comparison instead of = for assignment']
+            question: "What does this function return?",
+            code_snippet: "def calculate_average(scores):\n    if not scores:\n        return 0\n    return sum(scores) / len(scores)",
+            options: ["A) The sum of scores", "B) The average score", "C) The highest score", "D) The number of scores"],
+            correct_answer: "B",
+            explanation: "Function calculates and returns the average of the scores list",
+            question_type: "functionality",
+            concepts: ["functions", "mathematical operations"]
+          },
+          {
+            question: "What will happen when this code runs?",
+            code_snippet: "numbers = [1, 2, 3, 4, 5]\nresult = numbers[10]",
+            options: ["A) Returns None", "B) Returns 10", "C) Raises IndexError", "D) Returns 5"],
+            correct_answer: "C",
+            explanation: "Accessing index 10 in a 5-element list raises an IndexError",
+            question_type: "execution",
+            concepts: ["lists", "indexing", "errors"]
+          },
+          {
+            question: "What is the role of the 'self' parameter?",
+            code_snippet: "class Counter:\n    def __init__(self):\n        self.count = 0\n    def increment(self):\n        self.count += 1",
+            options: ["A) References the class", "B) References the instance", "C) A special keyword", "D) Optional parameter"],
+            correct_answer: "B",
+            explanation: "'self' refers to the specific instance of the class",
+            question_type: "concept",
+            concepts: ["classes", "instance methods"]
+          },
+          {
+            question: "What does this comprehension create?",
+            code_snippet: "result = {x: x**2 for x in range(5)}",
+            options: ["A) A list of squares", "B) A dictionary mapping numbers to squares", "C) A set of squares", "D) A tuple of squares"],
+            correct_answer: "B",
+            explanation: "This creates a dictionary where keys are numbers and values are their squares",
+            question_type: "data_structures",
+            concepts: ["dictionary comprehension", "mapping"]
           }
         ];
         
         for (let i = 0; i < numQuestions; i++) {
-          // Mix regular word ladders with programming code fix ladders
-          const useProgramming = i % 2 === 1; // Every other question is programming
-          
-          if (useProgramming && i < programmingLadders.length) {
-            const progLadder = programmingLadders[i % programmingLadders.length];
-            questions.push({
-              ladder_steps: {
-                type: 'programming',
-                buggyCode: progLadder.buggyCode,
-                correctCode: progLadder.correctCode,
-                codeSteps: progLadder.codeSteps,
-                codeHints: progLadder.codeHints
-              },
-              correct_answer: progLadder.correctCode,
-              difficulty: difficulty,
-              concepts: ["programming", "debugging", "syntax"]
-            });
-          } else {
-            const ladder = ladders[i % ladders.length];
-            questions.push({
-              ladder_steps: {
-                startWord: ladder.start,
-                endWord: ladder.end,
-                steps: ladder.steps,
-                hints: ladder.hints
-              },
-              correct_answer: ladder.end,
-              difficulty: difficulty,
-              concepts: ["programming", "word games"]
-            });
-          }
+          const questionData = codeAnalysisQuestions[i % codeAnalysisQuestions.length];
+          questions.push({
+            ladder_steps: {
+              type: 'code_analysis',
+              question: questionData.question,
+              code_snippet: questionData.code_snippet,
+              options: questionData.options,
+              correct_answer: questionData.correct_answer,
+              explanation: questionData.explanation,
+              question_type: questionData.question_type,
+              concepts: questionData.concepts
+            },
+            correct_answer: questionData.correct_answer,
+            difficulty: difficulty,
+            concepts: questionData.concepts
+          });
         }
         break;
         
@@ -596,9 +605,17 @@ class GameFormatController {
     
     const maxWrongGuesses = options.maxWrongGuesses || 6;
     
+    // Truncate content if too large to avoid token limits
+    const maxContentLength = 8000;
+    let processedContent = content;
+    if (content.length > maxContentLength) {
+      console.log(`⚠️ Content too large (${content.length} chars), truncating to ${maxContentLength} chars for Hangman game`);
+      processedContent = content.substring(0, maxContentLength) + '\n\n[Content truncated for processing...]';
+    }
+    
     const prompt = `Generate a Hangman word guessing game based on the following content. 
     
-    Content: ${content}
+    Content: ${processedContent}
     
     Requirements:
     - Extract exactly ${numWords} important words or phrases from the content
@@ -635,7 +652,19 @@ class GameFormatController {
       console.log('🤖 Calling AI service for Hangman generation...');
       const response = await this.promptService.generateContent(prompt);
       console.log('✅ AI service response received, parsing JSON...');
+      console.log('📄 Raw LLM response length:', response.length, 'characters');
+      console.log('📋 Raw LLM response preview:', response.substring(0, 500) + '...');
+      
       const gameData = JSON.parse(response);
+      console.log('🔍 Parsed game data structure:', {
+        title: gameData.title,
+        questionsCount: gameData.questions?.length || 0,
+        firstQuestionSample: gameData.questions?.[0] ? {
+          hasWordData: !!gameData.questions[0].word_data,
+          word: gameData.questions[0].word_data?.word,
+          hint: gameData.questions[0].word_data?.hint
+        } : 'No questions'
+      });
       
       // Validate we got the right number of questions
       if (!gameData.questions || gameData.questions.length !== numWords) {
@@ -714,57 +743,101 @@ class GameFormatController {
    * Generate Word Ladder game data from content
    */
   async generateWordLadderGame(content, difficulty, options) {
-    const numLadders = options.numQuestions || 3;
-    const maxSteps = options.maxSteps || 6;
+    const numQuestions = options.numQuestions || 3;
     
-    const prompt = `Generate a Word Ladder transformation game based on the following content.
+    // Truncate content if too large to avoid token limits
+    const maxContentLength = 8000;
+    let processedContent = content;
+    if (content.length > maxContentLength) {
+      console.log(`⚠️ Content too large (${content.length} chars), truncating to ${maxContentLength} chars for Word Ladder game`);
+      processedContent = content.substring(0, maxContentLength) + '\n\n[Content truncated for processing...]';
+    }
     
-    Content: ${content}
-    
-    Requirements:
-    - Create EXACTLY ${numLadders} word ladder puzzles
-    - Words should be related to the content concepts
-    - Maximum ${maxSteps} steps per ladder
-    - Difficulty: ${difficulty}
-    - Provide hints for transformations
-    - Generate EXACTLY ${numLadders} ladders, no more, no less
-    
-    Return a JSON object with this structure:
+    const prompt = `Generate code analysis questions for a "Word Ladder" style game based on the following content.
+
+Content: ${processedContent}
+
+Requirements:
+- Create EXACTLY ${numQuestions} code-based multiple choice questions
+- Questions should analyze, explain, or test understanding of the content
+- Difficulty: ${difficulty}
+- Focus on code comprehension, not syntax memorization
+- Questions can be about: functionality, output, concepts, debugging, optimization, etc.
+- Be creative with question types but keep them code-focused
+- Provide 4 multiple choice options for each question
+
+Examples of good question types (but be creative and varied):
+- "What does this function accomplish?"
+- "What will be the output of this code?"
+- "Which concept is demonstrated in this example?"
+- "What happens when you run this code snippet?"
+- "What is the purpose of this parameter?"
+- "Which approach would be more efficient?"
+
+Return a JSON object with this structure:
+{
+  "title": "Code Analysis - Word Ladder Game",
+  "metadata": {
+    "totalQuestions": ${numQuestions},
+    "gameType": "code_analysis",
+    "difficulty": "${difficulty}"
+  },
+  "questions": [
     {
-      "title": "Word Ladder Game Title", 
-      "metadata": {
-        "maxSteps": ${maxSteps},
-        "totalLadders": ${numLadders}
-      },
-      "questions": [
-        {
-          "ladder_steps": {
-            "startWord": "CODE",
-            "endWord": "NODE",
-            "steps": ["CODE", "CODA", "NODA", "NODE"],
-            "hints": ["Musical ending", "Data structure", "Final target"]
-          },
-          "correct_answer": "NODE",
-          "difficulty": "${difficulty}",
-          "concepts": ["programming", "data structures"]
-        }
-        // Repeat for all ${numLadders} ladders
-      ]
-    }`;
+      "id": 1,
+      "type": "multiple_choice",
+      "question": "What does this function accomplish?",
+      "code_snippet": "def example():\n    return value",
+      "options": ["A) Option 1", "B) Option 2", "C) Option 3", "D) Option 4"],
+      "correct_answer": "A",
+      "explanation": "Detailed explanation of the correct answer",
+      "difficulty": "${difficulty}",
+      "concepts": ["relevant", "concepts"],
+      "question_type": "functionality"
+    }
+    // Repeat for all ${numQuestions} questions
+  ]
+}
+
+Generate diverse, creative questions that test different aspects of understanding the content:`;
 
     try {
+      console.log('🚀 [WordLadder] Sending prompt to LLM for code analysis questions...');
       const response = await this.promptService.generateContent(prompt);
+      console.log('📄 [WordLadder] Received LLM response, parsing...');
+      
       const gameData = JSON.parse(response);
       
-      // Validate we got the right number of ladders
-      if (!gameData.questions || gameData.questions.length !== numLadders) {
-        console.log(`⚠️ AI generated ${gameData.questions?.length || 0} ladders instead of ${numLadders}, using fallback`);
-        throw new Error(`Expected ${numLadders} ladders, got ${gameData.questions?.length || 0}`);
+      // Validate we got the right number of questions
+      if (!gameData.questions || gameData.questions.length !== numQuestions) {
+        console.log(`⚠️ [WordLadder] AI generated ${gameData.questions?.length || 0} questions instead of ${numQuestions}, using fallback`);
+        throw new Error(`Expected ${numQuestions} questions, got ${gameData.questions?.length || 0}`);
       }
       
-      return gameData;
+      // Transform questions to word ladder format expected by database
+      const transformedQuestions = gameData.questions.map((question, index) => ({
+        ...question,
+        ladder_steps: {
+          type: 'code_analysis',
+          question: question.question,
+          code_snippet: question.code_snippet || null,
+          options: question.options,
+          correct_answer: question.correct_answer,
+          explanation: question.explanation,
+          question_type: question.question_type || 'analysis',
+          concepts: question.concepts || []
+        }
+      }));
+      
+      console.log('✅ [WordLadder] Successfully generated and transformed code analysis questions');
+      return {
+        ...gameData,
+        questions: transformedQuestions
+      };
+      
     } catch (error) {
-      console.error('Error generating word ladder game:', error);
+      console.error('❌ [WordLadder] Error generating word ladder game:', error);
+      console.log('🔄 [WordLadder] Using fallback code analysis questions...');
       throw error;
     }
   }
@@ -777,9 +850,17 @@ class GameFormatController {
     const gridSize = options.gridSize || 4;
     const memoryTime = options.memoryTime || 5;
     
+    // Truncate content if too large to avoid token limits
+    const maxContentLength = 8000;
+    let processedContent = content;
+    if (content.length > maxContentLength) {
+      console.log(`⚠️ Content too large (${content.length} chars), truncating to ${maxContentLength} chars for Memory Grid game`);
+      processedContent = content.substring(0, maxContentLength) + '\n\n[Content truncated for processing...]';
+    }
+    
     const prompt = `Generate a Memory Grid pattern matching game based on the following content.
     
-    Content: ${content}
+    Content: ${processedContent}
     
     Requirements:
     - Create EXACTLY ${numPatterns} different ${gridSize}x${gridSize} grid patterns with symbols/concepts from the content
@@ -817,8 +898,22 @@ class GameFormatController {
     }`;
 
     try {
+      console.log('🤖 Calling AI service for Memory Grid generation...');
       const response = await this.promptService.generateContent(prompt);
+      console.log('✅ AI service response received, parsing JSON...');
+      console.log('📄 Raw LLM response length:', response.length, 'characters');
+      console.log('📋 Raw LLM response preview:', response.substring(0, 500) + '...');
+      
       const gameData = JSON.parse(response);
+      console.log('🔍 Parsed Memory Grid data structure:', {
+        title: gameData.title,
+        questionsCount: gameData.questions?.length || 0,
+        firstPatternSample: gameData.questions?.[0] ? {
+          hasPatternData: !!gameData.questions[0].pattern_data,
+          gridSize: gameData.questions[0].pattern_data?.grid?.length || 0,
+          symbolsCount: gameData.questions[0].pattern_data?.symbols?.length || 0
+        } : 'No questions'
+      });
       
       // Validate we got the right number of patterns
       if (!gameData.questions || gameData.questions.length !== numPatterns) {

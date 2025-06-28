@@ -33,7 +33,13 @@ const corsOptions = {
 console.log('CORS allowed origins:', corsOptions.origin);
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Simple request logger to see ALL incoming requests
+app.use((req, res, next) => {
+  console.log(`🌐 ${req.method} ${req.url} - ${new Date().toISOString()}`);
+  next();
+});
 
 // Debug endpoint to test basic functionality
 app.get('/api/debug', (req, res) => {
@@ -50,24 +56,24 @@ app.get('/api/debug', (req, res) => {
 
 // Routes with specific rate limiting
 try {
-  app.use('/api/auth', authLimiter, require('./routes/auth')); // Auth-specific rate limiting
-  app.use('/api/uploads', generalApiLimiter, require('./routes/uploads')); // General rate limiting
-  app.use('/api/quizzes', generalApiLimiter, require('./routes/quizzes')); // General rate limiting
-  app.use('/api/quiz-attempts', generalApiLimiter, require('./routes/quizAttempts')); // submit quiz answers
-  app.use('/api/users', generalApiLimiter, require('./routes/users')); // General rate limiting
-  app.use('/api/analytics', generalApiLimiter, require('./routes/analytics')); // General rate limiting
-  app.use('/api/admin', generalApiLimiter, require('./routes/admin')); // General rate limiting
+  app.use('/api/auth', require('./routes/auth')); // Auth route
+  app.use('/api/uploads', require('./routes/uploads')); // Uploads route
+  app.use('/api/quizzes', require('./routes/quizzes')); // Quizzes route
+  app.use('/api/quiz-attempts', require('./routes/quizAttempts')); // submit quiz answers
+  app.use('/api/users', require('./routes/users')); // Users route
+  app.use('/api/analytics', require('./routes/analytics')); // Analytics route
+  app.use('/api/admin', require('./routes/admin')); // Admin route
   
   console.log('Loading simplified roles route...');
-  app.use('/api/roles', generalApiLimiter, require('./routes/roles-simple')); // Role management (simplified)
+  app.use('/api/roles', require('./routes/roles-simple')); // Role management (simplified)
   console.log('Simplified roles route loaded successfully');
   
   console.log('Loading simplified points route...');
-  app.use('/api/points', generalApiLimiter, require('./routes/points-simple')); // Points system (simplified)
+  app.use('/api/points', require('./routes/points-simple')); // Points system (simplified)
   console.log('Simplified points route loaded successfully');
   
   console.log('Loading games route...');
-  app.use('/api/games', generalApiLimiter, require('./routes/games')); // Game formats
+  app.use('/api/games', require('./routes/games')); // Game formats
   console.log('Games route loaded successfully');
   
 } catch (error) {

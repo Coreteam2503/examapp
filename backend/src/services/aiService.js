@@ -10,12 +10,12 @@ class AIService {
   initialize() {
     const apiKey = process.env.OPENAI_API_KEY;
     
-    console.log('Initializing AI Service...');
-    console.log('API Key present:', apiKey ? 'Yes' : 'No');
+    console.log('🔧 [AIService] Initializing AI Service...');
+    console.log('🔑 [AIService] API Key present:', apiKey ? 'Yes' : 'No');
     
     if (!apiKey) {
-      console.warn('OpenAI API key not found. AI features will be disabled.');
-      console.warn('Please set OPENAI_API_KEY in your environment variables.');
+      console.warn('⚠️ [AIService] OpenAI API key not found. AI features will be disabled.');
+      console.warn('⚠️ [AIService] Please set OPENAI_API_KEY in your environment variables.');
       return;
     }
 
@@ -24,20 +24,24 @@ class AIService {
         apiKey: apiKey,
       });
       this.isConfigured = true;
-      console.log('OpenAI API client initialized successfully');
+      console.log('✅ [AIService] OpenAI API client initialized successfully');
     } catch (error) {
-      console.error('Failed to initialize OpenAI client:', error.message);
+      console.error('❌ [AIService] Failed to initialize OpenAI client:', error.message);
       this.isConfigured = false;
     }
   }
 
   // Test API connectivity
   async testConnection() {
+    console.log('🧪 [AIService] Testing OpenAI API connection...');
+    
     if (!this.isConfigured) {
+      console.error('❌ [AIService] Cannot test connection - OpenAI API is not configured');
       throw new Error('OpenAI API is not configured. Please check your API key.');
     }
 
     try {
+      console.log('📡 [AIService] Sending test request to OpenAI API...');
       const response = await this.openai.chat.completions.create({
         model: 'gpt-3.5-turbo',
         messages: [
@@ -50,6 +54,9 @@ class AIService {
         temperature: 0
       });
 
+      console.log('✅ [AIService] OpenAI API test successful');
+      console.log('📊 [AIService] Test response usage:', response.usage);
+
       return {
         success: true,
         message: 'OpenAI API connection successful',
@@ -58,7 +65,7 @@ class AIService {
         usage: response.usage
       };
     } catch (error) {
-      console.error('OpenAI API test failed:', error);
+      console.error('❌ [AIService] OpenAI API test failed:', error);
       return {
         success: false,
         message: 'OpenAI API connection failed',
@@ -69,10 +76,6 @@ class AIService {
 
   // Generate quiz questions from content
   async generateQuizQuestions(content, options = {}) {
-    if (!this.isConfigured) {
-      throw new Error('OpenAI API is not configured. Please check your API key.');
-    }
-
     const {
       numQuestions = 5,
       difficulty = 'medium',
@@ -80,14 +83,33 @@ class AIService {
       language = 'auto-detect'
     } = options;
 
+    console.log('🚀 [AIService] Starting quiz generation...');
+    console.log('📝 [AIService] Quiz parameters:', {
+      numQuestions,
+      difficulty,
+      questionTypes,
+      language,
+      contentLength: content.length
+    });
+
+    if (!this.isConfigured) {
+      console.error('❌ [AIService] Cannot generate quiz - OpenAI API is not configured');
+      throw new Error('OpenAI API is not configured. Please check your API key.');
+    }
+
     try {
+      console.log('🔨 [AIService] Building quiz prompt...');
       const prompt = this.buildQuizPrompt(content, {
         numQuestions,
         difficulty,
         questionTypes,
         language
       });
+      console.log('📏 [AIService] Prompt length:', prompt.length, 'characters');
 
+      console.log('📡 [AIService] Sending request to OpenAI API...');
+      const startTime = Date.now();
+      
       const response = await this.openai.chat.completions.create({
         model: 'gpt-3.5-turbo',
         messages: [
@@ -105,7 +127,37 @@ class AIService {
         response_format: { type: "json_object" }
       });
 
-      const result = JSON.parse(response.choices[0].message.content);
+      const endTime = Date.now();
+      console.log('⏱️ [AIService] OpenAI API response time:', endTime - startTime, 'ms');
+      console.log('📊 [AIService] API Usage:', response.usage);
+
+      console.log('🔍 [AIService] Parsing OpenAI response...');
+      console.log('📄 [AIService] Raw response length:', response.choices[0].message.content.length, 'characters');
+      console.log('📋 [AIService] Raw response preview:', response.choices[0].message.content.substring(0, 200) + '...');
+
+      let result;
+      try {
+        result = JSON.parse(response.choices[0].message.content);
+        console.log('✅ [AIService] Successfully parsed JSON response');
+        console.log('📊 [AIService] Generated questions count:', result.questions?.length || 0);
+      } catch (parseError) {
+        console.error('❌ [AIService] Failed to parse JSON response:', parseError.message);
+        console.error('🔍 [AIService] Raw response content:', response.choices[0].message.content);
+        throw new Error(`Failed to parse OpenAI response: ${parseError.message}`);
+      }
+
+      // Validate the result structure
+      if (!result.questions || !Array.isArray(result.questions)) {
+        console.error('❌ [AIService] Invalid response structure - missing questions array');
+        throw new Error('Invalid response structure: missing questions array');
+      }
+
+      console.log('✅ [AIService] Quiz generation completed successfully');
+      console.log('📈 [AIService] Final result:', {
+        questionsGenerated: result.questions.length,
+        hasMetadata: !!result.metadata,
+        questionTypes: result.questions.map(q => q.type)
+      });
       
       return {
         success: true,
@@ -115,11 +167,17 @@ class AIService {
           usage: response.usage,
           difficulty: difficulty,
           language: language,
-          contentLength: content.length
+          contentLength: content.length,
+          generationTime: endTime - startTime,
+          ...result.metadata
         }
       };
     } catch (error) {
-      console.error('Quiz generation failed:', error);
+      console.error('❌ [AIService] Quiz generation failed:', error);
+      console.error('🔍 [AIService] Error details:', {
+        message: error.message,
+        stack: error.stack
+      });
       throw new Error(`Failed to generate quiz: ${error.message}`);
     }
   }
@@ -127,6 +185,8 @@ class AIService {
   // Build the prompt for quiz generation
   buildQuizPrompt(content, options) {
     const { numQuestions, difficulty, questionTypes, language } = options;
+    
+    console.log('🔨 [AIService] Building prompt with options:', { numQuestions, difficulty, questionTypes, language });
     
     const questionTypeInstructions = {
       'multiple-choice': 'Multiple choice questions with 4 options (A, B, C, D)',
@@ -137,7 +197,7 @@ class AIService {
     
     const instructions = questionTypes.map(type => questionTypeInstructions[type] || type).join(', ');
     
-    return `
+    const prompt = `
 Please analyze the following code/content and generate ${numQuestions} high-quality quiz questions.
 
 CONTENT TO ANALYZE:
@@ -195,15 +255,25 @@ RESPONSE FORMAT (JSON):
 
 Generate diverse, educational questions that test understanding of the content provided.
 `;
+
+    console.log('✅ [AIService] Prompt built successfully');
+    return prompt;
   }
 
   // Generate explanations for code
   async explainCode(code, language = 'auto-detect') {
+    console.log('🚀 [AIService] Starting code explanation...');
+    console.log('📝 [AIService] Code explanation parameters:', { language, codeLength: code.length });
+
     if (!this.isConfigured) {
+      console.error('❌ [AIService] Cannot explain code - OpenAI API is not configured');
       throw new Error('OpenAI API is not configured. Please check your API key.');
     }
 
     try {
+      console.log('📡 [AIService] Sending code explanation request to OpenAI...');
+      const startTime = Date.now();
+
       const response = await this.openai.chat.completions.create({
         model: 'gpt-3.5-turbo',
         messages: [
@@ -220,23 +290,29 @@ Generate diverse, educational questions that test understanding of the content p
         temperature: 0.3
       });
 
+      const endTime = Date.now();
+      console.log('⏱️ [AIService] Code explanation response time:', endTime - startTime, 'ms');
+      console.log('📊 [AIService] API Usage:', response.usage);
+      console.log('✅ [AIService] Code explanation completed successfully');
+
       return {
         success: true,
         explanation: response.choices[0].message.content.trim(),
         metadata: {
           model: response.model,
-          usage: response.usage
+          usage: response.usage,
+          generationTime: endTime - startTime
         }
       };
     } catch (error) {
-      console.error('Code explanation failed:', error);
+      console.error('❌ [AIService] Code explanation failed:', error);
       throw new Error(`Failed to explain code: ${error.message}`);
     }
   }
 
   // Get API status and configuration info
   getStatus() {
-    return {
+    const status = {
       configured: this.isConfigured,
       provider: 'OpenAI',
       model: 'gpt-3.5-turbo',
@@ -246,60 +322,96 @@ Generate diverse, educational questions that test understanding of the content p
         testConnection: this.isConfigured
       }
     };
+
+    console.log('📊 [AIService] Current status:', status);
+    return status;
   }
 
   // Validate quiz question format
   validateQuizFormat(questions) {
+    console.log('🔍 [AIService] Validating quiz format...');
+    console.log('📊 [AIService] Questions to validate:', questions?.length || 0);
+    
     const errors = [];
     
     if (!Array.isArray(questions)) {
-      errors.push('Questions must be an array');
+      const error = 'Questions must be an array';
+      console.error('❌ [AIService] Validation error:', error);
+      errors.push(error);
       return errors;
     }
 
     questions.forEach((question, index) => {
+      console.log(`🔍 [AIService] Validating question ${index + 1}:`, {
+        type: question.type,
+        hasQuestion: !!question.question,
+        hasCorrectAnswer: question.correct_answer !== undefined
+      });
+
       if (!question.question || typeof question.question !== 'string') {
-        errors.push(`Question ${index + 1}: Missing or invalid question text`);
+        const error = `Question ${index + 1}: Missing or invalid question text`;
+        console.error('❌ [AIService] Validation error:', error);
+        errors.push(error);
       }
       
       if (!question.type || !['multiple-choice', 'true-false', 'fill-in-the-blank', 'matching'].includes(question.type)) {
-        errors.push(`Question ${index + 1}: Invalid question type`);
+        const error = `Question ${index + 1}: Invalid question type`;
+        console.error('❌ [AIService] Validation error:', error);
+        errors.push(error);
       }
       
       if (question.type === 'multiple-choice') {
         if (!Array.isArray(question.options) || question.options.length < 2) {
-          errors.push(`Question ${index + 1}: Multiple choice questions need at least 2 options`);
+          const error = `Question ${index + 1}: Multiple choice questions need at least 2 options`;
+          console.error('❌ [AIService] Validation error:', error);
+          errors.push(error);
         }
         
         if (!question.correct_answer) {
-          errors.push(`Question ${index + 1}: Missing correct answer`);
+          const error = `Question ${index + 1}: Missing correct answer`;
+          console.error('❌ [AIService] Validation error:', error);
+          errors.push(error);
         }
       }
       
       if (question.type === 'true-false') {
         if (typeof question.correct_answer !== 'boolean') {
-          errors.push(`Question ${index + 1}: True/false questions need a boolean correct_answer`);
+          const error = `Question ${index + 1}: True/false questions need a boolean correct_answer`;
+          console.error('❌ [AIService] Validation error:', error);
+          errors.push(error);
         }
       }
       
       if (question.type === 'matching') {
         if (!Array.isArray(question.pairs) || question.pairs.length < 2) {
-          errors.push(`Question ${index + 1}: Matching questions need at least 2 pairs`);
+          const error = `Question ${index + 1}: Matching questions need at least 2 pairs`;
+          console.error('❌ [AIService] Validation error:', error);
+          errors.push(error);
         }
         
         question.pairs?.forEach((pair, pairIndex) => {
           if (!pair.left || !pair.right) {
-            errors.push(`Question ${index + 1}, Pair ${pairIndex + 1}: Missing left or right value`);
+            const error = `Question ${index + 1}, Pair ${pairIndex + 1}: Missing left or right value`;
+            console.error('❌ [AIService] Validation error:', error);
+            errors.push(error);
           }
         });
       }
       
       if (question.type === 'fill-in-the-blank') {
         if (!question.blanks || !Array.isArray(question.blanks)) {
-          errors.push(`Question ${index + 1}: Fill-in-the-blank questions need blanks array`);
+          const error = `Question ${index + 1}: Fill-in-the-blank questions need blanks array`;
+          console.error('❌ [AIService] Validation error:', error);
+          errors.push(error);
         }
       }
     });
+
+    if (errors.length === 0) {
+      console.log('✅ [AIService] Quiz validation completed successfully');
+    } else {
+      console.error('❌ [AIService] Quiz validation failed with', errors.length, 'errors');
+    }
 
     return errors;
   }

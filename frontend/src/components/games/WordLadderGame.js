@@ -13,187 +13,175 @@ const WordLadderGame = ({ gameData, onGameComplete }) => {
   const [ladderSteps, setLadderSteps] = useState(0);
   const [avatarCharacter, setAvatarCharacter] = useState(Math.random() > 0.5 ? '👦' : '👧');
 
-  // Generate programming-focused questions dynamically based on gameData
-  const generateProgrammingQuestions = (numQuestions = 5) => {
-    const programmingQuestions = [
-      {
-        id: 1,
-        type: 'mcq',
-        question: 'What will be the output of this Python code?\n\nfor i in range(3):\n    print(i * 2)',
-        options: ['0 2 4', '0\n2\n4', '1 2 3', '2 4 6'],
-        correctAnswer: '0\n2\n4',
-        hint: 'The range(3) function generates numbers 0, 1, 2. Each number is multiplied by 2 and printed on a new line.'
-      },
-      {
-        id: 2,
-        type: 'fill_blank',
-        question: 'Complete the JavaScript function to reverse a string:\n\nfunction reverseString(str) {\n    return str.______().reverse().join("");\n}',
-        correctAnswer: 'split',
-        hint: 'To reverse a string in JavaScript, you first need to convert it to an array using the split() method.'
-      },
-      {
-        id: 3,
-        type: 'true_false',
-        question: 'In Python, the following code will create a shallow copy of a list:\n\nnew_list = old_list[:]',
-        correctAnswer: true,
-        hint: 'The slice notation [:] creates a shallow copy of the list, copying all elements to a new list object.'
-      },
-      {
-        id: 4,
-        type: 'matching',
-        question: 'Match the programming concepts with their definitions:',
-        pairs: [
-          { left: 'Recursion', right: 'Function calling itself' },
-          { left: 'Iteration', right: 'Repeating a process' },
-          { left: 'Polymorphism', right: 'Same interface, different implementations' }
-        ],
-        hint: 'These are fundamental programming concepts: Recursion involves self-calling functions, Iteration is about loops, and Polymorphism allows different implementations of the same interface.'
-      },
-      {
-        id: 5,
-        type: 'mcq',
-        question: 'What is the time complexity of binary search?',
-        options: ['O(n)', 'O(log n)', 'O(n²)', 'O(1)'],
-        correctAnswer: 'O(log n)',
-        hint: 'Binary search divides the search space in half with each comparison, making it logarithmic in time complexity.'
-      },
-      {
-        id: 6,
-        type: 'mcq',
-        question: 'Which of the following is a valid variable name in Python?',
-        options: ['2variable', '_my_var', 'my-var', 'class'],
-        correctAnswer: '_my_var',
-        hint: 'Variable names in Python can start with letters or underscores, but not numbers or contain hyphens.'
-      },
-      {
-        id: 7,
-        type: 'fill_blank',
-        question: 'Complete the Python code to create a list:\n\nmy_list = [1, 2, 3]\nprint(_______(my_list))',
-        correctAnswer: 'len',
-        hint: 'The len() function returns the number of items in a sequence.'
-      },
-      {
-        id: 8,
-        type: 'true_false',
-        question: 'In JavaScript, the === operator checks for both value and type equality.',
-        correctAnswer: true,
-        hint: 'The === operator (strict equality) checks both value and type, while == only checks value.'
-      },
-      {
-        id: 9,
-        type: 'mcq',
-        question: 'What does HTML stand for?',
-        options: ['High Tech Modern Language', 'HyperText Markup Language', 'Home Tool Markup Language', 'Hyperlink and Text Markup Language'],
-        correctAnswer: 'HyperText Markup Language',
-        hint: 'HTML is the standard markup language for creating web pages.'
-      },
-      {
-        id: 10,
-        type: 'fill_blank',
-        question: 'Complete the CSS rule:\n\n.container {\n  display: _______;\n}',
-        correctAnswer: 'flex',
-        hint: 'Flexbox is a popular CSS layout method for creating flexible layouts.'
-      },
-      {
-        id: 11,
-        type: 'mcq',
-        question: 'What is the purpose of the return statement in a function?',
-        options: ['To print output', 'To send back a value', 'To create variables', 'To delete data'],
-        correctAnswer: 'To send back a value',
-        hint: 'The return statement is used to send a value back from a function to the code that called it.'
-      },
-      {
-        id: 12,
-        type: 'true_false',
-        question: 'In most programming languages, arrays start indexing from 1.',
-        correctAnswer: false,
-        hint: 'Most programming languages use zero-based indexing, meaning arrays start from index 0.'
-      },
-      {
-        id: 13,
-        type: 'fill_blank',
-        question: 'Complete the Python conditional statement:\n\nif x > 5:\n    print("Greater")\n____:\n    print("Not greater")',
-        correctAnswer: 'else',
-        hint: 'The else keyword is used to execute code when the if condition is false.'
-      },
-      {
-        id: 14,
-        type: 'mcq',
-        question: 'Which data structure follows Last In, First Out (LIFO) principle?',
-        options: ['Queue', 'Stack', 'Array', 'Tree'],
-        correctAnswer: 'Stack',
-        hint: 'A stack follows LIFO principle where the last element added is the first one to be removed.'
-      },
-      {
-        id: 15,
-        type: 'matching',
-        question: 'Match the loop types with their descriptions:',
-        pairs: [
-          { left: 'for loop', right: 'Iterates over a sequence' },
-          { left: 'while loop', right: 'Repeats while condition is true' },
-          { left: 'do-while loop', right: 'Executes at least once' }
-        ],
-        hint: 'Different loop types serve different purposes: for loops iterate over sequences, while loops check conditions, and do-while loops guarantee at least one execution.'
-      },
-      {
-        id: 16,
-        type: 'true_false',
-        question: 'SQL stands for Structured Query Language.',
-        correctAnswer: true,
-        hint: 'SQL is indeed Structured Query Language, used for managing relational databases.'
-      },
-      {
-        id: 17,
-        type: 'mcq',
-        question: 'What is the primary purpose of version control systems like Git?',
-        options: ['To compile code', 'To track changes in files', 'To design user interfaces', 'To test applications'],
-        correctAnswer: 'To track changes in files',
-        hint: 'Version control systems track changes in files over time, allowing multiple developers to collaborate.'
-      },
-      {
-        id: 18,
-        type: 'fill_blank',
-        question: 'Complete the HTTP status code meaning:\n\n200 means _______, 404 means Not Found',
-        correctAnswer: 'OK',
-        hint: 'HTTP status code 200 indicates that the request was successful.'
-      },
-      {
-        id: 19,
-        type: 'mcq',
-        question: 'Which principle focuses on hiding internal implementation details?',
-        options: ['Inheritance', 'Polymorphism', 'Encapsulation', 'Abstraction'],
-        correctAnswer: 'Encapsulation',
-        hint: 'Encapsulation is about bundling data and methods together and hiding internal details from outside access.'
-      },
-      {
-        id: 20,
-        type: 'true_false',
-        question: 'Machine learning is a subset of artificial intelligence.',
-        correctAnswer: true,
-        hint: 'Machine learning is indeed a subset of AI that focuses on learning from data without explicit programming.'
-      }
-    ];
-
-    // Generate additional questions if needed to meet the requested count
-    const baseQuestions = [...programmingQuestions];
-    const result = [];
+  // Convert ladder_steps data to the format expected by the component
+  const convertLadderDataToGameFormat = (question) => {
+    console.log('🔄 Converting question:', question);
     
-    // Fill up to numQuestions by repeating and modifying questions if necessary
-    for (let i = 0; i < numQuestions; i++) {
-      const baseQuestion = baseQuestions[i % baseQuestions.length];
-      const questionCopy = {
-        ...baseQuestion,
-        id: i + 1  // Ensure unique IDs
-      };
-      result.push(questionCopy);
+    if (!question?.ladder_steps) {
+      console.warn('❌ No ladder_steps found in question:', question);
+      return null;
     }
 
-    return result;
+    let ladder_steps;
+    
+    // Handle ladder_steps as string or object
+    if (typeof question.ladder_steps === 'string') {
+      try {
+        ladder_steps = JSON.parse(question.ladder_steps);
+      } catch (e) {
+        console.error('❌ Failed to parse ladder_steps string:', question.ladder_steps);
+        return null;
+      }
+    } else {
+      ladder_steps = question.ladder_steps;
+    }
+
+    console.log('📊 Parsed ladder steps data:', ladder_steps);
+    
+    // Handle code analysis type questions (NEW FORMAT)
+    if (ladder_steps.type === 'code_analysis') {
+      // Combine question text with code snippet for display in the question box
+      let combinedQuestion = ladder_steps.question;
+      if (ladder_steps.code_snippet) {
+        combinedQuestion += `\n\n${ladder_steps.code_snippet}`;
+      }
+      
+      // Shuffle options and update correct answer
+      const originalOptions = ladder_steps.options || [];
+      const originalCorrectAnswer = ladder_steps.correct_answer;
+      
+      // Find the correct option text
+      const correctOptionText = originalOptions.find(option => 
+        option.startsWith(originalCorrectAnswer + ')')
+      );
+      
+      // Create array of options without letters
+      const optionsWithoutLetters = originalOptions.map(option => ({
+        originalLetter: option.match(/^([A-D])\)/)?.[1],
+        text: option.replace(/^[A-D]\)\s*/, ''),
+        isCorrect: option.startsWith(originalCorrectAnswer + ')')
+      }));
+      
+      // Shuffle the options
+      const shuffledOptions = [...optionsWithoutLetters].sort(() => Math.random() - 0.5);
+      
+      // Reassign letters A, B, C, D and find new correct answer
+      const finalOptions = shuffledOptions.map((option, index) => {
+        const newLetter = String.fromCharCode(65 + index); // A, B, C, D
+        return `${newLetter}) ${option.text}`;
+      });
+      
+      // Find which letter the correct answer is now
+      const newCorrectAnswer = shuffledOptions.findIndex(option => option.isCorrect);
+      const finalCorrectAnswer = String.fromCharCode(65 + newCorrectAnswer);
+      
+      console.log('🔀 Shuffled options:', {
+        original: originalOptions,
+        shuffled: finalOptions,
+        originalCorrect: originalCorrectAnswer,
+        newCorrect: finalCorrectAnswer
+      });
+      
+      const converted = {
+        id: question.id || Math.random(),
+        type: 'mcq',
+        question: combinedQuestion, // Include code in the question text
+        code_snippet: null, // Don't show code separately since it's in question
+        options: finalOptions,
+        correctAnswer: finalCorrectAnswer,
+        hint: ladder_steps.explanation || `This question tests: ${ladder_steps.question_type || 'code understanding'}`,
+        ladder_data: ladder_steps,
+        question_type: ladder_steps.question_type || 'analysis',
+        concepts: ladder_steps.concepts || ['programming']
+      };
+      
+      console.log('✅ Converted code analysis question:', converted);
+      return converted;
+    }
+    
+    // Handle legacy programming type questions (debugging)
+    if (ladder_steps.type === 'programming') {
+      const converted = {
+        id: question.id || Math.random(),
+        type: 'mcq',
+        question: `What is wrong with this code?\n\n${ladder_steps.buggyCode}`,
+        code_snippet: ladder_steps.buggyCode,
+        options: [
+          'A) Syntax error in function definition',
+          'B) Missing import statement', 
+          'C) Incorrect variable name',
+          'D) Wrong function call'
+        ],
+        correctAnswer: 'A',
+        hint: ladder_steps.codeHints?.[0] || 'Look for syntax errors in the code',
+        ladder_data: ladder_steps,
+        question_type: 'debugging',
+        concepts: ['programming', 'debugging']
+      };
+      
+      console.log('✅ Converted programming debug question:', converted);
+      return converted;
+    }
+    
+    // Handle legacy word ladder format (convert to programming question)
+    const { startWord, endWord, steps, hints } = ladder_steps;
+    if (startWord && endWord) {
+      const converted = {
+        id: question.id || Math.random(),
+        type: 'mcq',
+        question: `In programming, what concept relates to transforming "${startWord}" to "${endWord}"?`,
+        options: [
+          'A) Data transformation',
+          'B) Algorithm design',
+          'C) Problem solving',
+          'D) Code optimization'
+        ],
+        correctAnswer: 'A',
+        hint: `Think about how data flows and changes in programming`,
+        ladder_data: ladder_steps,
+        question_type: 'concept',
+        concepts: ['programming', 'concepts']
+      };
+      
+      console.log('✅ Converted legacy word ladder to programming concept:', converted);
+      return converted;
+    }
+
+    console.warn('❌ Unknown ladder_steps format:', ladder_steps);
+    return null;
   };
 
   // Get the number of questions from gameData
   const numQuestions = gameData?.questions?.length || gameData?.metadata?.totalQuestions || gameData?.game_options?.numQuestions || 5;
-  const questions = generateProgrammingQuestions(numQuestions);
+  
+  // Use actual game data instead of hardcoded content
+  const useActualGameData = gameData?.questions && gameData.questions.length > 0;
+  
+  // Memoize questions to prevent re-shuffling on every render
+  const questions = React.useMemo(() => {
+    if (useActualGameData) {
+      console.log('🎮 Using actual game data for Word Ladder');
+      console.log('📊 Full gameData:', gameData);
+      console.log('📊 First question ladder_steps:', gameData.questions[0]?.ladder_steps);
+      console.log('📊 First question full object:', gameData.questions[0]);
+      
+      // Convert each question's ladder_steps to the expected format
+      const convertedQuestions = gameData.questions.map(question => convertLadderDataToGameFormat(question)).filter(Boolean);
+      console.log('🔄 Converted ladder content (one-time):', convertedQuestions);
+      
+      // NO FALLBACKS - Let it fail if conversion doesn't work
+      if (convertedQuestions.length === 0) {
+        console.error('❌ CONVERSION FAILED: No questions converted successfully');
+        console.error('❌ Raw gameData.questions:', gameData.questions);
+        throw new Error('Failed to convert any questions - check conversion logic');
+      }
+      
+      return convertedQuestions;
+    } else {
+      console.error('❌ NO GAME DATA: useActualGameData is false');
+      throw new Error('No game data available - check data loading');
+    }
+  }, [gameData, useActualGameData]); // Only recalculate if gameData changes
 
   // Timer effect
   useEffect(() => {
@@ -292,12 +280,12 @@ const WordLadderGame = ({ gameData, onGameComplete }) => {
       setLadderSteps(prev => prev + 1);
     }
 
-    // Move to next question after a delay, regardless of correctness
+    // Move to next question after a longer delay to show feedback
     setTimeout(() => {
       if (currentQuestionIndex < questions.length - 1) {
         setCurrentQuestionIndex(prev => prev + 1);
       }
-    }, 1500);
+    }, 3000); // Increased from 1500ms to 3000ms to show correct answer
   };
 
   const startGame = () => {
@@ -623,7 +611,9 @@ const QuestionCard = ({ questionNumber, question, isAnswered, onAnswer, userAnsw
     
     switch (question.type) {
       case 'mcq':
-        isCorrect = answer === question.correctAnswer;
+        // Extract letter from the clicked option (e.g., "A) Text..." -> "A")
+        const selectedLetter = answer.match(/^([A-D])\)/)?.[1];
+        isCorrect = selectedLetter === question.correctAnswer;
         break;
       case 'true_false':
         isCorrect = answer === question.correctAnswer;
@@ -645,49 +635,74 @@ const QuestionCard = ({ questionNumber, question, isAnswered, onAnswer, userAnsw
       case 'mcq':
         return (
           <div className="mcq-options">
-            {question.options.map((option, index) => (
-              <button
-                key={index}
-                onClick={() => handleSubmit(option)}
-                disabled={isAnswered}
-                className={`option-btn ${
-                  isAnswered
-                    ? option === question.correctAnswer
-                      ? 'correct'
-                      : option === userAnswer?.answer && !userAnswer?.isCorrect
-                      ? 'incorrect'
-                      : 'neutral'
-                    : ''
-                }`}
-              >
-                <span className="option-letter">{String.fromCharCode(65 + index)}.</span>
-                <pre className="option-text">{option}</pre>
-              </button>
-            ))}
+            {question.options.map((option, index) => {
+              let buttonClass = 'option-btn';
+              
+              if (isAnswered) {
+                // Extract letter from option (e.g., "A) Text..." -> "A")
+                const optionLetter = option.match(/^([A-D])\)/)?.[1];
+                
+                // Always highlight the correct answer in green
+                if (optionLetter === question.correctAnswer) {
+                  buttonClass += ' correct';
+                }
+                // Also highlight the user's wrong answer in red (if different from correct)
+                else if (option === userAnswer?.answer && !userAnswer?.isCorrect) {
+                  buttonClass += ' incorrect';
+                }
+                // All other options remain neutral
+                else {
+                  buttonClass += ' neutral';
+                }
+              }
+              
+              return (
+                <button
+                  key={index}
+                  onClick={() => handleSubmit(option)}
+                  disabled={isAnswered}
+                  className={buttonClass}
+                >
+                  <span className="option-letter">{String.fromCharCode(65 + index)}.</span>
+                  <pre className="option-text">{option}</pre>
+                </button>
+              );
+            })}
           </div>
         );
 
       case 'true_false':
         return (
           <div className="true-false-options">
-            {[true, false].map((value) => (
-              <button
-                key={value.toString()}
-                onClick={() => handleSubmit(value)}
-                disabled={isAnswered}
-                className={`tf-btn ${
-                  isAnswered
-                    ? value === question.correctAnswer
-                      ? 'correct'
-                      : value === userAnswer?.answer && !userAnswer?.isCorrect
-                      ? 'incorrect'
-                      : 'neutral'
-                    : ''
-                }`}
-              >
-                {value ? '✓ True' : '✗ False'}
-              </button>
-            ))}
+            {[true, false].map((value) => {
+              let buttonClass = 'tf-btn';
+              
+              if (isAnswered) {
+                // Always highlight the correct answer in green
+                if (value === question.correctAnswer) {
+                  buttonClass += ' correct';
+                }
+                // Also highlight the user's wrong answer in red (if different from correct)
+                else if (value === userAnswer?.answer && !userAnswer?.isCorrect) {
+                  buttonClass += ' incorrect';
+                }
+                // All other options remain neutral
+                else {
+                  buttonClass += ' neutral';
+                }
+              }
+              
+              return (
+                <button
+                  key={value.toString()}
+                  onClick={() => handleSubmit(value)}
+                  disabled={isAnswered}
+                  className={buttonClass}
+                >
+                  {value ? '✓ True' : '✗ False'}
+                </button>
+              );
+            })}
           </div>
         );
 
@@ -738,11 +753,29 @@ const QuestionCard = ({ questionNumber, question, isAnswered, onAnswer, userAnsw
         </div>
         
         <div className="question-body">
-          <h3 className="question-text">
+          <div className="question-text">
             <pre className="question-pre">{question.question}</pre>
-          </h3>
+          </div>
           
           {renderQuestionContent()}
+          
+          {/* Show correct answer feedback before moving to next question */}
+          {showFeedback && (
+            <div className={`feedback ${userAnswer?.isCorrect ? 'correct' : 'incorrect'}`}>
+              {userAnswer?.isCorrect ? (
+                <div className="feedback-correct">
+                  🎉 <strong>Correct!</strong>
+                </div>
+              ) : (
+                <div className="feedback-incorrect">
+                  ❌ <strong>Wrong answer</strong>
+                  <div className="correct-answer-display">
+                    ✅ Correct answer: <strong>{question.correctAnswer}</strong>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           
           {/* Hint displayed below question and options */}
           <div className="hint-with-question">
@@ -754,12 +787,6 @@ const QuestionCard = ({ questionNumber, question, isAnswered, onAnswer, userAnsw
               <p>{question.hint}</p>
             </div>
           </div>
-          
-          {showFeedback && (
-            <div className={`feedback ${userAnswer?.isCorrect ? 'correct' : 'incorrect'}`}>
-              {userAnswer?.isCorrect ? '🎉 Correct!' : '❌ Wrong answer'}
-            </div>
-          )}
         </div>
       </div>
     </div>

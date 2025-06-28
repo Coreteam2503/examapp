@@ -232,11 +232,107 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
     return result;
   };
 
+  // Convert pattern_data to the format expected by the component
+  const convertPatternDataToGameFormat = (question) => {
+    console.log('🔄 Converting pattern_data:', question);
+    
+    if (!question?.pattern_data) {
+      console.warn('❌ No pattern_data found in question:', question);
+      return null;
+    }
+
+    let pattern_data;
+    
+    // Handle pattern_data as string or object
+    if (typeof question.pattern_data === 'string') {
+      try {
+        pattern_data = JSON.parse(question.pattern_data);
+      } catch (e) {
+        console.error('❌ Failed to parse pattern_data string:', question.pattern_data);
+        return null;
+      }
+    } else {
+      pattern_data = question.pattern_data;
+    }
+
+    const { grid, symbols, sequence } = pattern_data;
+
+    if (!symbols || !Array.isArray(symbols)) {
+      console.warn('❌ Invalid symbols in pattern_data:', pattern_data);
+      return null;
+    }
+
+    // Create memory pairs from symbols
+    const leftColumn = symbols.map((symbol, index) => ({
+      content: symbol,
+      symbol: symbol,
+      position: index
+    }));
+
+    const rightColumn = symbols.map((symbol, index) => ({
+      content: `${symbol} Pattern`,
+      description: `Match with ${symbol}`,
+      position: index
+    }));
+
+    // Create matching pairs - each symbol matches with itself
+    const pairs = symbols.map((symbol, index) => [index, index]);
+
+    const converted = {
+      type: 'memory_grid',
+      grid: grid || [],
+      symbols: symbols,
+      sequence: sequence || [],
+      gridSize: Math.max(2, Math.sqrt(symbols.length)),
+      leftColumn: leftColumn,
+      rightColumn: rightColumn,
+      pairs: pairs
+    };
+    
+    console.log('✅ Converted pattern_data to game format:', converted);
+    return converted;
+  };
+
   // Get the number of questions from gameData
   const numQuestions = gameData?.questions?.length || gameData?.metadata?.totalQuestions || gameData?.game_options?.numQuestions || 5;
-  const programmingContent = generateProgrammingContent(numQuestions);
   
-  const currentPattern = programmingContent[currentLevel] || programmingContent[0];
+  // Use actual game data instead of hardcoded content
+  const useActualGameData = gameData?.questions && gameData.questions.length > 0;
+  
+  let gameContent;
+  if (useActualGameData) {
+    console.log('🎮 Using actual game data for Memory Grid');
+    console.log('📊 First question pattern_data:', gameData.questions[0]?.pattern_data);
+    
+    // Convert each question's pattern_data to the expected format
+    gameContent = gameData.questions.map(question => convertPatternDataToGameFormat(question)).filter(Boolean);
+    console.log('🔄 Converted game content:', gameContent);
+    
+    // If no valid conversions, use a simple symbol matching game based on first question
+    if (gameContent.length === 0 && gameData.questions.length > 0) {
+      console.log('⚠️ No pattern_data found, creating simple symbol game');
+      const symbols = ['🎯', '💡', '🔧', '💻', '📝', '🌟'];
+      gameContent = [{
+        type: 'memory_grid',
+        leftColumn: symbols.slice(0, 3).map((symbol, index) => ({
+          content: symbol,
+          symbol: symbol,
+          position: index
+        })),
+        rightColumn: symbols.slice(0, 3).map((symbol, index) => ({
+          content: `Match ${symbol}`,
+          description: `Find the matching ${symbol}`,
+          position: index
+        })),
+        pairs: [[0, 0], [1, 1], [2, 2]]
+      }];
+    }
+  } else {
+    console.log('🔧 Using fallback programming content');
+    gameContent = generateProgrammingContent(numQuestions);
+  }
+  
+  const currentPattern = gameContent[currentLevel] || gameContent[0];
 
   useEffect(() => {
     let interval;
@@ -347,7 +443,7 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
   const handleLevelComplete = () => {
     setTimeout(() => {
       // Check if there are more levels
-      if (currentLevel + 1 < programmingContent.length) {
+      if (currentLevel + 1 < gameContent.length) {
         // Move to next level
         setCurrentLevel(prev => prev + 1);
         setMatchedPairs(new Set());
@@ -362,7 +458,7 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
           onGameComplete({
             success: true,
             score,
-            levels: programmingContent.length,
+            levels: gameContent.length,
             timeElapsed,
             accuracy: calculateAccuracy()
           });
@@ -504,9 +600,9 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
             </ul>
           </div>
           <div className="game-preview">
-            <p>Total Levels: <strong>{programmingContent.length}</strong></p>
+            <p>Total Levels: <strong>{gameContent.length}</strong></p>
             <p>Lives: <strong>3</strong></p>
-            <p>Challenge: <strong>Programming Code Matching</strong></p>
+            <p>Challenge: <strong>Memory Grid Game</strong></p>
           </div>
           <button className="start-game-btn" onClick={startGame}>
             Start Programming Challenge
@@ -518,7 +614,7 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
 
   if (gameState === 'complete') {
     const success = lives > 0;
-    const levelsCompleted = success ? programmingContent.length : currentLevel + 1;
+    const levelsCompleted = success ? gameContent.length : currentLevel + 1;
     const finalScore = calculateAccuracy();
     
     return (
@@ -543,7 +639,7 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
               <div className="stat-label">Time Taken</div>
             </div>
             <div className="stat-item">
-              <div className="stat-value">{levelsCompleted}/{programmingContent.length}</div>
+              <div className="stat-value">{levelsCompleted}/{gameContent.length}</div>
               <div className="stat-label">Levels Done</div>
             </div>
           </div>
@@ -677,7 +773,7 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
         <div className="game-info">
           <h2>Programming Memory Grid</h2>
           <div className="level-info">
-            Level {currentLevel + 1} of {programmingContent.length}
+            Level {currentLevel + 1} of {gameContent.length}
           </div>
         </div>
         <div className="game-stats">

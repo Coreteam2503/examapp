@@ -7,8 +7,8 @@ const { db } = require('../config/database');
 const mkdir = promisify(fs.mkdir);
 const stat = promisify(fs.stat);
 
-// Get max file size from environment (default 10KB)
-const MAX_FILE_SIZE_KB = parseInt(process.env.MAX_FILE_SIZE_KB) || 10;
+// Get max file size from environment (default 10MB)
+const MAX_FILE_SIZE_KB = parseInt(process.env.MAX_FILE_SIZE_KB) || 10240;
 const MAX_FILE_SIZE = MAX_FILE_SIZE_KB * 1024; // Convert KB to bytes
 
 console.log(`📁 File Upload Configuration:`);

@@ -1,4 +1,4 @@
-const PromptService = require('../../services/promptService'); // Updated with fallback support
+const PromptService = require('../../services/promptService');
 const { db: knex } = require('../config/database');
 const fs = require('fs').promises;
 const path = require('path');
@@ -13,6 +13,7 @@ class QuizController {
    * POST /api/quizzes/generate-enhanced
    */
   async generateEnhancedQuiz(req, res) {
+    console.log('🔥 [QuizController] generateEnhancedQuiz endpoint called!');
     try {
       const { 
         uploadId, 
@@ -23,41 +24,79 @@ class QuizController {
       } = req.body;
       const userId = req.user.userId;
 
+      console.log('🚀 [QuizController] Starting enhanced quiz generation...');
+      console.log('📝 [QuizController] Request parameters:', {
+        uploadId,
+        difficulty,
+        numQuestions,
+        questionTypes,
+        includeHints,
+        userId
+      });
+
       if (!uploadId) {
+        console.error('❌ [QuizController] Upload ID is required');
         return res.status(400).json({ error: 'Upload ID is required' });
       }
 
       // Get upload information
+      console.log('🔍 [QuizController] Fetching upload information...');
       const upload = await knex('uploads')
         .where({ id: uploadId, user_id: userId })
         .first();
 
       if (!upload) {
+        console.error('❌ [QuizController] Upload not found for user', userId, 'uploadId', uploadId);
         return res.status(404).json({ error: 'Upload not found' });
       }
 
+      console.log('✅ [QuizController] Upload found:', {
+        filename: upload.filename,
+        fileType: upload.file_type,
+        hasContent: !!upload.content,
+        hasFilePath: !!upload.file_path
+      });
+
       // Read file content
+      console.log('📖 [QuizController] Reading file content...');
       let content;
       if (upload.content) {
+        console.log('📄 [QuizController] Using content from database');
         content = upload.content;
       } else if (upload.file_path) {
+        console.log('📁 [QuizController] Reading content from file path:', upload.file_path);
         const filePath = path.join(__dirname, '../../uploads', upload.file_path);
         try {
           content = await fs.readFile(filePath, 'utf8');
+          console.log('✅ [QuizController] File content read successfully, length:', content.length);
         } catch (fileError) {
-          console.error('Error reading file:', fileError);
+          console.error('❌ [QuizController] Error reading file:', fileError);
           return res.status(500).json({ error: 'Could not read uploaded file' });
         }
       } else {
+        console.error('❌ [QuizController] No content source available');
         return res.status(400).json({ error: 'No content available for this upload' });
       }
 
       if (!content || content.trim().length === 0) {
+        console.error('❌ [QuizController] Upload content is empty');
         return res.status(400).json({ error: 'Upload content is empty' });
       }
 
+      console.log('📊 [QuizController] Content ready for processing:', {
+        contentLength: content.length,
+        contentPreview: content.substring(0, 100) + '...'
+      });
+
       // Generate quiz using LLM with enhanced options
-      console.log(`Generating enhanced quiz for upload ${uploadId} with types: ${questionTypes.join(', ')}`);
+      console.log('🎯 [QuizController] Starting LLM quiz generation...');
+      console.log('📝 [QuizController] LLM parameters:', {
+        difficulty,
+        numQuestions: parseInt(numQuestions),
+        questionTypes,
+        language: this.detectLanguage(upload.filename),
+        includeHints
+      });
       
       const quizData = await this.promptService.generateQuizFromContent(content, {
         difficulty,
@@ -67,7 +106,15 @@ class QuizController {
         includeHints
       });
 
+      console.log('✅ [QuizController] LLM quiz generation completed successfully');
+      console.log('📊 [QuizController] Generated quiz data:', {
+        questionsCount: quizData.questions?.length || 0,
+        hasMetadata: !!quizData.metadata,
+        questionTypes: quizData.questions?.map(q => q.type) || []
+      });
+
       // Store quiz in database with enhanced title
+      console.log('💾 [QuizController] Storing quiz in database...');
       const [quizId] = await knex('quizzes').insert({
         upload_id: uploadId,
         user_id: userId,
@@ -84,9 +131,21 @@ class QuizController {
         })
       });
 
+      console.log('✅ [QuizController] Quiz stored with ID:', quizId);
+
       // Store questions with enhanced data
+      console.log('💾 [QuizController] Storing questions in database...');
       const questions = quizData.questions.map((question, index) => {
         const normalizedType = this.normalizeQuestionType(question.type);
+        
+        console.log(`📝 [QuizController] Processing question ${index + 1}:`, {
+          id: question.id,
+          type: question.type,
+          normalizedType,
+          hasOptions: !!question.options,
+          hasCorrectAnswer: question.correct_answer !== undefined,
+          hasExplanation: !!question.explanation
+        });
         
         return {
           quiz_id: quizId,
@@ -106,11 +165,16 @@ class QuizController {
         };
       });
 
+      console.log('💾 [QuizController] Inserting', questions.length, 'questions into database...');
       await knex('questions').insert(questions);
+      console.log('✅ [QuizController] All questions inserted successfully');
 
       // Get the complete quiz data to return
+      console.log('🔍 [QuizController] Fetching complete quiz data...');
       const completeQuiz = await this.getCompleteQuizData(quizId);
+      console.log('✅ [QuizController] Complete quiz data retrieved');
 
+      console.log('🎉 [QuizController] Enhanced quiz generation completed successfully');
       res.status(201).json({
         message: 'Enhanced quiz generated successfully',
         quiz: completeQuiz,
@@ -123,7 +187,13 @@ class QuizController {
       });
 
     } catch (error) {
-      console.error('Error generating enhanced quiz:', error);
+      console.error('❌ [QuizController] Error generating enhanced quiz:', error);
+      console.error('🔍 [QuizController] Error details:', {
+        message: error.message,
+        stack: error.stack,
+        uploadId,
+        userId
+      });
       res.status(500).json({ 
         error: 'Failed to generate enhanced quiz',
         details: error.message 
@@ -131,6 +201,7 @@ class QuizController {
     }
   }
   async generateQuiz(req, res) {
+    console.log('🔥 [QuizController] generateQuiz endpoint called!');
     try {
       const { uploadId, difficulty = 'medium', numQuestions = 5 } = req.body;
       const userId = req.user.userId;
@@ -151,13 +222,13 @@ class QuizController {
       // Read file content
       let content;
       if (upload.content) {
-        // Content is stored in database
         content = upload.content;
+        console.log(`Content loaded from DB: ${content.length} chars`);
       } else if (upload.file_path) {
-        // Content is stored as file
         const filePath = path.join(__dirname, '../../uploads', upload.file_path);
         try {
           content = await fs.readFile(filePath, 'utf8');
+          console.log(`Content loaded from file: ${content.length} chars`);
         } catch (fileError) {
           console.error('Error reading file:', fileError);
           return res.status(500).json({ error: 'Could not read uploaded file' });
@@ -171,19 +242,40 @@ class QuizController {
       }
 
       // Generate quiz using LLM
-      console.log(`Generating quiz for upload ${uploadId} with ${numQuestions} questions at ${difficulty} difficulty`);
+      console.log(`🎯 Generating quiz for upload ${uploadId}: ${numQuestions} questions, ${difficulty} difficulty`);
+      console.log(`📝 Content preview: ${content.substring(0, 100)}...`);
       
-      // Include a mix of question types for more variety
       const questionTypes = ['multiple-choice', 'true-false', 'fill-in-the-blank'];
       
+      console.log(`🚀 Calling promptService.generateQuizFromContent...`);
       const quizData = await this.promptService.generateQuizFromContent(content, {
         difficulty,
         numQuestions: parseInt(numQuestions),
         questionTypes,
         language: this.detectLanguage(upload.filename)
       });
+      
+      console.log(`✅ LLM response received:`, {
+        questionsCount: quizData.questions?.length || 0,
+        hasMetadata: !!quizData.metadata,
+        questionSample: quizData.questions?.[0] ? {
+          type: quizData.questions[0].type,
+          hasQuestion: !!quizData.questions[0].question,
+          hasAnswer: !!quizData.questions[0].correct_answer,
+          questionPreview: quizData.questions[0].question?.substring(0, 50) + '...',
+          answerPreview: quizData.questions[0].correct_answer?.toString().substring(0, 30) + '...'
+        } : 'No questions'
+      });
+      
+      // DETAILED LLM RESPONSE INSPECTION
+      if (quizData.questions && quizData.questions.length > 0) {
+        console.log(`🔍 Raw LLM Question Structure:`, {
+          firstQuestion: JSON.stringify(quizData.questions[0], null, 2)
+        });
+      }
 
       // Store quiz in database
+      console.log(`💾 Saving quiz to database...`);
       const [quizId] = await knex('quizzes').insert({
         upload_id: uploadId,
         user_id: userId,
@@ -194,37 +286,57 @@ class QuizController {
         created_at: new Date(),
         metadata: JSON.stringify(quizData.metadata || {})
       });
+      console.log(`✅ Quiz saved with ID: ${quizId}`);
 
       // Store questions
+      console.log(`💾 Saving ${quizData.questions.length} questions...`);
       const questions = quizData.questions.map((question, index) => {
         const normalizedType = this.normalizeQuestionType(question.type);
         
-        return {
-        quiz_id: quizId,
-        question_number: index + 1,
-        type: normalizedType,
-        question_text: question.question,
-        code_snippet: question.code_snippet || null,
-        options: question.options ? JSON.stringify(question.options) : null,
-        correct_answer: question.correct_answer || null,
-        // Store correctAnswers for fill-in-the-blank questions
-        correct_answers_data: question.correctAnswers ? JSON.stringify(question.correctAnswers) : null,
-        // Store pairs for matching questions
-        pairs: question.pairs ? JSON.stringify(question.pairs) : null,
-        // Store items and correct order for ordering questions
-        items: question.items ? JSON.stringify(question.items) : null,
-        correct_order: question.correctOrder ? JSON.stringify(question.correctOrder) : null,
-        explanation: question.explanation,
-        difficulty: question.difficulty || difficulty,
-        concepts: JSON.stringify(question.concepts || []),
-        hint: question.hint || null,
-          // Store the formatted text for fill-in-blank questions
-        formatted_text: question.text || question.question,
-        created_at: new Date()
-      };
+        console.log(`📝 Question ${index + 1}: ${question.question?.substring(0, 50)}... (${normalizedType})`);
+        
+        const questionData = {
+          quiz_id: quizId,
+          question_number: index + 1,
+          type: normalizedType,
+          question_text: question.question,
+          code_snippet: question.code_snippet || null,
+          options: question.options ? JSON.stringify(question.options) : null,
+          correct_answer: question.correct_answer || null,
+          correct_answers_data: question.correctAnswers ? JSON.stringify(question.correctAnswers) : null,
+          pairs: question.pairs ? JSON.stringify(question.pairs) : null,
+          items: question.items ? JSON.stringify(question.items) : null,
+          correct_order: question.correctOrder ? JSON.stringify(question.correctOrder) : null,
+          explanation: question.explanation,
+          difficulty: question.difficulty || difficulty,
+          concepts: JSON.stringify(question.concepts || []),
+          hint: question.hint || null,
+          formatted_text: question.text || question.question,
+          created_at: new Date()
+        };
+        
+        console.log(`    → Saved: ${!!questionData.question_text}, Answer: ${!!questionData.correct_answer}, Options: ${!!questionData.options}`);
+        return questionData;
       });
 
       await knex('questions').insert(questions);
+      console.log(`✅ All questions saved successfully`);
+      
+      // VERIFICATION: Check if questions were actually saved with correct data
+      console.log(`🔍 Verifying saved questions...`);
+      const savedQuestions = await knex('questions').where('quiz_id', quizId).select('*');
+      console.log(`📊 Verification results:`, {
+        expectedCount: questions.length,
+        actualCount: savedQuestions.length,
+        sampleQuestion: savedQuestions[0] ? {
+          id: savedQuestions[0].id,
+          type: savedQuestions[0].type,
+          question_text: savedQuestions[0].question_text?.substring(0, 50) + '...',
+          hasCorrectAnswer: !!savedQuestions[0].correct_answer,
+          hasOptions: !!savedQuestions[0].options,
+          hasExplanation: !!savedQuestions[0].explanation
+        } : 'No questions found'
+      });
 
       // Get the complete quiz data to return
       const completeQuiz = await this.getCompleteQuizData(quizId);
@@ -235,7 +347,8 @@ class QuizController {
       });
 
     } catch (error) {
-      console.error('Error generating quiz:', error);
+      console.error('❌ Error generating quiz:', error);
+      console.error('   Error details:', error.message);
       res.status(500).json({ 
         error: 'Failed to generate quiz',
         details: error.message 
@@ -419,6 +532,18 @@ class QuizController {
       .orderBy('question_number');
 
     console.log(`📋 [getCompleteQuizData] Quiz ${quizId} - Format: ${quiz.game_format || 'traditional'}, Questions count: ${questions.length}`);
+    
+    // DEBUG: Log the actual questions from database
+    if (questions.length > 0) {
+      console.log('🔍 [getCompleteQuizData] First question from database:', {
+        id: questions[0].id,
+        type: questions[0].type,
+        question_text: questions[0].question_text?.substring(0, 100) + '...',
+        pattern_data_preview: questions[0].pattern_data ? questions[0].pattern_data.substring(0, 100) + '...' : 'No pattern data',
+        word_data_preview: questions[0].word_data ? questions[0].word_data.substring(0, 100) + '...' : 'No word data',
+        ladder_steps_preview: questions[0].ladder_steps ? JSON.stringify(questions[0].ladder_steps).substring(0, 100) + '...' : 'No ladder steps'
+      });
+    }
 
     // Handle missing questions - ensure we always have data
     if (!questions || questions.length === 0) {
