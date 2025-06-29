@@ -2,6 +2,7 @@ const PromptService = require('../../services/promptService');
 const { db: knex } = require('../config/database');
 const fs = require('fs').promises;
 const path = require('path');
+const { extractJupyterCells } = require('../../utils/jupyterUtils');
 
 class GameFormatController {
   constructor() {
@@ -196,7 +197,7 @@ class GameFormatController {
           const questions = gameData.questions.map((question, index) => ({
             quiz_id: quizId,
             question_number: index + 1,
-            type: gameFormat,
+            type: question.type || gameFormat, // Use question-specific type, fallback to game format
             question_text: question.question || question.prompt || '',
             correct_answer: question.correct_answer || '',
             word_data: question.word_data ? JSON.stringify(question.word_data) : null,
@@ -687,11 +688,39 @@ class GameFormatController {
    * Generate Knowledge Tower game data from content
    */
   async generateKnowledgeTowerGame(content, difficulty, options) {
+    console.log('🏗️ [KnowledgeTower] Starting generation with:', {
+      contentLength: content?.length,
+      difficulty,
+      options,
+      hasPromptService: !!this.promptService
+    });
+    
     const levelsCount = options.numQuestions || options.levelsCount || 5;
+    
+    // Handle Jupyter notebooks intelligently
+    let processedContent = content;
+    if (content.includes('"cells":') && content.includes('"cell_type":')) {
+      console.log('📓 [KnowledgeTower] Detected Jupyter notebook, extracting key cells...');
+      try {
+        const extraction = extractJupyterCells(content);
+        processedContent = extraction.content;
+        console.log('✅ [KnowledgeTower] Extracted', extraction.metadata.extractedCells, 'cells from', extraction.originalCellCount, 'total cells');
+      } catch (error) {
+        console.log('⚠️ [KnowledgeTower] Jupyter extraction failed, using truncation:', error.message);
+        processedContent = content.substring(0, 6000) + '\n\n[Content truncated...]';
+      }
+    } else {
+      // Regular content truncation for non-notebook files
+      const maxContentLength = 6000;
+      if (content.length > maxContentLength) {
+        console.log(`⚠️ [KnowledgeTower] Content too large (${content.length} chars), truncating to ${maxContentLength} chars`);
+        processedContent = content.substring(0, maxContentLength) + '\n\n[Content truncated for processing...]';
+      }
+    }
     
     const prompt = `Generate a Knowledge Tower climbing game based on the following content.
     
-    Content: ${content}
+    Content: ${processedContent}
     
     Requirements:
     - Create EXACTLY ${levelsCount} progressive difficulty levels
@@ -700,6 +729,13 @@ class GameFormatController {
     - Difficulty: ${difficulty}
     - Each level should have a clear theme/focus
     - Generate EXACTLY ${levelsCount} levels, no more, no less
+    - Use DIVERSE question types: mcq, true_false, matching
+    - Mix question types across levels for variety
+    
+    Question Type Guidelines:
+    - mcq: Multiple choice with 4 options (A, B, C, D)
+    - true_false: Boolean questions (true/false)
+    - matching: Pair-matching questions with left and right items
     
     Return a JSON object with this structure:
     {
@@ -711,30 +747,67 @@ class GameFormatController {
       "questions": [
         {
           "level_number": 1,
+          "type": "mcq",
           "question": "Basic question about the content",
-          "options": ["A", "B", "C", "D"],
+          "options": ["A) Option 1", "B) Option 2", "C) Option 3", "D) Option 4"],
           "correct_answer": "A",
+          "explanation": "Detailed explanation of the correct answer",
           "level_theme": "Fundamentals",
           "difficulty": "easy",
           "concepts": ["basic concept"]
+        },
+        {
+          "level_number": 2,
+          "type": "true_false",
+          "question": "True or false question about content",
+          "correct_answer": true,
+          "explanation": "Explanation of why this is true/false",
+          "level_theme": "Understanding",
+          "difficulty": "easy",
+          "concepts": ["concept"]
+        },
+        {
+          "level_number": 3,
+          "type": "matching",
+          "question": "Match the concepts with their descriptions",
+          "leftItems": ["Concept A", "Concept B"],
+          "rightItems": ["Description A", "Description B"],
+          "correctPairs": [[0, 0], [1, 1]],
+          "explanation": "Explanation of the matching pairs",
+          "level_theme": "Application",
+          "difficulty": "medium",
+          "concepts": ["concept"]
         }
-        // Repeat for all ${levelsCount} levels with increasing difficulty
+        // Continue with diverse question types for all ${levelsCount} levels
       ]
     }`;
 
     try {
+      console.log('🚀 [KnowledgeTower] Calling LLM with prompt length:', prompt.length);
       const response = await this.promptService.generateContent(prompt);
+      console.log('📄 [KnowledgeTower] Got LLM response, length:', response?.length);
+      
       const gameData = JSON.parse(response);
       
       // Validate we got the right number of levels
       if (!gameData.questions || gameData.questions.length !== levelsCount) {
-        console.log(`⚠️ AI generated ${gameData.questions?.length || 0} levels instead of ${levelsCount}, using fallback`);
+        console.log(`⚠️ Knowledge Tower: AI generated ${gameData.questions?.length || 0} levels instead of ${levelsCount}`);
         throw new Error(`Expected ${levelsCount} levels, got ${gameData.questions?.length || 0}`);
       }
       
+      console.log('✅ [KnowledgeTower] Successfully generated:', {
+        title: gameData.title,
+        questionCount: gameData.questions.length,
+        questionTypes: gameData.questions.map(q => q.type)
+      });
+      
       return gameData;
     } catch (error) {
-      console.error('Error generating knowledge tower game:', error);
+      console.error('❌ Knowledge Tower generation error:', {
+        message: error.message,
+        stack: error.stack,
+        promptServiceAvailable: !!this.promptService
+      });
       throw error;
     }
   }

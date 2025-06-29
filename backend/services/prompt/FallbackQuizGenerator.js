@@ -39,18 +39,68 @@ class FallbackQuizGenerator {
       });
     } else if (prompt.toLowerCase().includes('knowledge tower')) {
       console.log('🎮 [FallbackQuizGenerator] Detected Knowledge Tower game request');
+      
+      // Extract number of levels from prompt
+      const levelsNeeded = prompt.match(/(\d+)\s+(?:levels?|questions?)/i)?.[1] || 5;
+      
+      // Generate diverse question types
+      const questionTypes = ['mcq', 'true_false', 'matching'];
+      const levelThemes = ['Fundamentals', 'Understanding', 'Application', 'Analysis', 'Synthesis'];
+      const difficulties = ['easy', 'easy', 'medium', 'medium', 'hard'];
+      
+      const questions = [];
+      for (let i = 0; i < levelsNeeded; i++) {
+        const questionType = questionTypes[i % questionTypes.length];
+        const levelTheme = levelThemes[i % levelThemes.length];
+        const difficulty = difficulties[i] || 'medium';
+        
+        let questionData = {
+          level_number: i + 1,
+          type: questionType,
+          level_theme: levelTheme,
+          difficulty: difficulty,
+          concepts: ["programming", "concepts"]
+        };
+        
+        switch (questionType) {
+          case 'mcq':
+            questionData = {
+              ...questionData,
+              question: `What is the main concept in level ${i + 1}?`,
+              options: ["A) Programming fundamentals", "B) Data structures", "C) Algorithms", "D) Software design"],
+              correct_answer: "A",
+              explanation: "Programming fundamentals are the core concepts."
+            };
+            break;
+            
+          case 'true_false':
+            questionData = {
+              ...questionData,
+              question: `Programming involves writing code to solve problems.`,
+              correct_answer: true,
+              explanation: "Programming is indeed about writing code to solve problems."
+            };
+            break;
+            
+          case 'matching':
+            questionData = {
+              ...questionData,
+              question: "Match the programming concepts with their descriptions:",
+              leftItems: ["Variable", "Function", "Loop", "Array"],
+              rightItems: ["Stores data", "Reusable code block", "Repeats actions", "Stores multiple values"],
+              correctPairs: [[0, 0], [1, 1], [2, 2], [3, 3]],
+              explanation: "Each concept matches with its appropriate description."
+            };
+            break;
+        }
+        
+        questions.push(questionData);
+      }
+      
       return JSON.stringify({
         title: "Knowledge Tower Game",
-        metadata: { totalLevels: 5, progressiveLearning: true },
-        questions: [{
-          level_number: 1,
-          question: "What is the main topic of this content?",
-          options: ["Programming", "Cooking", "Sports", "History"],
-          correct_answer: "Programming",
-          level_theme: "Fundamentals",
-          difficulty: "easy",
-          concepts: ["basics"]
-        }]
+        metadata: { totalLevels: questions.length, progressiveLearning: true },
+        questions
       });
     } else if (prompt.toLowerCase().includes('word ladder')) {
       console.log('🎮 [FallbackQuizGenerator] Detected Word Ladder game request');

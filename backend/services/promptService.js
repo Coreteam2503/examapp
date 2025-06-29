@@ -128,12 +128,11 @@ class PromptService {
    */
   async generateContent(prompt) {
     console.log('🚀 [PromptService] Starting content generation...');
-    console.log('📝 [PromptService] Prompt length:', prompt.length, 'characters');
     console.log('🔑 [PromptService] Using OpenAI:', this.openaiClient.isAvailable() ? 'Yes' : 'No');
 
-    // Use fallback if OpenAI is not available
+    // DON'T use fallback - let it fail if OpenAI is not available
     if (!this.openaiClient.isAvailable()) {
-      return this.fallbackGenerator.generateContent(prompt);
+      throw new Error('OpenAI client is not available and fallback is disabled for debugging');
     }
 
     try {
@@ -159,9 +158,8 @@ class PromptService {
 
     } catch (error) {
       console.error('❌ [PromptService] Error generating content with OpenAI:', error);
-      console.log('🔄 [PromptService] Falling back to simple content generation...');
-      
-      return this.fallbackGenerator.generateContent(prompt);
+      // DON'T use fallback - let it fail
+      throw error;
     }
   }
 
