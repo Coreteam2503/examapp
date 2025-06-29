@@ -43,8 +43,8 @@ class FallbackQuizGenerator {
       // Extract number of levels from prompt
       const levelsNeeded = prompt.match(/(\d+)\s+(?:levels?|questions?)/i)?.[1] || 5;
       
-      // Generate diverse question types
-      const questionTypes = ['mcq', 'true_false', 'matching'];
+      // Generate diverse question types (no matching for now)
+      const questionTypes = ['mcq', 'true_false'];
       const levelThemes = ['Fundamentals', 'Understanding', 'Application', 'Analysis', 'Synthesis'];
       const difficulties = ['easy', 'easy', 'medium', 'medium', 'hard'];
       
@@ -79,17 +79,6 @@ class FallbackQuizGenerator {
               question: `Programming involves writing code to solve problems.`,
               correct_answer: true,
               explanation: "Programming is indeed about writing code to solve problems."
-            };
-            break;
-            
-          case 'matching':
-            questionData = {
-              ...questionData,
-              question: "Match the programming concepts with their descriptions:",
-              leftItems: ["Variable", "Function", "Loop", "Array"],
-              rightItems: ["Stores data", "Reusable code block", "Repeats actions", "Stores multiple values"],
-              correctPairs: [[0, 0], [1, 1], [2, 2], [3, 3]],
-              explanation: "Each concept matches with its appropriate description."
             };
             break;
         }

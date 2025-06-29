@@ -7,79 +7,16 @@ const { extractJupyterCells } = require('../../utils/jupyterUtils');
 class GameFormatController {
   constructor() {
     this.promptService = new PromptService();
-    // Initialize bulletproof fallback data
-    this.fallbackData = {
-      hangman: {
-        title: "Hangman Game",
-        metadata: { maxWrongGuesses: 6, totalWords: 1, fallback: true },
-        questions: [{
-          word_data: {
-            word: "PROGRAMMING",
-            category: "Technology",
-            hint: "The process of creating software applications"
-          },
-          correct_answer: "PROGRAMMING",
-          max_attempts: 6,
-          difficulty: "medium",
-          concepts: ["programming", "software"]
-        }]
-      },
-      knowledge_tower: {
-        title: "Knowledge Tower Game",
-        metadata: { totalLevels: 3, progressiveLearning: true, fallback: true },
-        questions: [{
-          level_number: 1,
-          question: "What is the primary purpose of programming?",
-          options: ["To create software applications", "To design hardware", "To manage databases", "To create networks"],
-          correct_answer: "To create software applications",
-          level_theme: "Fundamentals",
-          difficulty: "easy",
-          concepts: ["programming", "basics"]
-        }]
-      },
-      word_ladder: {
-        title: "Word Ladder Game",
-        metadata: { maxSteps: 4, totalLadders: 1, fallback: true },
-        questions: [{
-          ladder_steps: {
-            startWord: "CODE",
-            endWord: "NODE",
-            steps: ["CODE", "COVE", "NOVE", "NODE"],
-            hints: ["Programming instructions", "Small bay", "New type", "Network point"]
-          },
-          correct_answer: "NODE",
-          difficulty: "medium",
-          concepts: ["programming", "networking"]
-        }]
-      },
-      memory_grid: {
-        title: "Memory Grid Game",
-        metadata: { gridSize: 3, memoryTime: 5, totalPatterns: 1, fallback: true },
-        questions: [{
-          pattern_data: {
-            grid: [
-              ["🔧", "💻", "📝"],
-              ["💻", "🔧", "📝"],
-              ["📝", "💻", "🔧"]
-            ],
-            sequence: [0, 4, 8],
-            symbols: ["🔧", "💻", "📝"]
-          },
-          correct_answer: "[0,4,8]",
-          difficulty: "medium",
-          concepts: ["patterns", "memory", "programming"]
-        }]
-      }
-    };
+    console.log('🎮 [GameFormatController] Initialized with AI-only generation (no fallbacks)');
   }
 
   /**
-   * Generate game format quiz - BULLETPROOF VERSION
+   * Generate game format quiz - AI-POWERED VERSION
    * POST /api/games/generate
    */
   async generateGameFormat(req, res) {
     const requestId = Date.now();
-    console.log(`🎮 [${requestId}] BULLETPROOF game generation started`, {
+    console.log(`🎮 [${requestId}] AI-powered game generation started`, {
       body: req.body,
       user: req.user?.userId,
       timestamp: new Date().toISOString()
@@ -97,12 +34,13 @@ class GameFormatController {
       console.log(`📝 [${requestId}] Processing:`, { uploadId, gameFormat, difficulty, gameOptions, userId, numQuestions });
 
       // Validate game format
-      if (!this.fallbackData[gameFormat]) {
+      const supportedFormats = ['hangman', 'knowledge_tower', 'word_ladder', 'memory_grid'];
+      if (!supportedFormats.includes(gameFormat)) {
         console.log(`❌ [${requestId}] Invalid game format: ${gameFormat}`);
         return res.status(400).json({ 
           success: false,
           error: 'Invalid game format',
-          supportedFormats: Object.keys(this.fallbackData)
+          supportedFormats: supportedFormats
         });
       }
 
@@ -154,7 +92,7 @@ class GameFormatController {
         content = 'function example() { console.log("Hello World"); return "programming"; }';
       }
 
-      // Generate game data with comprehensive error handling
+      // Generate game data with error handling
       let gameData;
       try {
         console.log(`🧠 [${requestId}] Generating game data with AI service...`);
@@ -166,10 +104,14 @@ class GameFormatController {
         });
       } catch (gameGenError) {
         console.error(`❌ [${requestId}] Game generation error:`, gameGenError);
-        console.log(`🔄 [${requestId}] Using bulletproof fallback...`);
-        
-        gameData = this.getFallbackGameData(gameFormat, difficulty, { ...gameOptions, numQuestions }, upload?.filename);
-        console.log(`✅ [${requestId}] Fallback data ready`);
+        // Return proper error response instead of fallback
+        return res.status(500).json({
+          success: false,
+          error: 'Game generation failed',
+          message: gameGenError.message,
+          requestId: requestId,
+          timestamp: new Date().toISOString()
+        });
       }
 
       // Store in database with error handling
@@ -194,25 +136,55 @@ class GameFormatController {
         // Store game questions/data
         if (gameData.questions && gameData.questions.length > 0) {
           console.log(`💾 [${requestId}] Storing`, gameData.questions.length, 'questions...');
-          const questions = gameData.questions.map((question, index) => ({
-            quiz_id: quizId,
-            question_number: index + 1,
-            type: question.type || gameFormat, // Use question-specific type, fallback to game format
-            question_text: question.question || question.prompt || '',
-            correct_answer: question.correct_answer || '',
-            word_data: question.word_data ? JSON.stringify(question.word_data) : null,
-            level_number: question.level_number || (index + 1),
-            pattern_data: question.pattern_data ? JSON.stringify(question.pattern_data) : null,
-            ladder_steps: question.ladder_steps ? JSON.stringify(question.ladder_steps) : null,
-            max_attempts: question.max_attempts || gameOptions.maxWrongGuesses || 6,
-            visual_data: question.visual_data ? JSON.stringify(question.visual_data) : null,
-            difficulty: question.difficulty || difficulty,
-            concepts: JSON.stringify(question.concepts || []),
-            hint: question.hint || null,
-            level_theme: question.level_theme || `Level ${index + 1}`,
-            options: question.options ? JSON.stringify(question.options) : null,
-            created_at: new Date()
-          }));
+          const questions = gameData.questions.map((question, index) => {
+            // Debug MCQ questions
+            if (question.type === 'mcq') {
+              console.log(`🔍 [${requestId}] MCQ question ${index + 1}:`, {
+                hasOptions: !!question.options,
+                options: question.options,
+                correctAnswer: question.correct_answer,
+                optionsCount: question.options?.length || 0
+              });
+            }
+            
+            // Debug matching questions
+            if (question.type === 'matching') {
+              console.log(`🔍 [${requestId}] Matching question ${index + 1}:`, {
+                hasLeftItems: !!question.leftItems,
+                hasRightItems: !!question.rightItems,
+                hasCorrectPairs: !!question.correctPairs,
+                leftItems: question.leftItems,
+                rightItems: question.rightItems,
+                correctPairs: question.correctPairs
+              });
+            }
+            
+            return {
+              quiz_id: quizId,
+              question_number: index + 1,
+              type: question.type || gameFormat, // Use question-specific type, fallback to game format
+              question_text: question.question || question.prompt || '',
+              correct_answer: question.correct_answer || '',
+              word_data: question.word_data ? JSON.stringify(question.word_data) : null,
+              level_number: question.level_number || (index + 1),
+              pattern_data: question.pattern_data ? JSON.stringify(question.pattern_data) : null,
+              ladder_steps: question.ladder_steps ? JSON.stringify(question.ladder_steps) : null,
+              max_attempts: question.max_attempts || gameOptions.maxWrongGuesses || 6,
+              visual_data: question.visual_data ? JSON.stringify(question.visual_data) : null,
+              difficulty: question.difficulty || difficulty,
+              concepts: JSON.stringify(question.concepts || []),
+              hint: question.hint || null,
+              level_theme: question.level_theme || `Level ${index + 1}`,
+              options: question.options ? JSON.stringify(question.options) : null,
+              // Add support for matching question fields
+              items: question.leftItems ? JSON.stringify({
+                left: question.leftItems,
+                right: question.rightItems,
+                correctPairs: question.correctPairs
+              }) : null,
+              created_at: new Date()
+            };
+          });
 
           await knex('questions').insert(questions);
           console.log(`✅ [${requestId}] Questions stored successfully`);
@@ -247,46 +219,31 @@ class GameFormatController {
       res.status(201).json(response);
 
     } catch (error) {
-      // ULTIMATE FALLBACK - This should NEVER fail
+      // Return proper error response
       console.error(`❌ [${requestId}] CRITICAL ERROR:`, error);
       console.error(`Stack:`, error.stack);
       
-      const gameFormat = req.body?.gameFormat || 'hangman';
-      const numQuestions = parseInt(req.body?.numQuestions || 5);
-      const emergency = this.getFallbackGameData(gameFormat, 'medium', { numQuestions });
-      
-      res.status(200).json({
-        success: true,
-        message: 'Game generated using emergency fallback',
-        game: {
-          id: `emergency_${requestId}`,
-          title: emergency.title,
-          game_format: gameFormat,
-          difficulty: 'medium',
-          total_questions: emergency.questions.length,
-          metadata: emergency.metadata,
-          questions: emergency.questions,
-          created_at: new Date().toISOString(),
-          emergency_fallback: true
-        },
-        gameFormat: gameFormat,
-        timestamp: new Date().toISOString(),
+      res.status(500).json({
+        success: false,
+        error: 'Critical game generation failure',
+        message: error.message,
         requestId: requestId,
-        note: 'Generated using emergency fallback - all functionality preserved'
+        timestamp: new Date().toISOString()
       });
     }
   }
 
   /**
-   * Safely generate game data with multiple fallback layers
+   * Safely generate game data with error handling
    */
   async generateGameDataSafely(gameFormat, difficulty, gameOptions, content) {
     try {
-      // Try AI generation first
+      // Try AI generation
       return await this.generateWithAI(gameFormat, difficulty, gameOptions, content);
     } catch (aiError) {
-      console.log('AI generation failed, using structured fallback:', aiError.message);
-      return this.getFallbackGameData(gameFormat, difficulty, gameOptions);
+      console.error('❌ AI generation failed:', aiError.message);
+      // Re-throw the error instead of using fallback
+      throw new Error(`AI generation failed: ${aiError.message}`);
     }
   }
 
@@ -306,290 +263,6 @@ class GameFormatController {
       default:
         throw new Error(`Unsupported game format: ${gameFormat}`);
     }
-  }
-
-  /**
-   * Get bulletproof fallback data with correct number of questions
-   */
-  getFallbackGameData(gameFormat, difficulty, gameOptions, filename = 'content') {
-    const numQuestions = gameOptions.numQuestions || 5;
-    const baseData = this.fallbackData[gameFormat] || this.fallbackData.hangman;
-    
-    // Generate multiple questions/levels based on user selection
-    const questions = [];
-    
-    switch (gameFormat) {
-      case 'hangman':
-        const words = [
-          'PROGRAMMING', 'FUNCTION', 'VARIABLE', 'ALGORITHM', 'DATABASE', 'NETWORK', 'SECURITY', 'TESTING',
-          'JAVASCRIPT', 'PYTHON', 'FRAMEWORK', 'LIBRARY', 'DEBUGGING', 'COMPILER', 'INTERFACE', 'PROTOCOL',
-          'ENCRYPTION', 'BOOLEAN', 'INTEGER', 'STRING', 'ARRAY', 'OBJECT', 'CLASS', 'METHOD', 'INHERITANCE'
-        ];
-        const categories = [
-          'Programming', 'Data Types', 'Security', 'Algorithms', 'Networks', 'Development', 'Languages', 'Concepts'
-        ];
-        const hints = [
-          'Process of creating software', 'Reusable block of code', 'Storage container for data', 'Step-by-step procedure',
-          'Organized collection of data', 'System of interconnected computers', 'Protection of digital information', 'Validation process',
-          'Popular web programming language', 'High-level programming language', 'Structured foundation for development', 'Collection of pre-written code',
-          'Process of finding and fixing errors', 'Program that translates code', 'Connection point between systems', 'Set of rules for communication',
-          'Process of encoding information', 'True or false value', 'Whole number data type', 'Sequence of characters',
-          'Ordered collection of elements', 'Data structure with properties', 'Template for creating objects', 'Function belonging to a class',
-          'Acquiring properties from parent class'
-        ];
-        for (let i = 0; i < numQuestions; i++) {
-          const word = words[i % words.length];
-          questions.push({
-            word_data: {
-              word: word,
-              category: categories[i % categories.length],
-              hint: hints[i % hints.length]
-            },
-            correct_answer: word,
-            max_attempts: gameOptions.maxWrongGuesses || 6,
-            difficulty: difficulty,
-            concepts: ["programming", "technology"]
-          });
-        }
-        break;
-        
-      case 'knowledge_tower':
-        const themes = [
-          'Fundamentals', 'Data Types', 'Control Flow', 'Functions', 'Objects', 'Algorithms', 'Data Structures',
-          'Error Handling', 'Testing', 'Design Patterns', 'Databases', 'Networks', 'Security', 'Performance',
-          'Architecture', 'APIs', 'Version Control', 'DevOps', 'Cloud Computing', 'Machine Learning',
-          'Web Development', 'Mobile Development', 'Game Development', 'Advanced Concepts', 'Best Practices'
-        ];
-        const questionTemplates = [
-          { q: "What is the primary purpose of variables?", opts: ["Store data", "Display colors", "Create sounds", "Generate numbers"], ans: "Store data" },
-          { q: "Which data type represents whole numbers?", opts: ["Integer", "String", "Boolean", "Array"], ans: "Integer" },
-          { q: "What does a for loop do?", opts: ["Repeats code", "Stores data", "Creates functions", "Deletes files"], ans: "Repeats code" },
-          { q: "What is a function?", opts: ["Reusable code block", "Data container", "Color scheme", "File type"], ans: "Reusable code block" },
-          { q: "What is an object in programming?", opts: ["Data with properties", "A color", "A number", "A file"], ans: "Data with properties" },
-          { q: "What is the purpose of algorithms?", opts: ["Solve problems step-by-step", "Store files", "Display images", "Play music"], ans: "Solve problems step-by-step" },
-          { q: "What is an array?", opts: ["Ordered list of items", "Single number", "Color value", "Text file"], ans: "Ordered list of items" },
-          { q: "What is error handling?", opts: ["Managing code failures", "Creating errors", "Deleting code", "Changing colors"], ans: "Managing code failures" },
-          { q: "What is the purpose of testing?", opts: ["Verify code works correctly", "Delete code", "Change colors", "Add music"], ans: "Verify code works correctly" },
-          { q: "What are design patterns?", opts: ["Reusable solutions to common problems", "Color schemes", "File formats", "Music notes"], ans: "Reusable solutions to common problems" }
-        ];
-        for (let i = 0; i < numQuestions; i++) {
-          const template = questionTemplates[i % questionTemplates.length];
-          questions.push({
-            level_number: i + 1,
-            question: `Level ${i + 1}: ${template.q}`,
-            options: template.opts,
-            correct_answer: template.ans,
-            level_theme: themes[i % themes.length],
-            difficulty: i < 8 ? 'easy' : i < 16 ? 'medium' : 'hard',
-            concepts: ["programming", "basics"]
-          });
-        }
-        break;
-        
-      case 'word_ladder':
-        // Create code analysis questions instead of word transformations
-        const codeAnalysisQuestions = [
-          {
-            question: "What does this function accomplish?",
-            code_snippet: "def filter_positive(numbers):\n    return [x for x in numbers if x > 0]",
-            options: ["A) Returns only positive numbers", "B) Sorts the numbers", "C) Counts positive numbers", "D) Doubles all numbers"],
-            correct_answer: "A",
-            explanation: "This list comprehension filters and returns only positive numbers from the input list",
-            question_type: "functionality",
-            concepts: ["list comprehension", "filtering"]
-          },
-          {
-            question: "What will be the output of this code?",
-            code_snippet: "data = {'a': 1, 'b': 2}\nprint(len(data))",
-            options: ["A) {'a': 1, 'b': 2}", "B) 2", "C) 3", "D) Error"],
-            correct_answer: "B",
-            explanation: "len() returns the number of key-value pairs in the dictionary",
-            question_type: "output",
-            concepts: ["dictionaries", "built-in functions"]
-          },
-          {
-            question: "Which concept is demonstrated here?",
-            code_snippet: "class Vehicle:\n    def __init__(self, brand):\n        self.brand = brand\n\nclass Car(Vehicle):\n    pass",
-            options: ["A) Encapsulation", "B) Inheritance", "C) Polymorphism", "D) Abstraction"],
-            correct_answer: "B",
-            explanation: "Car class inherits from Vehicle class, demonstrating inheritance",
-            question_type: "concept",
-            concepts: ["inheritance", "classes"]
-          },
-          {
-            question: "What is the purpose of the try-except block?",
-            code_snippet: "try:\n    value = int(user_input)\nexcept ValueError:\n    value = 0",
-            options: ["A) Optimize performance", "B) Handle invalid input", "C) Format output", "D) Loop through data"],
-            correct_answer: "B",
-            explanation: "try-except handles ValueError when int() conversion fails",
-            question_type: "error_handling",
-            concepts: ["exception handling", "type conversion"]
-          },
-          {
-            question: "What does this function return?",
-            code_snippet: "def calculate_average(scores):\n    if not scores:\n        return 0\n    return sum(scores) / len(scores)",
-            options: ["A) The sum of scores", "B) The average score", "C) The highest score", "D) The number of scores"],
-            correct_answer: "B",
-            explanation: "Function calculates and returns the average of the scores list",
-            question_type: "functionality",
-            concepts: ["functions", "mathematical operations"]
-          },
-          {
-            question: "What will happen when this code runs?",
-            code_snippet: "numbers = [1, 2, 3, 4, 5]\nresult = numbers[10]",
-            options: ["A) Returns None", "B) Returns 10", "C) Raises IndexError", "D) Returns 5"],
-            correct_answer: "C",
-            explanation: "Accessing index 10 in a 5-element list raises an IndexError",
-            question_type: "execution",
-            concepts: ["lists", "indexing", "errors"]
-          },
-          {
-            question: "What is the role of the 'self' parameter?",
-            code_snippet: "class Counter:\n    def __init__(self):\n        self.count = 0\n    def increment(self):\n        self.count += 1",
-            options: ["A) References the class", "B) References the instance", "C) A special keyword", "D) Optional parameter"],
-            correct_answer: "B",
-            explanation: "'self' refers to the specific instance of the class",
-            question_type: "concept",
-            concepts: ["classes", "instance methods"]
-          },
-          {
-            question: "What does this comprehension create?",
-            code_snippet: "result = {x: x**2 for x in range(5)}",
-            options: ["A) A list of squares", "B) A dictionary mapping numbers to squares", "C) A set of squares", "D) A tuple of squares"],
-            correct_answer: "B",
-            explanation: "This creates a dictionary where keys are numbers and values are their squares",
-            question_type: "data_structures",
-            concepts: ["dictionary comprehension", "mapping"]
-          }
-        ];
-        
-        for (let i = 0; i < numQuestions; i++) {
-          const questionData = codeAnalysisQuestions[i % codeAnalysisQuestions.length];
-          questions.push({
-            ladder_steps: {
-              type: 'code_analysis',
-              question: questionData.question,
-              code_snippet: questionData.code_snippet,
-              options: questionData.options,
-              correct_answer: questionData.correct_answer,
-              explanation: questionData.explanation,
-              question_type: questionData.question_type,
-              concepts: questionData.concepts
-            },
-            correct_answer: questionData.correct_answer,
-            difficulty: difficulty,
-            concepts: questionData.concepts
-          });
-        }
-        break;
-        
-      case 'memory_grid':
-        const gridPatterns = [
-          {
-            grid: [["🔧", "💻", "📝"], ["💻", "🔧", "📝"], ["📝", "💻", "🔧"]],
-            sequence: [0, 4, 8],
-            symbols: ["🔧", "💻", "📝"]
-          },
-          {
-            grid: [["⚡", "🔒", "🌐"], ["🌐", "⚡", "🔒"], ["🔒", "🌐", "⚡"]],
-            sequence: [1, 3, 7],
-            symbols: ["⚡", "🔒", "🌐"]
-          },
-          {
-            grid: [["📊", "🗃️", "🔍"], ["🔍", "📊", "🗃️"], ["🗃️", "🔍", "📊"]],
-            sequence: [2, 5, 6],
-            symbols: ["📊", "🗃️", "🔍"]
-          },
-          {
-            grid: [["🎯", "🚀", "💡"], ["💡", "🎯", "🚀"], ["🚀", "💡", "🎯"]],
-            sequence: [0, 3, 8],
-            symbols: ["🎯", "🚀", "💡"]
-          },
-          {
-            grid: [["🔄", "📈", "⚙️"], ["⚙️", "🔄", "📈"], ["📈", "⚙️", "🔄"]],
-            sequence: [1, 4, 7],
-            symbols: ["🔄", "📈", "⚙️"]
-          }
-        ];
-        
-        // Add programming patterns for some questions
-        const programmingPatterns = [
-          {
-            type: 'programming',
-            grid: [
-              [{ type: 'CODE', content: 'for i in range(5):' }, { type: 'OUTPUT', content: '0, 1, 2, 3, 4' }],
-              [{ type: 'CODE', content: 'print("Hello")' }, { type: 'OUTPUT', content: 'Hello' }],
-              [{ type: 'CODE', content: 'x = 5 + 3' }, { type: 'OUTPUT', content: '8' }],
-              [{ type: 'CODE', content: 'len([1,2,3])' }, { type: 'OUTPUT', content: '3' }]
-            ],
-            pairs: [[0, 1], [2, 3], [4, 5], [6, 7]]
-          },
-          {
-            type: 'programming',
-            grid: [
-              [{ type: 'FUNCTION', content: 'map()' }, { type: 'DESCRIPTION', content: 'Applies function to items' }],
-              [{ type: 'FUNCTION', content: 'filter()' }, { type: 'DESCRIPTION', content: 'Filters items by condition' }],
-              [{ type: 'FUNCTION', content: 'reduce()' }, { type: 'DESCRIPTION', content: 'Reduces to single value' }],
-              [{ type: 'FUNCTION', content: 'sort()' }, { type: 'DESCRIPTION', content: 'Sorts items in order' }]
-            ],
-            pairs: [[0, 1], [2, 3], [4, 5], [6, 7]]
-          },
-          {
-            type: 'programming',
-            grid: [
-              [{ type: 'ERROR', content: 'SyntaxError' }, { type: 'CAUSE', content: 'Missing parenthesis' }],
-              [{ type: 'ERROR', content: 'TypeError' }, { type: 'CAUSE', content: 'Wrong data type' }],
-              [{ type: 'ERROR', content: 'IndexError' }, { type: 'CAUSE', content: 'Index out of range' }],
-              [{ type: 'ERROR', content: 'KeyError' }, { type: 'CAUSE', content: 'Key not found' }]
-            ],
-            pairs: [[0, 1], [2, 3], [4, 5], [6, 7]]
-          }
-        ];
-        
-        for (let i = 0; i < numQuestions; i++) {
-          // Mix regular memory patterns with programming patterns
-          const useProgramming = i % 3 === 2; // Every 3rd question is programming
-          
-          if (useProgramming && i < programmingPatterns.length) {
-            questions.push({
-              pattern_data: programmingPatterns[i % programmingPatterns.length],
-              correct_answer: JSON.stringify(programmingPatterns[i % programmingPatterns.length].pairs),
-              difficulty: difficulty,
-              concepts: ["programming", "matching", "concepts"]
-            });
-          } else {
-            const pattern = gridPatterns[i % gridPatterns.length];
-            questions.push({
-              pattern_data: pattern,
-              correct_answer: JSON.stringify(pattern.sequence),
-              difficulty: difficulty,
-              concepts: ["patterns", "memory", "programming"]
-            });
-          }
-        }
-        break;
-        
-      default:
-        // Fallback to single question
-        questions.push(baseData.questions[0]);
-    }
-    
-    return {
-      title: `${gameFormat.replace('_', ' ').toUpperCase()} Game - ${filename}`,
-      metadata: {
-        ...baseData.metadata,
-        totalQuestions: numQuestions,
-        totalWords: gameFormat === 'hangman' ? numQuestions : undefined,
-        totalLevels: gameFormat === 'knowledge_tower' ? numQuestions : undefined,
-        totalLadders: gameFormat === 'word_ladder' ? numQuestions : undefined,
-        totalPatterns: gameFormat === 'memory_grid' ? numQuestions : undefined,
-        difficulty: difficulty,
-        gameOptions: gameOptions,
-        generated_by: 'bulletproof_fallback',
-        timestamp: new Date().toISOString()
-      },
-      questions: questions
-    };
   }
 
   /**
@@ -653,10 +326,13 @@ class GameFormatController {
       console.log('🤖 Calling AI service for Hangman generation...');
       const response = await this.promptService.generateContent(prompt);
       console.log('✅ AI service response received, parsing JSON...');
-      console.log('📄 Raw LLM response length:', response.length, 'characters');
-      console.log('📋 Raw LLM response preview:', response.substring(0, 500) + '...');
       
-      const gameData = JSON.parse(response);
+      // Handle new response structure
+      const content = typeof response === 'object' ? response.content : response;
+      console.log('📄 Raw LLM response length:', content.length, 'characters');
+      console.log('📋 Raw LLM response preview:', content.substring(0, 500) + '...');
+      
+      const gameData = JSON.parse(content);
       console.log('🔍 Parsed game data structure:', {
         title: gameData.title,
         questionsCount: gameData.questions?.length || 0,
@@ -729,13 +405,20 @@ class GameFormatController {
     - Difficulty: ${difficulty}
     - Each level should have a clear theme/focus
     - Generate EXACTLY ${levelsCount} levels, no more, no less
-    - Use DIVERSE question types: mcq, true_false, matching
-    - Mix question types across levels for variety
+    - Use ONLY these question types: mcq, true_false
+    - DO NOT use matching questions
+    - Mix only mcq and true_false across levels
     
     Question Type Guidelines:
     - mcq: Multiple choice with 4 options (A, B, C, D)
     - true_false: Boolean questions (true/false)
-    - matching: Pair-matching questions with left and right items
+    
+    STRICTLY FORBIDDEN: Do not generate "matching" type questions under any circumstances.
+    
+    CRITICAL OUTPUT FORMAT:
+    - For MCQ questions: options must be ["A) Option text", "B) Option text", "C) Option text", "D) Option text"]
+    - For MCQ questions: correct_answer must be single letter "A", "B", "C", or "D"
+    - For true_false questions: correct_answer must be boolean true or false (not string)
     
     Return a JSON object with this structure:
     {
@@ -765,29 +448,209 @@ class GameFormatController {
           "level_theme": "Understanding",
           "difficulty": "easy",
           "concepts": ["concept"]
-        },
-        {
-          "level_number": 3,
-          "type": "matching",
-          "question": "Match the concepts with their descriptions",
-          "leftItems": ["Concept A", "Concept B"],
-          "rightItems": ["Description A", "Description B"],
-          "correctPairs": [[0, 0], [1, 1]],
-          "explanation": "Explanation of the matching pairs",
-          "level_theme": "Application",
-          "difficulty": "medium",
-          "concepts": ["concept"]
         }
-        // Continue with diverse question types for all ${levelsCount} levels
+    
+    MANDATORY FORMAT RULES:
+    - MCQ options MUST include letters: ["A) First option", "B) Second option", "C) Third option", "D) Fourth option"]
+    - MCQ correct_answer MUST be just the letter: "A", "B", "C", or "D"
+    - True/false correct_answer MUST be boolean: true or false
+    
+    Generate ONLY mcq and true_false question types. Do NOT generate matching questions.
       ]
     }`;
 
+    // Define function schema for structured Knowledge Tower generation
+    const knowledgeTowerFunction = {
+      name: "generate_knowledge_tower",
+      description: "Generate a Knowledge Tower game with structured question data",
+      parameters: {
+        type: "object",
+        properties: {
+          title: {
+            type: "string",
+            description: "Title of the Knowledge Tower game"
+          },
+          metadata: {
+            type: "object",
+            properties: {
+              totalLevels: { type: "number" },
+              progressiveLearning: { type: "boolean" }
+            }
+          },
+          questions: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                level_number: { type: "number" },
+                type: { 
+                  type: "string", 
+                  enum: ["mcq", "true_false", "matching"]
+                },
+                question: { type: "string" },
+                options: {
+                  type: "array",
+                  items: { 
+                    type: "string",
+                    pattern: "^[A-D]\\) .+"
+                  },
+                  minItems: 4,
+                  maxItems: 4,
+                  description: "REQUIRED for MCQ. MUST be exactly 4 items in format: ['A) Option text', 'B) Option text', 'C) Option text', 'D) Option text']"
+                },
+                correct_answer: { 
+                  type: ["string", "boolean"],
+                  description: "For MCQ: MUST be exactly one letter A, B, C, or D. For true_false: MUST be boolean true/false"
+                },
+                leftItems: {
+                  type: "array",
+                  items: { type: "string" },
+                  description: "Required for matching questions - items to match"
+                },
+                rightItems: {
+                  type: "array", 
+                  items: { type: "string" },
+                  description: "Required for matching questions - descriptions/matches"
+                },
+                correctPairs: {
+                  type: "array",
+                  items: {
+                    type: "array",
+                    items: { type: "number" }
+                  },
+                  description: "Required for matching questions - [[leftIndex, rightIndex], ...]"
+                },
+                explanation: { type: "string" },
+                level_theme: { type: "string" },
+                difficulty: { type: "string" },
+                concepts: {
+                  type: "array",
+                  items: { type: "string" }
+                }
+              },
+              required: ["level_number", "type", "question", "level_theme", "difficulty", "concepts"]
+            }
+          }
+        },
+        required: ["title", "metadata", "questions"]
+      }
+    };
+
     try {
-      console.log('🚀 [KnowledgeTower] Calling LLM with prompt length:', prompt.length);
-      const response = await this.promptService.generateContent(prompt);
-      console.log('📄 [KnowledgeTower] Got LLM response, length:', response?.length);
+      console.log('🚀 [KnowledgeTower] Using function calling for structured generation...');
+      const response = await this.promptService.generateContent([
+        {
+          role: 'system',
+          content: 'You are an educational game generator. You MUST follow the exact format requirements for MCQ options. MCQ options MUST include letter prefixes like "A) Option text". This is critical for the frontend to work properly.'
+        },
+        {
+          role: 'user',
+          content: `Generate a Knowledge Tower climbing game with exactly ${levelsCount} levels based on this content:
+
+${processedContent}
+
+YOU MUST FOLLOW THESE EXACT FORMAT REQUIREMENTS:
+
+For MCQ questions:
+- options MUST be exactly: ["A) First option", "B) Second option", "C) Third option", "D) Fourth option"]
+- correct_answer MUST be exactly: "A" or "B" or "C" or "D"
+
+For true_false questions:
+- correct_answer MUST be exactly: true or false (boolean)
+
+EXAMPLE MCQ:
+{
+  "type": "mcq",
+  "question": "What is 2+2?",
+  "options": ["A) 3", "B) 4", "C) 5", "D) 6"],
+  "correct_answer": "B"
+}
+
+EXAMPLE TRUE/FALSE:
+{
+  "type": "true_false", 
+  "question": "The sky is blue",
+  "correct_answer": true
+}
+
+Requirements:
+- Create exactly ${levelsCount} progressive difficulty levels
+- Use question types: mcq, true_false (NO matching)
+- Each level should build on previous concepts
+- Difficulty: ${difficulty}
+
+DO NOT FORGET THE LETTER PREFIXES (A), B), C), D)) IN OPTIONS!`
+        }
+      ], {
+        functions: [knowledgeTowerFunction],
+        function_call: { name: "generate_knowledge_tower" }
+      });
+      console.log('📄 [KnowledgeTower] Got LLM response');
       
-      const gameData = JSON.parse(response);
+      // Parse function call response
+      let gameData;
+      if (response.function_call) {
+        console.log('🔧 [KnowledgeTower] Processing function call response');
+        gameData = JSON.parse(response.content);
+      } else {
+        console.log('📝 [KnowledgeTower] Processing regular response');
+        // If we get a regular response object, extract content
+        const content = typeof response === 'object' ? response.content : response;
+        gameData = JSON.parse(content);
+      }
+      
+      // Fix MCQ format issues automatically
+      if (gameData.questions) {
+        gameData.questions = gameData.questions.map((question, index) => {
+          if (question.type === 'mcq' && question.options) {
+            console.log(`🔧 [KnowledgeTower] Fixing MCQ format for question ${index + 1}`);
+            
+            // Check if options already have letter prefixes
+            const hasLetterPrefixes = question.options.every(opt => /^[A-D]\)/.test(opt));
+            
+            let fixedOptions;
+            let fixedCorrectAnswer;
+            
+            if (hasLetterPrefixes) {
+              // Options already have letters, just use them as-is
+              fixedOptions = question.options;
+              fixedCorrectAnswer = question.correct_answer;
+            } else {
+              // Add letter prefixes to options
+              fixedOptions = question.options.map((option, idx) => {
+                const letter = String.fromCharCode(65 + idx); // A, B, C, D
+                return `${letter}) ${option}`;
+              });
+              
+              // Find which option matches the correct answer and convert to letter
+              const correctIndex = question.options.findIndex(option => 
+                option.toString().trim() === question.correct_answer.toString().trim()
+              );
+              
+              if (correctIndex !== -1) {
+                fixedCorrectAnswer = String.fromCharCode(65 + correctIndex); // A, B, C, D
+              } else {
+                // Fallback: if we can't match, try partial matching
+                const partialMatch = question.options.findIndex(option => 
+                  option.toString().toLowerCase().includes(question.correct_answer.toString().toLowerCase()) ||
+                  question.correct_answer.toString().toLowerCase().includes(option.toString().toLowerCase())
+                );
+                fixedCorrectAnswer = partialMatch !== -1 ? String.fromCharCode(65 + partialMatch) : 'A';
+              }
+            }
+            
+            console.log(`✅ [KnowledgeTower] Fixed MCQ - Options: ${JSON.stringify(fixedOptions.slice(0, 2))}..., Answer: ${fixedCorrectAnswer}`);
+            
+            return {
+              ...question,
+              options: fixedOptions,
+              correct_answer: fixedCorrectAnswer
+            };
+          }
+          
+          return question;
+        });
+      }
       
       // Validate we got the right number of levels
       if (!gameData.questions || gameData.questions.length !== levelsCount) {
@@ -879,7 +742,9 @@ Generate diverse, creative questions that test different aspects of understandin
       const response = await this.promptService.generateContent(prompt);
       console.log('📄 [WordLadder] Received LLM response, parsing...');
       
-      const gameData = JSON.parse(response);
+      // Handle new response structure
+      const content = typeof response === 'object' ? response.content : response;
+      const gameData = JSON.parse(content);
       
       // Validate we got the right number of questions
       if (!gameData.questions || gameData.questions.length !== numQuestions) {
@@ -974,10 +839,13 @@ Generate diverse, creative questions that test different aspects of understandin
       console.log('🤖 Calling AI service for Memory Grid generation...');
       const response = await this.promptService.generateContent(prompt);
       console.log('✅ AI service response received, parsing JSON...');
-      console.log('📄 Raw LLM response length:', response.length, 'characters');
-      console.log('📋 Raw LLM response preview:', response.substring(0, 500) + '...');
       
-      const gameData = JSON.parse(response);
+      // Handle new response structure
+      const content = typeof response === 'object' ? response.content : response;
+      console.log('📄 Raw LLM response length:', content.length, 'characters');
+      console.log('📋 Raw LLM response preview:', content.substring(0, 500) + '...');
+      
+      const gameData = JSON.parse(content);
       console.log('🔍 Parsed Memory Grid data structure:', {
         title: gameData.title,
         questionsCount: gameData.questions?.length || 0,

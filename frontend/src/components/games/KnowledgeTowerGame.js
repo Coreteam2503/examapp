@@ -10,12 +10,70 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
   const [gameResults, setGameResults] = useState([]);
   const [towerHeight, setTowerHeight] = useState(0);
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
+  const [shuffledQuestions, setShuffledQuestions] = useState([]);
 
   const questions = gameData?.questions || [];
   const totalLevels = gameData?.metadata?.totalLevels || 5;
   
-  // Get questions for current level
-  const currentLevelQuestions = questions.filter(q => q.level_number === currentLevel);
+  // Initialize shuffled questions on first load
+  useEffect(() => {
+    if (questions.length > 0 && shuffledQuestions.length === 0) {
+      const processedQuestions = questions.map(question => {
+        // For MCQ questions, shuffle options and update correct answer
+        if (question.type === 'mcq' && question.options && Array.isArray(question.options)) {
+          const originalOptions = question.options;
+          const originalCorrectAnswer = question.correct_answer;
+          
+          // Find the correct option text
+          const correctOptionText = originalOptions.find(option => 
+            option.startsWith(originalCorrectAnswer + ')')
+          );
+          
+          // Create array of options without letters
+          const optionsWithoutLetters = originalOptions.map(option => ({
+            originalLetter: option.match(/^([A-D])\)/)?.[1],
+            text: option.replace(/^[A-D]\)\s*/, ''),
+            isCorrect: option.startsWith(originalCorrectAnswer + ')')
+          }));
+          
+          // Shuffle the options
+          const shuffledOptions = [...optionsWithoutLetters].sort(() => Math.random() - 0.5);
+          
+          // Reassign letters A, B, C, D and find new correct answer
+          const finalOptions = shuffledOptions.map((option, index) => {
+            const newLetter = String.fromCharCode(65 + index); // A, B, C, D
+            return `${newLetter}) ${option.text}`;
+          });
+          
+          // Find which letter the correct answer is now
+          const newCorrectAnswer = shuffledOptions.findIndex(option => option.isCorrect);
+          const finalCorrectAnswer = String.fromCharCode(65 + newCorrectAnswer);
+          
+          return {
+            ...question,
+            options: finalOptions,
+            correct_answer: finalCorrectAnswer,
+            originalCorrectAnswer: originalCorrectAnswer
+          };
+        }
+        
+        // For True/False questions, convert string to boolean
+        if (question.type === 'true_false') {
+          return {
+            ...question,
+            correct_answer: question.correct_answer === '1' || question.correct_answer === 'true' || question.correct_answer === true
+          };
+        }
+        
+        return question;
+      });
+      
+      setShuffledQuestions(processedQuestions);
+    }
+  }, [questions, shuffledQuestions.length]);
+  
+  // Get questions for current level from shuffled questions
+  const currentLevelQuestions = shuffledQuestions.filter(q => q.level_number === currentLevel);
   const currentLevelQuestion = currentLevelQuestions[0]; // Assuming one question per level for simplicity
 
   // Timer effect
@@ -87,9 +145,35 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
   };
 
   const submitAnswer = () => {
-    if (!selectedAnswer || !currentLevelQuestion) return;
+    if ((selectedAnswer === '' || selectedAnswer === null || selectedAnswer === undefined) && selectedAnswer !== false || !currentLevelQuestion) return;
 
-    const isCorrect = selectedAnswer === currentLevelQuestion.correct_answer;
+    let isCorrect = false;
+    const questionType = currentLevelQuestion.type || 'mcq';
+    
+    // Handle different question types for validation
+    switch (questionType) {
+      case 'mcq':
+        // For MCQ, compare the selected option with correct answer
+        const selectedLetter = selectedAnswer.match(/^([A-D])\)/)?.[1];
+        isCorrect = selectedLetter === currentLevelQuestion.correct_answer;
+        break;
+        
+      case 'true_false':
+        // For true/false, compare boolean values
+        isCorrect = selectedAnswer === currentLevelQuestion.correct_answer;
+        break;
+        
+      case 'matching':
+        // For matching, this would need more complex logic
+        // For now, consider it correct if user provided any answer
+        isCorrect = selectedAnswer && (typeof selectedAnswer === 'string' ? selectedAnswer.trim().length > 0 : true);
+        break;
+        
+      default:
+        // Default to string comparison
+        isCorrect = selectedAnswer === currentLevelQuestion.correct_answer;
+    }
+
     const result = {
       level: currentLevel,
       question: currentLevelQuestion.question,
@@ -97,7 +181,8 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
       correctAnswer: currentLevelQuestion.correct_answer,
       isCorrect,
       timeSpent: timeElapsed,
-      levelTheme: currentLevelQuestion.level_theme || 'General'
+      levelTheme: currentLevelQuestion.level_theme || 'General',
+      questionType: questionType
     };
 
     setGameResults(prev => [...prev, result]);
@@ -214,6 +299,145 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
     );
   };
 
+  const renderQuestionContent = () => {
+    if (!currentLevelQuestion) return null;
+    
+    const questionType = currentLevelQuestion.type || 'mcq';
+    
+    switch (questionType) {
+      case 'mcq':
+        const options = currentLevelQuestion.options || [];
+        return (
+          <div className="mcq-options">
+            {options.map((option, index) => {
+              let buttonClass = 'option-btn';
+              
+              if (showResult) {
+                // Extract letter from option (e.g., "A) Text..." -> "A")
+                const optionLetter = option.match(/^([A-D])\)/)?.[1];
+                
+                // Always highlight the correct answer in green
+                if (optionLetter === currentLevelQuestion.correct_answer) {
+                  buttonClass += ' correct';
+                }
+                // Also highlight the user's wrong answer in red (if different from correct)
+                else if (option === selectedAnswer && selectedAnswer !== currentLevelQuestion.correct_answer) {
+                  buttonClass += ' incorrect';
+                }
+                // All other options remain neutral
+                else {
+                  buttonClass += ' neutral';
+                }
+              } else if (option === selectedAnswer) {
+                buttonClass += ' selected';
+              }
+              
+              return (
+                <button
+                  key={index}
+                  onClick={() => handleAnswerSelect(option)}
+                  disabled={showResult}
+                  className={buttonClass}
+                >
+                  <span className="option-letter">{String.fromCharCode(65 + index)}.</span>
+                  <span className="option-text">{option.replace(/^[A-D]\)\s*/, '')}</span>
+                </button>
+              );
+            })}
+          </div>
+        );
+
+      case 'true_false':
+        return (
+          <div className="true-false-options">
+            {[true, false].map((value) => {
+              let buttonClass = 'tf-btn';
+              
+              if (showResult) {
+                // Always highlight the correct answer in green
+                if (value === currentLevelQuestion.correct_answer) {
+                  buttonClass += ' correct';
+                }
+                // Also highlight the user's wrong answer in red (if different from correct)
+                else if (value === selectedAnswer && selectedAnswer !== currentLevelQuestion.correct_answer) {
+                  buttonClass += ' incorrect';
+                }
+                // All other options remain neutral
+                else {
+                  buttonClass += ' neutral';
+                }
+              } else if (value === selectedAnswer) {
+                buttonClass += ' selected';
+              }
+              
+              return (
+                <button
+                  key={value.toString()}
+                  onClick={() => handleAnswerSelect(value)}
+                  disabled={showResult}
+                  className={buttonClass}
+                >
+                  {value ? '✓ True' : '✗ False'}
+                </button>
+              );
+            })}
+          </div>
+        );
+
+      case 'matching':
+        const leftItems = currentLevelQuestion.leftItems || [];
+        const rightItems = currentLevelQuestion.rightItems || [];
+        return (
+          <div className="matching-section">
+            <div className="matching-instructions">
+              Match the items from the left column with the right column
+            </div>
+            <div className="matching-container">
+              <div className="left-column">
+                {leftItems.map((item, index) => (
+                  <div key={index} className="matching-item left">
+                    {item}
+                  </div>
+                ))}
+              </div>
+              <div className="right-column">
+                {rightItems.map((item, index) => (
+                  <div key={index} className="matching-item right">
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+            {showResult && (
+              <div className="matching-result">
+                <strong>Correct pairs:</strong>
+                {(currentLevelQuestion.correctPairs || []).map((pair, index) => (
+                  <div key={index} className="correct-pair">
+                    {leftItems[pair[0]]} → {rightItems[pair[1]]}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+
+      default:
+        return (
+          <div className="text-input-container">
+            <input
+              type="text"
+              className="answer-input"
+              value={selectedAnswer}
+              onChange={(e) => handleAnswerSelect(e.target.value)}
+              placeholder="Type your answer here..."
+              disabled={showResult}
+              autoFocus
+            />
+          </div>
+        );
+    }
+  };
+
   const renderQuestion = () => {
     if (!currentLevelQuestion) {
       return (
@@ -259,33 +483,7 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
         <div className="question-content">
           <h4 className="question-text">{questionText}</h4>
           
-          {options && Array.isArray(options) && options.length > 0 ? (
-            <div className="options-container">
-              {options.map((option, index) => (
-                <button
-                  key={index}
-                  className={`option ${selectedAnswer === option ? 'selected' : ''}`}
-                  onClick={() => handleAnswerSelect(option)}
-                  disabled={showResult}
-                >
-                  <span className="option-letter">{String.fromCharCode(65 + index)}</span>
-                  <span className="option-text">{option}</span>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="text-input-container">
-              <input
-                type="text"
-                className="answer-input"
-                value={selectedAnswer}
-                onChange={(e) => handleAnswerSelect(e.target.value)}
-                placeholder="Type your answer here..."
-                disabled={showResult}
-                autoFocus
-              />
-            </div>
-          )}
+          {renderQuestionContent()}
         </div>
         
         {!showResult && (
@@ -293,7 +491,14 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
             <button 
               className="submit-btn"
               onClick={submitAnswer}
-              disabled={!selectedAnswer || selectedAnswer.trim() === ''}
+              disabled={
+                (
+                  selectedAnswer === '' ||
+                  selectedAnswer === null ||
+                  selectedAnswer === undefined
+                ) ||
+                (typeof selectedAnswer === 'string' && selectedAnswer.trim() === '')
+              }
             >
               Submit Answer 🚀
             </button>

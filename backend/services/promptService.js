@@ -123,12 +123,15 @@ class PromptService {
 
   /**
    * Generate content using the appropriate LLM service
-   * @param {string} prompt - The prompt to send to the LLM
+   * @param {string|Array} prompt - The prompt to send to the LLM (string) or messages array for function calling
+   * @param {object} options - Additional options for function calling
    * @returns {Promise<string>} The generated content
    */
-  async generateContent(prompt) {
+  async generateContent(prompt, options = {}) {
     console.log('🚀 [PromptService] Starting content generation...');
     console.log('🔑 [PromptService] Using OpenAI:', this.openaiClient.isAvailable() ? 'Yes' : 'No');
+    console.log('📝 [PromptService] Input type:', Array.isArray(prompt) ? 'messages array' : 'string prompt');
+    console.log('🔧 [PromptService] Has function options:', !!options.functions);
 
     // DON'T use fallback - let it fail if OpenAI is not available
     if (!this.openaiClient.isAvailable()) {
@@ -136,25 +139,48 @@ class PromptService {
     }
 
     try {
-      const messages = [
-        {
-          role: 'system',
-          content: 'You are a helpful AI assistant that generates educational content. Always respond with valid JSON.'
-        },
-        {
-          role: 'user',
-          content: prompt
-        }
-      ];
+      let messages;
+      
+      // Handle both string prompts and message arrays
+      if (Array.isArray(prompt)) {
+        // Direct messages array (for function calling)
+        messages = prompt;
+        console.log('📨 [PromptService] Using provided messages array with', messages.length, 'messages');
+      } else {
+        // Traditional string prompt
+        messages = [
+          {
+            role: 'system',
+            content: 'You are a helpful AI assistant that generates educational content. Always respond with valid JSON.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ];
+        console.log('📨 [PromptService] Created messages from string prompt');
+      }
 
-      const response = await this.openaiClient.generateContent(messages, {
-        model: 'gpt-4',
+      const requestOptions = {
+        model: 'gpt-3.5-turbo', // Use cheaper model for testing
         temperature: 0.7,
-        max_tokens: 2000
+        max_tokens: 2000,
+        ...options // This allows function calling options to be passed through
+      };
+
+      console.log('📡 [PromptService] Sending request with options:', {
+        model: requestOptions.model,
+        hasFunctions: !!requestOptions.functions,
+        hasFunctionCall: !!requestOptions.function_call,
+        messagesCount: messages.length
       });
 
+      const response = await this.openaiClient.generateContent(messages, requestOptions);
+
       console.log('✅ [PromptService] Content generation completed successfully');
-      return response.content;
+      console.log('📊 [PromptService] Response type:', response.function_call ? 'function call' : 'regular content');
+      
+      return response;
 
     } catch (error) {
       console.error('❌ [PromptService] Error generating content with OpenAI:', error);
