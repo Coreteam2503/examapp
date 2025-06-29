@@ -15,29 +15,159 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
   const questions = gameData?.questions || [];
   const totalLevels = gameData?.metadata?.totalLevels || 5;
   
+  // Helper function to get displayable correct answer text
+  const getDisplayCorrectAnswer = (question) => {
+    if (question.type === 'mcq' && question.options && question.correct_answer) {
+      // First try to find exact match with letter prefix
+      let correctOption = question.options.find(option => 
+        option.startsWith(question.correct_answer + ')')
+      );
+      
+      if (correctOption) {
+        return correctOption;
+      }
+      
+      // If no exact match, try to find by content (in case format is wrong)
+      correctOption = question.options.find(option => 
+        option.toLowerCase().includes(question.correct_answer.toLowerCase()) ||
+        question.correct_answer.toLowerCase().includes(option.toLowerCase())
+      );
+      
+      if (correctOption) {
+        return correctOption;
+      }
+      
+      // If still no match, check if correct_answer is just the text without letter
+      const matchingIndex = question.options.findIndex(option => {
+        // Remove letter prefix if it exists and compare
+        const optionText = option.replace(/^[A-D]\)\s*/, '');
+        return optionText.trim() === question.correct_answer.trim();
+      });
+      
+      if (matchingIndex !== -1) {
+        return question.options[matchingIndex];
+      }
+      
+      // Last resort: if correct_answer is a letter, use it to find the option
+      if (/^[A-D]$/.test(question.correct_answer)) {
+        const letterIndex = question.correct_answer.charCodeAt(0) - 65; // A=0, B=1, etc.
+        if (letterIndex >= 0 && letterIndex < question.options.length) {
+          return question.options[letterIndex];
+        }
+      }
+      
+      // Fallback: return the raw correct_answer
+      return question.correct_answer;
+    }
+    
+    if (question.type === 'true_false') {
+      return question.correct_answer ? 'True' : 'False';
+    }
+    
+    if (question.type === 'matching') {
+      // Format correct matching pairs for display
+      const leftItems = question.leftItems || [];
+      const rightItems = question.rightItems || [];
+      const correctPairs = question.correctPairs || [];
+      
+      const correctMatches = correctPairs.map(([leftIndex, rightIndex]) => {
+        const leftItem = leftItems[leftIndex] || `Item ${leftIndex + 1}`;
+        const rightItem = rightItems[rightIndex] || `Option ${rightIndex + 1}`;
+        return `${leftItem} → ${rightItem}`;
+      });
+      
+      return correctMatches.join(', ');
+    }
+    
+    return question.correct_answer;
+  };
+
+  // Helper function to format selected answer for display
+  const getDisplaySelectedAnswer = (selectedAnswer, question) => {
+    // Handle null, undefined, or 'No answer' cases
+    if (!selectedAnswer || selectedAnswer === 'No answer') {
+      return 'No answer';
+    }
+    
+    if (question.type === 'matching' && typeof selectedAnswer === 'object') {
+      // Format matching answers as readable text
+      const leftItems = question.leftItems || [];
+      const rightItems = question.rightItems || [];
+      const matches = [];
+      
+      Object.entries(selectedAnswer).forEach(([leftIndex, rightIndex]) => {
+        if (leftIndex !== 'selectedLeft' && rightIndex !== undefined) {
+          const leftItem = leftItems[parseInt(leftIndex)] || `Item ${parseInt(leftIndex) + 1}`;
+          const rightItem = rightItems[parseInt(rightIndex)] || `Option ${parseInt(rightIndex) + 1}`;
+          matches.push(`${leftItem} → ${rightItem}`);
+        }
+      });
+      
+      return matches.length > 0 ? matches.join(', ') : 'No matches made';
+    }
+    
+    if (question.type === 'true_false') {
+      return selectedAnswer ? 'True' : 'False';
+    }
+    
+    // For MCQ and other types, return as string
+    return selectedAnswer?.toString() || 'No answer';
+  };
+  
   // Initialize shuffled questions on first load
   useEffect(() => {
     if (questions.length > 0 && shuffledQuestions.length === 0) {
+      console.log('🔀 Initializing question shuffling and processing...');
+      
       const processedQuestions = questions.map(question => {
         // For MCQ questions, shuffle options and update correct answer
         if (question.type === 'mcq' && question.options && Array.isArray(question.options)) {
-          const originalOptions = question.options;
-          const originalCorrectAnswer = question.correct_answer;
+          console.log('🔀 Shuffling MCQ question:', {
+            originalOptions: question.options,
+            originalAnswer: question.correct_answer
+          });
           
-          // Find the correct option text
-          const correctOptionText = originalOptions.find(option => 
-            option.startsWith(originalCorrectAnswer + ')')
-          );
+          let processedOptions = [...question.options];
+          let processedCorrectAnswer = question.correct_answer;
           
-          // Create array of options without letters
-          const optionsWithoutLetters = originalOptions.map(option => ({
+          // Check if options already have letter prefixes
+          const hasLetterPrefixes = processedOptions.every(opt => /^[A-D]\)/.test(opt));
+          
+          if (!hasLetterPrefixes) {
+            console.log('🔧 Adding letter prefixes to options before shuffling');
+            // Add letter prefixes to options
+            processedOptions = processedOptions.map((option, index) => {
+              const letter = String.fromCharCode(65 + index); // A, B, C, D
+              return `${letter}) ${option}`;
+            });
+            
+            // If correct_answer is the actual text, convert it to letter
+            if (!/^[A-D]$/.test(question.correct_answer)) {
+              const correctIndex = question.options.findIndex(option => 
+                option.toString().trim() === question.correct_answer.toString().trim()
+              );
+              if (correctIndex !== -1) {
+                processedCorrectAnswer = String.fromCharCode(65 + correctIndex);
+                console.log(`🔧 Converted answer from "${question.correct_answer}" to "${processedCorrectAnswer}"`);
+              }
+            }
+          }
+          
+          // Create array of options for shuffling
+          const optionsWithoutLetters = processedOptions.map(option => ({
             originalLetter: option.match(/^([A-D])\)/)?.[1],
             text: option.replace(/^[A-D]\)\s*/, ''),
-            isCorrect: option.startsWith(originalCorrectAnswer + ')')
+            fullText: option,
+            isCorrect: option.startsWith(processedCorrectAnswer + ')') || 
+                      option.replace(/^[A-D]\)\s*/, '').trim() === question.correct_answer.toString().trim()
           }));
           
-          // Shuffle the options
-          const shuffledOptions = [...optionsWithoutLetters].sort(() => Math.random() - 0.5);
+          // IMPORTANT: Proper shuffling using Fisher-Yates algorithm for better randomness
+          const shuffledOptions = [...optionsWithoutLetters];
+          for (let i = shuffledOptions.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffledOptions[i], shuffledOptions[j]] = [shuffledOptions[j], shuffledOptions[i]];
+          }
           
           // Reassign letters A, B, C, D and find new correct answer
           const finalOptions = shuffledOptions.map((option, index) => {
@@ -46,14 +176,20 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
           });
           
           // Find which letter the correct answer is now
-          const newCorrectAnswer = shuffledOptions.findIndex(option => option.isCorrect);
-          const finalCorrectAnswer = String.fromCharCode(65 + newCorrectAnswer);
+          const newCorrectAnswerIndex = shuffledOptions.findIndex(option => option.isCorrect);
+          const finalCorrectAnswer = String.fromCharCode(65 + newCorrectAnswerIndex);
+          
+          console.log('✅ MCQ shuffling completed:', {
+            finalOptions,
+            finalCorrectAnswer,
+            originalCorrectAnswer: question.correct_answer
+          });
           
           return {
             ...question,
             options: finalOptions,
             correct_answer: finalCorrectAnswer,
-            originalCorrectAnswer: originalCorrectAnswer
+            originalCorrectAnswer: question.correct_answer
           };
         }
         
@@ -65,8 +201,85 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
           };
         }
         
+        // For Matching questions, parse the items data and shuffle
+        if (question.type === 'matching' && question.items) {
+          try {
+            const matchingData = typeof question.items === 'string' ? JSON.parse(question.items) : question.items;
+            const originalLeft = matchingData.left || [];
+            const originalRight = matchingData.right || [];
+            const originalCorrectPairs = matchingData.correctPairs || [];
+            
+            console.log('🔀 Shuffling matching question:', {
+              originalLeft,
+              originalRight,
+              originalCorrectPairs
+            });
+            
+            // Shuffle right items (descriptions/answers)
+            const rightItemsWithIndex = originalRight.map((item, index) => ({
+              item,
+              originalIndex: index
+            }));
+            
+            // Shuffle the right items
+            const shuffledRightItems = [...rightItemsWithIndex].sort(() => Math.random() - 0.5);
+            
+            // Create new mapping for correct pairs
+            const newCorrectPairs = originalCorrectPairs.map(([leftIndex, rightIndex]) => {
+              // Find where the original right item ended up after shuffling
+              const newRightIndex = shuffledRightItems.findIndex(item => item.originalIndex === rightIndex);
+              return [leftIndex, newRightIndex];
+            });
+            
+            // You can also shuffle left items if desired
+            const leftItemsWithIndex = originalLeft.map((item, index) => ({
+              item,
+              originalIndex: index
+            }));
+            
+            // Shuffle the left items too
+            const shuffledLeftItems = [...leftItemsWithIndex].sort(() => Math.random() - 0.5);
+            
+            // Update correct pairs to account for left item shuffling too
+            const finalCorrectPairs = newCorrectPairs.map(([leftIndex, rightIndex]) => {
+              const newLeftIndex = shuffledLeftItems.findIndex(item => item.originalIndex === leftIndex);
+              return [newLeftIndex, rightIndex];
+            });
+            
+            console.log('✅ Matching question shuffled:', {
+              shuffledLeft: shuffledLeftItems.map(item => item.item),
+              shuffledRight: shuffledRightItems.map(item => item.item),
+              finalCorrectPairs
+            });
+            
+            return {
+              ...question,
+              leftItems: shuffledLeftItems.map(item => item.item),
+              rightItems: shuffledRightItems.map(item => item.item),
+              correctPairs: finalCorrectPairs
+            };
+          } catch (error) {
+            console.error('Error parsing matching data:', error);
+            return question;
+          }
+        }
+        
         return question;
       });
+      
+      // Optional: Shuffle question order (uncomment if you want random question order)
+      // For Knowledge Tower, you might want to keep progressive order (Level 1, 2, 3...)
+      // But if you want random order, uncomment the next 4 lines:
+      
+      // console.log('🔀 Shuffling question order...');
+      // const shuffledQuestionOrder = [...processedQuestions];
+      // for (let i = shuffledQuestionOrder.length - 1; i > 0; i--) {
+      //   const j = Math.floor(Math.random() * (i + 1));
+      //   [shuffledQuestionOrder[i], shuffledQuestionOrder[j]] = [shuffledQuestionOrder[j], shuffledQuestionOrder[i]];
+      //   // Update level numbers to maintain 1, 2, 3... sequence
+      //   shuffledQuestionOrder[i].level_number = i + 1;
+      // }
+      // setShuffledQuestions(shuffledQuestionOrder);
       
       setShuffledQuestions(processedQuestions);
     }
@@ -103,8 +316,8 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
       const currentResult = {
         level: currentLevel,
         question: currentLevelQuestion?.question || '',
-        selectedAnswer: selectedAnswer || 'No answer',
-        correctAnswer: currentLevelQuestion?.correct_answer || '',
+        selectedAnswer: currentLevelQuestion ? getDisplaySelectedAnswer(selectedAnswer || 'No answer', currentLevelQuestion) : 'No answer',
+        correctAnswer: currentLevelQuestion ? getDisplayCorrectAnswer(currentLevelQuestion) : '',
         isCorrect: false, // Mark as incomplete
         timeSpent: timeElapsed,
         levelTheme: currentLevelQuestion?.level_theme || 'General',
@@ -164,9 +377,20 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
         break;
         
       case 'matching':
-        // For matching, this would need more complex logic
-        // For now, consider it correct if user provided any answer
-        isCorrect = selectedAnswer && (typeof selectedAnswer === 'string' ? selectedAnswer.trim().length > 0 : true);
+        // For matching, check if user's matches align with correct pairs
+        const userMatches = typeof selectedAnswer === 'object' ? selectedAnswer : {};
+        const correctPairs = currentLevelQuestion.correctPairs || [];
+        
+        // Check if all correct pairs are matched correctly
+        let correctMatchCount = 0;
+        correctPairs.forEach(([leftIndex, rightIndex]) => {
+          if (userMatches[leftIndex] === rightIndex) {
+            correctMatchCount++;
+          }
+        });
+        
+        // Consider correct if most pairs are matched correctly
+        isCorrect = correctMatchCount >= Math.ceil(correctPairs.length * 0.7); // 70% threshold
         break;
         
       default:
@@ -177,12 +401,13 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
     const result = {
       level: currentLevel,
       question: currentLevelQuestion.question,
-      selectedAnswer,
-      correctAnswer: currentLevelQuestion.correct_answer,
+      selectedAnswer: getDisplaySelectedAnswer(selectedAnswer, currentLevelQuestion),
+      correctAnswer: getDisplayCorrectAnswer(currentLevelQuestion),
       isCorrect,
       timeSpent: timeElapsed,
       levelTheme: currentLevelQuestion.level_theme || 'General',
-      questionType: questionType
+      questionType: questionType,
+      rawSelectedAnswer: selectedAnswer // Keep raw answer for logic
     };
 
     setGameResults(prev => [...prev, result]);
@@ -387,27 +612,72 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
       case 'matching':
         const leftItems = currentLevelQuestion.leftItems || [];
         const rightItems = currentLevelQuestion.rightItems || [];
+        const userMatches = selectedAnswer || {};
+        const selectedLeftIndex = userMatches.selectedLeft;
+        
         return (
           <div className="matching-section">
             <div className="matching-instructions">
-              Match the items from the left column with the right column
+              Click an item from the left, then click its match from the right
             </div>
             <div className="matching-container">
               <div className="left-column">
+                <h4>Items</h4>
                 {leftItems.map((item, index) => (
-                  <div key={index} className="matching-item left">
+                  <div 
+                    key={index} 
+                    className={`matching-item left ${
+                      selectedLeftIndex === index ? 'selected' : ''
+                    } ${userMatches[index] !== undefined ? 'matched' : ''}`}
+                    onClick={() => {
+                      if (!showResult) {
+                        // Select this left item for matching
+                        const newAnswer = { ...userMatches };
+                        newAnswer.selectedLeft = index;
+                        handleAnswerSelect(newAnswer);
+                      }
+                    }}
+                  >
                     {item}
                   </div>
                 ))}
               </div>
               <div className="right-column">
+                <h4>Descriptions</h4>
                 {rightItems.map((item, index) => (
-                  <div key={index} className="matching-item right">
+                  <div 
+                    key={index} 
+                    className={`matching-item right ${
+                      Object.values(userMatches).includes(index) ? 'matched' : ''
+                    }`}
+                    onClick={() => {
+                      if (!showResult && selectedLeftIndex !== undefined) {
+                        // Match the selected left item with this right item
+                        const newMatches = { ...userMatches };
+                        newMatches[selectedLeftIndex] = index;
+                        delete newMatches.selectedLeft;
+                        handleAnswerSelect(newMatches);
+                      }
+                    }}
+                  >
                     {item}
                   </div>
                 ))}
               </div>
             </div>
+            
+            {/* Show current matches */}
+            {Object.keys(userMatches).filter(key => key !== 'selectedLeft').length > 0 && !showResult && (
+              <div className="current-matches">
+                <strong>Your matches:</strong>
+                {Object.entries(userMatches).filter(([key, _]) => key !== 'selectedLeft').map(([leftIdx, rightIdx]) => (
+                  <div key={leftIdx} className="user-match">
+                    {leftItems[leftIdx]} → {rightItems[rightIdx]}
+                  </div>
+                ))}
+              </div>
+            )}
+            
             {showResult && (
               <div className="matching-result">
                 <strong>Correct pairs:</strong>
@@ -527,7 +797,7 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
           </h3>
           
           <div className="result-details">
-            <p><strong>Your answer:</strong> {result.selectedAnswer}</p>
+            <p><strong>Your answer:</strong> {getDisplaySelectedAnswer(result.selectedAnswer, currentLevelQuestion)}</p>
             <p><strong>Correct answer:</strong> {result.correctAnswer}</p>
             {isCorrect && <p className="success-message">You can climb to the next level!</p>}
             {!isCorrect && <p className="failure-message">Study the material and try again!</p>}

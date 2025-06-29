@@ -1166,3 +1166,96 @@
     padding: 12px 16px;
   }
 }
+
+/* Enhanced Matching Questions */
+.matching-container h4 {
+  text-align: center;
+  margin-bottom: 15px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.matching-item {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.matching-item:hover:not(.matched) {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
+}
+
+.matching-item.matched {
+  background: rgba(46, 204, 113, 0.2);
+  border-color: #2ecc71;
+  cursor: default;
+}
+
+.matching-item.left.matched {
+  background: rgba(52, 152, 219, 0.2);
+  border-color: #3498db;
+}
+
+.match-indicator {
+  font-size: 12px;
+  color: #3498db;
+  font-weight: 600;
+  margin-left: 10px;
+}
+
+.matching-instructions {
+  text-align: center;
+  margin-bottom: 20px;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 10px;
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+}
+
+.matching-result {
+  margin-top: 20px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+}
+
+.correct-pair {
+  margin: 8px 0;
+  padding: 8px;
+  background: rgba(46, 204, 113, 0.2);
+  border-radius: 4px;
+  text-align: center;
+  color: #2ecc71;
+  font-weight: 600;
+}
+
+/* Improved Matching Game Mechanics */
+.matching-item.selected {
+  background: rgba(241, 196, 15, 0.3);
+  border-color: #f1c40f;
+  box-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
+}
+
+.current-matches {
+  margin-top: 20px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+}
+
+.user-match {
+  margin: 5px 0;
+  padding: 8px;
+  background: rgba(52, 152, 219, 0.2);
+  border-radius: 4px;
+  text-align: center;
+  color: #3498db;
+  font-weight: 600;
+}

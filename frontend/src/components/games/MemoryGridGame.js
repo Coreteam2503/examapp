@@ -12,227 +12,9 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
   const [secondSelection, setSecondSelection] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showGameOverAlert, setShowGameOverAlert] = useState(false);
-  const [showExitConfirmation, setShowExitConfirmation] = useState(false); // NEW: Custom modal state
+  const [showExitConfirmation, setShowExitConfirmation] = useState(false);
 
-  // Generate programming content dynamically based on gameData
-  const generateProgrammingContent = (numQuestions = 5) => {
-    const baseContent = [
-      {
-        type: 'programming',
-        leftColumn: [
-          { content: 'str(42)' },
-          { content: 'print("Hello World")' },
-          { content: 'max([1, 5, 3])' },
-          { content: 'x = 5' },
-          { content: '"Hi" * 3' },
-          { content: 'bool(0)' }
-        ],
-        rightColumn: [
-          { content: 'Returns: "42"' },
-          { content: 'Outputs: Hello World' },
-          { content: 'Returns: 5' },
-          { content: 'Assigns value 5' },
-          { content: 'Result: HiHiHi' },
-          { content: 'Returns: False' }
-        ],
-        pairs: [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5]]
-      },
-      {
-        type: 'programming',
-        leftColumn: [
-          { content: 'len([1, 2, 3])' },
-          { content: 'type("hello")' },
-          { content: 'range(3)' },
-          { content: 'int("5")' },
-          { content: 'list((1, 2))' },
-          { content: 'abs(-10)' }
-        ],
-        rightColumn: [
-          { content: 'Returns: 3' },
-          { content: 'Returns: <class \'str\'>' },
-          { content: 'Returns: range(0, 3)' },
-          { content: 'Returns: 5' },
-          { content: 'Returns: [1, 2]' },
-          { content: 'Returns: 10' }
-        ],
-        pairs: [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5]]
-      },
-      {
-        type: 'programming',
-        leftColumn: [
-          { content: 'def add(a, b):' },
-          { content: 'class Car:' },
-          { content: 'import math' },
-          { content: 'for i in range(2):' },
-          { content: 'if x > 0:' },
-          { content: 'try:' }
-        ],
-        rightColumn: [
-          { content: 'Function definition' },
-          { content: 'Class definition' },
-          { content: 'Module import' },
-          { content: 'Loop structure' },
-          { content: 'Conditional statement' },
-          { content: 'Exception handling' }
-        ],
-        pairs: [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5]]
-      },
-      {
-        type: 'programming',
-        leftColumn: [
-          { content: 'SyntaxError' },
-          { content: 'IndexError' },
-          { content: 'TypeError' },
-          { content: 'ValueError' },
-          { content: 'KeyError' },
-          { content: 'AttributeError' }
-        ],
-        rightColumn: [
-          { content: 'Invalid syntax' },
-          { content: 'Index out of range' },
-          { content: 'Wrong data type' },
-          { content: 'Invalid value' },
-          { content: 'Key not found' },
-          { content: 'Attribute missing' }
-        ],
-        pairs: [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5]]
-      },
-      {
-        type: 'programming',
-        leftColumn: [
-          { content: 'HTML' },
-          { content: 'CSS' },
-          { content: 'JavaScript' },
-          { content: 'Python' },
-          { content: 'SQL' },
-          { content: 'JSON' }
-        ],
-        rightColumn: [
-          { content: 'Markup language' },
-          { content: 'Styling language' },
-          { content: 'Scripting language' },
-          { content: 'Programming language' },
-          { content: 'Query language' },
-          { content: 'Data format' }
-        ],
-        pairs: [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5]]
-      },
-      {
-        type: 'programming',
-        leftColumn: [
-          { content: 'GET' },
-          { content: 'POST' },
-          { content: 'PUT' },
-          { content: 'DELETE' },
-          { content: 'PATCH' },
-          { content: 'HEAD' }
-        ],
-        rightColumn: [
-          { content: 'Retrieve data' },
-          { content: 'Create new data' },
-          { content: 'Update entire resource' },
-          { content: 'Remove resource' },
-          { content: 'Partial update' },
-          { content: 'Get headers only' }
-        ],
-        pairs: [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5]]
-      },
-      {
-        type: 'programming',
-        leftColumn: [
-          { content: 'O(1)' },
-          { content: 'O(log n)' },
-          { content: 'O(n)' },
-          { content: 'O(n log n)' },
-          { content: 'O(n²)' },
-          { content: 'O(2^n)' }
-        ],
-        rightColumn: [
-          { content: 'Constant time' },
-          { content: 'Logarithmic time' },
-          { content: 'Linear time' },
-          { content: 'Linearithmic time' },
-          { content: 'Quadratic time' },
-          { content: 'Exponential time' }
-        ],
-        pairs: [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5]]
-      },
-      {
-        type: 'programming',
-        leftColumn: [
-          { content: 'Array' },
-          { content: 'LinkedList' },
-          { content: 'Stack' },
-          { content: 'Queue' },
-          { content: 'HashMap' },
-          { content: 'Tree' }
-        ],
-        rightColumn: [
-          { content: 'Indexed collection' },
-          { content: 'Node-based structure' },
-          { content: 'LIFO structure' },
-          { content: 'FIFO structure' },
-          { content: 'Key-value pairs' },
-          { content: 'Hierarchical structure' }
-        ],
-        pairs: [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5]]
-      },
-      {
-        type: 'programming',
-        leftColumn: [
-          { content: 'git add' },
-          { content: 'git commit' },
-          { content: 'git push' },
-          { content: 'git pull' },
-          { content: 'git branch' },
-          { content: 'git merge' }
-        ],
-        rightColumn: [
-          { content: 'Stage changes' },
-          { content: 'Save changes' },
-          { content: 'Upload changes' },
-          { content: 'Download changes' },
-          { content: 'Create branch' },
-          { content: 'Combine branches' }
-        ],
-        pairs: [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5]]
-      },
-      {
-        type: 'programming',
-        leftColumn: [
-          { content: 'React' },
-          { content: 'Vue' },
-          { content: 'Angular' },
-          { content: 'Express' },
-          { content: 'Django' },
-          { content: 'Flask' }
-        ],
-        rightColumn: [
-          { content: 'JavaScript library' },
-          { content: 'Progressive framework' },
-          { content: 'Full framework' },
-          { content: 'Node.js framework' },
-          { content: 'Python framework' },
-          { content: 'Micro framework' }
-        ],
-        pairs: [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5]]
-      }
-    ];
-
-    // Generate content for the requested number of questions
-    const result = [];
-    for (let i = 0; i < numQuestions; i++) {
-      const basePattern = baseContent[i % baseContent.length];
-      result.push({
-        ...basePattern,
-        id: i // Add unique ID for each pattern
-      });
-    }
-    
-    return result;
-  };
-
-  // Convert pattern_data to the format expected by the component
+  // Convert pattern_data to the format expected by the matching component
   const convertPatternDataToGameFormat = (question) => {
     console.log('🔄 Converting pattern_data:', question);
     
@@ -262,21 +44,71 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
       return null;
     }
 
-    // Create memory pairs from symbols
-    const leftColumn = symbols.map((symbol, index) => ({
-      content: symbol,
-      symbol: symbol,
-      position: index
-    }));
+    // Create meaningful matching pairs from the symbols
+    // Based on the pattern data, create logical matching relationships
+    
+    const createMatchingContent = (symbols, sequence, grid) => {
+      // Create meaningful input/output or concept-description matching pairs
+      const symbolDescriptions = {
+        // Tools & Technology
+        '🔧': 'Tool',
+        '💻': 'Technology', 
+        '📝': 'Note',
+        
+        // Colors
+        '🔵': 'Blue',
+        '🟡': 'Yellow',
+        '🟢': 'Green', 
+        '🔴': 'Red',
+        
+        // Education & Science
+        '📚': 'Books',
+        '🖥️': 'Computer',
+        '🔬': 'Science',
+        '🔭': 'Astronomy',
+        
+        // Transportation
+        '🚗': 'Car',
+        '🚲': 'Bicycle',
+        '🚂': 'Train',
+        '🚀': 'Rocket',
+        
+        // Fruits
+        '🍎': 'Apple',
+        '🍌': 'Banana',
+        '🍇': 'Grapes',
+        '🍊': 'Orange'
+      };
 
-    const rightColumn = symbols.map((symbol, index) => ({
-      content: `${symbol} Pattern`,
-      description: `Match with ${symbol}`,
-      position: index
-    }));
+      const leftColumn = [];
+      const rightColumn = [];
+      const pairs = [];
 
-    // Create matching pairs - each symbol matches with itself
-    const pairs = symbols.map((symbol, index) => [index, index]);
+      symbols.forEach((symbol, index) => {
+        const description = symbolDescriptions[symbol] || `Item ${index + 1}`;
+        
+        leftColumn.push({
+          content: symbol,
+          symbol: symbol,
+          position: index
+        });
+
+        rightColumn.push({
+          content: description,
+          description: `Match with ${symbol}`,
+          position: index
+        });
+
+        pairs.push([index, index]);
+      });
+
+      return { leftColumn, rightColumn, pairs };
+    };
+
+    const { leftColumn, rightColumn, pairs } = createMatchingContent(symbols, sequence, grid);
+
+    // Create matching pairs - each symbol matches with its description
+    // const pairs = symbols.map((symbol, index) => [index, index]);
 
     const converted = {
       type: 'memory_grid',
@@ -289,8 +121,89 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
       pairs: pairs
     };
     
-    console.log('✅ Converted pattern_data to game format:', converted);
+    console.log('✅ Converted pattern_data to matching format:', converted);
     return converted;
+  };
+
+  // Generate programming content as fallback
+  const generateProgrammingContent = (numQuestions = 5) => {
+    const baseContent = [
+      {
+        type: 'programming',
+        leftColumn: [
+          { content: 'str(42)' },
+          { content: 'print("Hello World")' },
+          { content: 'max([1, 5, 3])' }
+        ],
+        rightColumn: [
+          { content: 'Returns: "42"' },
+          { content: 'Outputs: Hello World' },
+          { content: 'Returns: 5' }
+        ],
+        pairs: [[0, 0], [1, 1], [2, 2]]
+      },
+      {
+        type: 'programming',
+        leftColumn: [
+          { content: 'len([1, 2, 3])' },
+          { content: 'type("hello")' },
+          { content: 'range(3)' }
+        ],
+        rightColumn: [
+          { content: 'Returns: 3' },
+          { content: 'Returns: <class \'str\'>' },
+          { content: 'Returns: range(0, 3)' }
+        ],
+        pairs: [[0, 0], [1, 1], [2, 2]]
+      },
+      {
+        type: 'programming',
+        leftColumn: [
+          { content: 'def add(a, b):' },
+          { content: 'class Car:' },
+          { content: 'import math' }
+        ],
+        rightColumn: [
+          { content: 'Function definition' },
+          { content: 'Class definition' },
+          { content: 'Module import' }
+        ],
+        pairs: [[0, 0], [1, 1], [2, 2]]
+      },
+      {
+        type: 'programming',
+        leftColumn: [
+          { content: 'SyntaxError' },
+          { content: 'IndexError' },
+          { content: 'TypeError' }
+        ],
+        rightColumn: [
+          { content: 'Invalid syntax' },
+          { content: 'Index out of range' },
+          { content: 'Wrong data type' }
+        ],
+        pairs: [[0, 0], [1, 1], [2, 2]]
+      },
+      {
+        type: 'programming',
+        leftColumn: [
+          { content: 'HTML' },
+          { content: 'CSS' },
+          { content: 'JavaScript' }
+        ],
+        rightColumn: [
+          { content: 'Markup language' },
+          { content: 'Styling language' },
+          { content: 'Scripting language' }
+        ],
+        pairs: [[0, 0], [1, 1], [2, 2]]
+      }
+    ];
+
+    return baseContent.slice(0, numQuestions).map((content, index) => ({
+      ...content,
+      id: index
+    }));
   };
 
   // Get the number of questions from gameData
@@ -311,15 +224,15 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
     // If no valid conversions, use a simple symbol matching game based on first question
     if (gameContent.length === 0 && gameData.questions.length > 0) {
       console.log('⚠️ No pattern_data found, creating simple symbol game');
-      const symbols = ['🎯', '💡', '🔧', '💻', '📝', '🌟'];
+      const symbols = ['🎯', '💡', '🔧'];
       gameContent = [{
         type: 'memory_grid',
-        leftColumn: symbols.slice(0, 3).map((symbol, index) => ({
+        leftColumn: symbols.map((symbol, index) => ({
           content: symbol,
           symbol: symbol,
           position: index
         })),
-        rightColumn: symbols.slice(0, 3).map((symbol, index) => ({
+        rightColumn: symbols.map((symbol, index) => ({
           content: `Match ${symbol}`,
           description: `Find the matching ${symbol}`,
           position: index
@@ -442,9 +355,7 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
 
   const handleLevelComplete = () => {
     setTimeout(() => {
-      // Check if there are more levels
       if (currentLevel + 1 < gameContent.length) {
-        // Move to next level
         setCurrentLevel(prev => prev + 1);
         setMatchedPairs(new Set());
         setFirstSelection(null);
@@ -452,7 +363,6 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
         setShowFeedback(false);
         setLives(3); // Reset lives for new level
       } else {
-        // All levels completed
         setGameState('complete');
         if (onGameComplete) {
           onGameComplete({
@@ -515,12 +425,10 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
     }
   };
 
-  // FIXED: Replace alert() with custom modal
   const handleExitGame = () => {
-    setShowExitConfirmation(true); // Show custom modal instead of alert
+    setShowExitConfirmation(true);
   };
 
-  // NEW: Handle modal actions
   const confirmExitQuiz = () => {
     setShowExitConfirmation(false);
     setGameState('complete');
@@ -588,24 +496,23 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
     return (
       <div className="memory-grid-container">
         <div className="game-intro">
-          <h2>Programming Memory Grid Challenge</h2>
+          <h2>Memory Grid Challenge</h2>
           <div className="game-rules">
             <h3>How to Play:</h3>
             <ul>
-              <li>Match programming code snippets with their outputs or corrected versions</li>
+              <li>Match symbols from the left column with their descriptions in the right column</li>
               <li>Click one card from the left column and one from the right column</li>
               <li>You have 3 lives - wrong matches cost a life</li>
-              <li>After 3 wrong matches, the game ends</li>
               <li>Match all pairs to complete each level</li>
             </ul>
           </div>
           <div className="game-preview">
             <p>Total Levels: <strong>{gameContent.length}</strong></p>
             <p>Lives: <strong>3</strong></p>
-            <p>Challenge: <strong>Memory Grid Game</strong></p>
+            <p>Challenge: <strong>Memory Grid Matching</strong></p>
           </div>
           <button className="start-game-btn" onClick={startGame}>
-            Start Programming Challenge
+            Start Memory Challenge
           </button>
         </div>
       </div>
@@ -656,10 +563,6 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
             <div className="detail-item">
               <span className="detail-label">Best Pairs:</span>
               <span className="detail-value">{matchedPairs.size / 2} of {currentPattern.pairs.length}</span>
-            </div>
-            <div className="detail-item">
-              <span className="detail-label">Note:</span>
-              <span className="detail-value">{success ? 'Congratulations! You matched all programming pairs!' : 'You exited the memory grid challenge early, but your progress was saved!'}</span>
             </div>
             <div className="detail-item">
               <span className="detail-label">Performance:</span>
@@ -726,7 +629,7 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
     );
   };
 
-  // NEW: Custom Exit Confirmation Modal (replacing alert)
+  // Exit Confirmation Modal
   const ExitConfirmationModal = () => {
     if (!showExitConfirmation) return null;
 
@@ -771,7 +674,7 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
       <ExitConfirmationModal />
       <div className="game-header">
         <div className="game-info">
-          <h2>Programming Memory Grid</h2>
+          <h2>Memory Grid Matching</h2>
           <div className="level-info">
             Level {currentLevel + 1} of {gameContent.length}
           </div>
@@ -807,11 +710,11 @@ const MemoryGridGame = ({ gameData, onGameComplete, onAnswerChange }) => {
         <div className="column-headers">
           <div className="column-header left-header">
             <span className="header-icon">&#x1F4BB;</span>
-            <span className="header-text">Code Snippets</span>
+            <span className="header-text">Symbols</span>
           </div>
           <div className="column-header right-header">
             <span className="header-icon">&#x1F4CB;</span>
-            <span className="header-text">Outputs / Solutions</span>
+            <span className="header-text">Descriptions</span>
           </div>
         </div>
 
