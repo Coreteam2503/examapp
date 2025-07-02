@@ -1,0 +1,135 @@
+.question-wrapper {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.question-text {
+  margin-bottom: 20px;
+}
+
+.question-text h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #1f2937;
+  word-wrap: break-word;
+}
+
+.question-content {
+  width: 100%;
+}
+
+.question-error {
+  border: 2px solid #ef4444;
+  border-radius: 8px;
+  background: #fef2f2;
+  padding: 20px;
+  text-align: center;
+}
+
+.error-message h4 {
+  margin: 0 0 10px 0;
+  color: #dc2626;
+  font-size: 16px;
+}
+
+.error-message p {
+  margin: 0 0 15px 0;
+  color: #991b1b;
+  font-size: 14px;
+}
+
+.error-message details {
+  text-align: left;
+  margin-top: 10px;
+  background: #ffffff;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+  padding: 10px;
+}
+
+.error-message summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #dc2626;
+  margin-bottom: 5px;
+}
+
+.error-message pre {
+  font-size: 12px;
+  color: #374151;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.question-debug {
+  margin-top: 15px;
+  padding: 8px;
+  background: #f3f4f6;
+  border-radius: 4px;
+  border-left: 3px solid #6b7280;
+}
+
+.question-debug small {
+  color: #6b7280;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+}
+
+/* Game mode specific styling */
+.question-wrapper[data-game-mode="hangman"] {
+  background: #fef7ed;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.question-wrapper[data-game-mode="tower"] {
+  background: #eff6ff;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.question-wrapper[data-game-mode="ladder"] {
+  background: #f0fdf4;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+/* Question type specific adjustments */
+.question-type-fill_blank .question-text {
+  display: none; /* Fill blank handles its own question text */
+}
+
+.question-type-matching .question-content {
+  margin-top: 10px;
+}
+
+.question-type-ordering .question-content {
+  margin-top: 15px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .question-text h3 {
+    font-size: 16px;
+  }
+  
+  .question-wrapper[data-game-mode] {
+    padding: 12px;
+  }
+  
+  .error-message {
+    padding: 15px;
+  }
+  
+  .error-message h4 {
+    font-size: 14px;
+  }
+  
+  .error-message p {
+    font-size: 13px;
+  }
+}

@@ -4,9 +4,11 @@ import './QuizDisplay.css';
 import './MobileResponsive.css';
 import './MobileQuestionTypes.css';
 import './MobileTouchInteractions.css';
-import FillInTheBlankQuestion from './questions/FillInTheBlankQuestion';
-import TrueFalseQuestion from './questions/TrueFalseQuestion';
-import MatchingQuestion from './questions/MatchingQuestion';
+import { 
+  FillInTheBlankQuestion,
+  TrueFalseQuestion,
+  MatchingQuestion 
+} from '../questions';
 
 const MobileQuizDisplay = ({ quiz, onQuizComplete, onAnswerChange }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);

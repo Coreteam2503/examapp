@@ -4,10 +4,12 @@ import './MobileResponsive.css';
 import './MobileQuestionTypes.css';
 import './MobileTouchInteractions.css';
 import './QuizThemeOverride.css';
-import FillInTheBlankQuestion from './questions/FillInTheBlankQuestion';
-import TrueFalseQuestion from './questions/TrueFalseQuestion';
-import MatchingQuestion from './questions/MatchingQuestion';
-import OrderingQuestion from './questions/OrderingQuestion';
+import { 
+  FillInTheBlankQuestion,
+  TrueFalseQuestion,
+  MatchingQuestion,
+  OrderingQuestion 
+} from '../questions';
 
 // Import game components
 import HangmanGame from '../games/HangmanGame';

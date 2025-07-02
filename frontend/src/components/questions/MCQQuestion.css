@@ -1,0 +1,136 @@
+.mcq-question {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.mcq-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.mcq-option {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 16px;
+  text-align: left;
+  min-height: 60px;
+  position: relative;
+  outline: none;
+}
+
+.mcq-option:hover:not(.disabled) {
+  border-color: #3b82f6;
+  background: #f8fafc;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+.mcq-option:active:not(.disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.1);
+}
+
+.mcq-option.selected {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  color: #1e40af;
+  font-weight: 600;
+}
+
+.mcq-option.selected::after {
+  content: '✓';
+  position: absolute;
+  right: 16px;
+  color: #3b82f6;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.mcq-option.correct {
+  border-color: #10b981;
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.mcq-option.correct::after {
+  content: '✓';
+  position: absolute;
+  right: 16px;
+  color: #10b981;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.mcq-option.incorrect {
+  border-color: #ef4444;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.mcq-option.incorrect::after {
+  content: '✗';
+  position: absolute;
+  right: 16px;
+  color: #ef4444;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.mcq-option.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #f8fafc;
+}
+
+.mcq-option-text {
+  flex: 1;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+
+.mcq-explanation {
+  margin-top: 16px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border-left: 4px solid #3b82f6;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.mcq-error {
+  padding: 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #991b1b;
+  text-align: center;
+  font-style: italic;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .mcq-option {
+    padding: 12px;
+    font-size: 14px;
+    min-height: 50px;
+  }
+  
+  .mcq-option-text {
+    line-height: 1.4;
+  }
+  
+  .mcq-explanation {
+    padding: 12px;
+    font-size: 13px;
+  }
+}

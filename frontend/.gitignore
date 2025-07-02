@@ -21,3 +21,10 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Task Master AI Algae
+.taskmaster/reports/
+node_modules/
+.env
+*.log
+logs/
