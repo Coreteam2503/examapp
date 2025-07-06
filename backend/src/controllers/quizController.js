@@ -1,4 +1,5 @@
 const PromptService = require('../../services/promptService');
+const { QuizGenerationService, QuizGenerationError } = require('../services/quizGenerationService');
 const { db: knex } = require('../config/database');
 const fs = require('fs').promises;
 const path = require('path');
@@ -6,6 +7,7 @@ const path = require('path');
 class QuizController {
   constructor() {
     this.promptService = new PromptService();
+    this.quizGenerationService = new QuizGenerationService();
   }
 
   /**
@@ -200,6 +202,80 @@ class QuizController {
       });
     }
   }
+
+  /**
+   * Generate dynamic quiz from question bank
+   * POST /api/quizzes/generate-dynamic
+   */
+  async generateDynamicQuiz(req, res) {
+    try {
+      console.log('🎯 [QuizController] Dynamic quiz generation started');
+      console.log('📝 [QuizController] Request body:', req.body);
+      
+      const userId = req.user.userId;
+      
+      // Generate quiz using the service
+      const result = await this.quizGenerationService.generateQuiz(req.body, userId);
+      
+      console.log(`✅ [QuizController] Dynamic quiz generated successfully, ID: ${result.quiz.id}`);
+      
+      res.status(201).json({
+        success: true,
+        message: 'Dynamic quiz generated successfully',
+        data: result
+      });
+      
+    } catch (error) {
+      console.error('❌ [QuizController] Dynamic quiz generation failed:', error);
+      
+      if (error instanceof QuizGenerationError) {
+        return res.status(400).json({
+          success: false,
+          message: error.message,
+          details: error.details
+        });
+      }
+      
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error during quiz generation',
+        error: error.message
+      });
+    }
+  }
+
+  /**
+   * Get available options for quiz generation
+   * GET /api/quizzes/generation-options
+   */
+  async getGenerationOptions(req, res) {
+    try {
+      console.log('📊 [QuizController] Getting generation options');
+      
+      const options = await this.quizGenerationService.getAvailableOptions();
+      
+      console.log('✅ [QuizController] Generation options retrieved:', {
+        domains: options.domains.length,
+        subjects: options.subjects.length,
+        types: options.types.length
+      });
+      
+      res.json({
+        success: true,
+        data: options
+      });
+      
+    } catch (error) {
+      console.error('❌ [QuizController] Get generation options failed:', error);
+      
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error while fetching generation options',
+        error: error.message
+      });
+    }
+  }
+
   async generateQuiz(req, res) {
     console.log('🔥 [QuizController] generateQuiz endpoint called!');
     try {
@@ -635,6 +711,8 @@ const quizController = new QuizController();
 module.exports = {
   generateQuiz: (req, res) => quizController.generateQuiz(req, res),
   generateEnhancedQuiz: (req, res) => quizController.generateEnhancedQuiz(req, res),
+  generateDynamicQuiz: (req, res) => quizController.generateDynamicQuiz(req, res),
+  getGenerationOptions: (req, res) => quizController.getGenerationOptions(req, res),
   getUserQuizzes: (req, res) => quizController.getUserQuizzes(req, res),
   getQuizById: (req, res) => quizController.getQuizById(req, res),
   deleteQuiz: (req, res) => quizController.deleteQuiz(req, res)

@@ -1,0 +1,95 @@
+/* Question Bank Form Styles */
+.question-bank-form {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.question-bank-form .code-editor {
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.question-bank-form .validation-status {
+  margin: 1rem 0;
+}
+
+.question-bank-form .error-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.question-bank-form .example-templates {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.question-bank-form .example-card {
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.question-bank-form .example-card:hover {
+  border-color: #3b82f6;
+  background-color: #eff6ff;
+}
+
+.question-bank-form .preview-section {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+.question-bank-form .submit-button {
+  padding: 0.75rem 1.5rem;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.question-bank-form .submit-button:hover:not(:disabled) {
+  background-color: #2563eb;
+}
+
+.question-bank-form .submit-button:disabled {
+  background-color: #d1d5db;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.question-bank-form .loading-spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Code Editor Override Styles */
+.cm-editor {
+  border-radius: 0.5rem;
+}
+
+.cm-editor.cm-focused {
+  outline: 2px solid #3b82f6;
+  outline-offset: -2px;
+}

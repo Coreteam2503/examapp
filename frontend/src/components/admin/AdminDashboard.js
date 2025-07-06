@@ -7,6 +7,7 @@ import AdminOverview from './AdminOverview';
 import StudentManagement from './StudentManagement';
 import SystemAnalytics from './SystemAnalytics';
 import QuizManagement from './QuizManagement';
+import QuestionBankManagement from './QuestionBankManagement';
 import UserRoles from './UserRoles';
 import SystemSettings from './SystemSettings';
 import './AdminDashboard.css';
@@ -45,6 +46,8 @@ const AdminDashboard = () => {
         return <SystemAnalytics />;
       case 'quizzes':
         return <QuizManagement />;
+      case 'questions':
+        return <QuestionBankManagement />;
       case 'roles':
         return <UserRoles />;
       case 'settings':

@@ -28,6 +28,12 @@ const AdminSidebar = ({ activeSection, setActiveSection, collapsed, setCollapsed
       description: 'Manage quizzes and content'
     },
     {
+      id: 'questions',
+      label: 'Question Bank',
+      icon: '🏦',
+      description: 'Create and manage question bank'
+    },
+    {
       id: 'roles',
       label: 'User Roles',
       icon: '🔐',

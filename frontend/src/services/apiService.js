@@ -83,10 +83,12 @@ export const apiService = {
     explainCode: (data) => api.post('/ai/explain-code', data)
   },
 
-  // Quiz endpoints
+  // Quiz endpoints with enhanced error handling
   quizzes: {
     generate: (data) => api.post('/quizzes/generate', data),
     generateEnhanced: (data) => api.post('/quizzes/generate-enhanced', data),
+    generateDynamic: (data) => api.post('/quizzes/generate-dynamic', data),
+    getGenerationOptions: () => api.get('/quizzes/generation-options'),
     list: (params) => api.get('/quizzes', { params }),
     getById: (id) => api.get(`/quizzes/${id}`),
     create: (data) => api.post('/quizzes', data),
@@ -95,32 +97,16 @@ export const apiService = {
     getResults: (attemptId) => api.get(`/quiz-attempts/${attemptId}/detailed`)
   },
 
-  // Games endpoints
-  games: {
-    generate: (data) => api.post('/games/generate', data),
-    getById: (id) => api.get(`/games/${id}`)
-  },
-
-  // Quiz attempts endpoints
-  quizAttempts: {
-    submit: (data) => api.post('/quiz-attempts', data),
-    getById: (id) => api.get(`/quiz-attempts/${id}`),
-    list: (params) => api.get('/quiz-attempts', { params }),
-    getUserAttempts: (params) => api.get('/quiz-attempts', { params }),
-    getStatistics: () => api.get('/quiz-attempts/statistics'),
-    getDetailedResults: (id) => api.get(`/quiz-attempts/${id}/detailed`),
-    getRecent: (params) => api.get('/quiz-attempts/recent', { params }),
-    delete: (id) => api.delete(`/quiz-attempts/${id}`)
-  },
-
-  // User endpoints
-  users: {
-    getProgress: () => api.get('/users/progress')
-  },
-
-  // Analytics endpoints
-  analytics: {
-    getPerformance: (params) => api.get('/analytics/performance', { params })
+  // Enhanced Question Bank endpoints
+  questions: {
+    bulkCreate: (data) => api.post('/questions/bulk', data),
+    search: (params) => api.get('/questions/search', { params }),
+    getStatistics: () => api.get('/questions/statistics'),
+    getMetadataOptions: () => api.get('/questions/metadata-options'),
+    getById: (id) => api.get(`/questions/${id}`),
+    updateById: (id, data) => api.put(`/questions/${id}`, data),
+    deleteById: (id) => api.delete(`/questions/${id}`),
+    validateBulk: (data) => api.post('/questions/validate-bulk', data)
   },
 
   // Admin endpoints
@@ -143,31 +129,153 @@ export const apiService = {
 // Export axios instance for custom requests
 export default api;
 
-// Helper function to handle API errors
+// Enhanced error handling function with structured error responses
 export const handleApiError = (error) => {
-  if (error.response) {
-    // Server responded with error status
+  // Network error (no response received)
+  if (error.request && !error.response) {
     return {
       success: false,
-      message: error.response.data?.message || 'Server error occurred',
-      status: error.response.status,
-      data: error.response.data
-    };
-  } else if (error.request) {
-    // Request made but no response received
-    return {
-      success: false,
-      message: 'Network error. Please check your connection.',
-      status: 0
-    };
-  } else {
-    // Something else happened
-    return {
-      success: false,
-      message: error.message || 'An unexpected error occurred',
+      error: {
+        code: 'NETWORK_ERROR',
+        message: 'Network error. Please check your connection and try again.',
+        details: ['Unable to connect to server', 'Check internet connection', 'Server may be unavailable']
+      },
       status: 0
     };
   }
+  
+  // Request timeout
+  if (error.code === 'ECONNABORTED') {
+    return {
+      success: false,
+      error: {
+        code: 'TIMEOUT_ERROR',
+        message: 'Request timed out. Please try again.',
+        details: ['Server response took too long', 'Try reducing request size or check connection']
+      },
+      status: 0
+    };
+  }
+  
+  // Server responded with error status
+  if (error.response) {
+    const { status, data } = error.response;
+    
+    // Handle specific status codes
+    switch (status) {
+      case 400:
+        return {
+          success: false,
+          error: {
+            code: 'BAD_REQUEST',
+            message: data?.message || 'Invalid request format',
+            details: data?.errors || data?.error?.details || ['Check request parameters']
+          },
+          status
+        };
+        
+      case 401:
+        return {
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'Authentication required',
+            details: ['Please log in to continue', 'Your session may have expired']
+          },
+          status
+        };
+        
+      case 403:
+        return {
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'Access denied',
+            details: ['You do not have permission to perform this action']
+          },
+          status
+        };
+        
+      case 404:
+        return {
+          success: false,
+          error: {
+            code: 'NOT_FOUND',
+            message: data?.message || 'Resource not found',
+            details: data?.errors || ['The requested resource does not exist']
+          },
+          status
+        };
+        
+      case 422:
+        return {
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: data?.message || 'Validation failed',
+            details: data?.errors || data?.error?.details || ['Please check your input']
+          },
+          status
+        };
+        
+      case 429:
+        return {
+          success: false,
+          error: {
+            code: 'RATE_LIMIT',
+            message: 'Too many requests. Please try again later.',
+            details: ['Rate limit exceeded', 'Wait a moment before trying again']
+          },
+          status
+        };
+        
+      case 500:
+        return {
+          success: false,
+          error: {
+            code: 'SERVER_ERROR',
+            message: 'Internal server error. Please try again.',
+            details: ['Something went wrong on our end', 'Try again in a few moments']
+          },
+          status
+        };
+        
+      case 502:
+      case 503:
+      case 504:
+        return {
+          success: false,
+          error: {
+            code: 'SERVICE_UNAVAILABLE',
+            message: 'Service temporarily unavailable',
+            details: ['Server is temporarily down', 'Please try again later']
+          },
+          status
+        };
+        
+      default:
+        return {
+          success: false,
+          error: {
+            code: 'UNKNOWN_ERROR',
+            message: data?.message || 'An unexpected error occurred',
+            details: data?.errors || ['Please try again or contact support']
+          },
+          status
+        };
+    }
+  }
+  
+  // Fallback for any other error
+  return {
+    success: false,
+    error: {
+      code: 'UNKNOWN_ERROR',
+      message: error.message || 'An unexpected error occurred',
+      details: ['Please try again or contact support']
+    },
+    status: 0
+  };
 };
 
 // Helper function to get auth token

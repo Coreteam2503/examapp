@@ -76,6 +76,10 @@ try {
   app.use('/api/games', require('./routes/games')); // Game formats
   console.log('Games route loaded successfully');
   
+  console.log('Loading questions route...');
+  app.use('/api/questions', require('./routes/questions')); // Question bank APIs
+  console.log('Questions route loaded successfully');
+  
 } catch (error) {
   console.error('Error loading routes:', error);
 }

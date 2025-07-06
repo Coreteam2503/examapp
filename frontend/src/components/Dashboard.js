@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import FileUpload from './FileUpload';
 import FileManager from './FileManager';
 import QuizManager from './quiz/QuizManager';
+import QuizGeneratorForm from './QuizGeneratorForm';
 import './Dashboard.css';
 
 // Import new dashboard components
@@ -161,6 +162,12 @@ const Dashboard = () => {
           >
             Your Quizzes
           </button>
+          <button 
+            className={`nav-btn ${activeTab === 'generate' ? 'active' : ''}`}
+            onClick={() => { setActiveTab('generate'); setMobileMenuOpen(false); }}
+          >
+            Generate Quiz
+          </button>
         </div>
       </nav>
 
@@ -193,6 +200,16 @@ const Dashboard = () => {
                 <p>Take quizzes based on your uploaded content and track your progress.</p>
               </div>
               <QuizManager onQuizCompleted={handleQuizCompleted} />
+            </div>
+          )}
+
+          {activeTab === 'generate' && (
+            <div className="tab-content">
+              <div className="tab-header">
+                <h2>Generate Custom Quiz</h2>
+                <p>Create a personalized quiz from the question bank with your preferred criteria.</p>
+              </div>
+              <QuizGeneratorForm />
             </div>
           )}
         </div>

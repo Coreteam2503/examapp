@@ -10,6 +10,143 @@ class Question {
     return db('questions').insert(questionsData);
   }
 
+  // New: Bulk create with transaction support
+  static async bulkCreate(questionsData) {
+    try {
+      const insertedIds = await db('questions').insert(questionsData);
+      
+      // Return the created questions
+      if (insertedIds.length > 0) {
+        const firstId = insertedIds[0];
+        const lastId = firstId + insertedIds.length - 1;
+        return db('questions')
+          .whereBetween('id', [firstId, lastId])
+          .orderBy('id');
+      }
+      return [];
+    } catch (error) {
+      console.error('Bulk create error:', error);
+      throw error;
+    }
+  }
+
+  // New: Advanced search with filters
+  static async searchWithFilters(filters = {}, options = {}) {
+    let query = db('questions').select('*');
+    
+    // Apply filters
+    if (filters.domain) {
+      query = query.where('domain', filters.domain);
+    }
+    
+    if (filters.subject) {
+      query = query.where('subject', filters.subject);
+    }
+    
+    if (filters.source) {
+      query = query.where('source', filters.source);
+    }
+    
+    if (filters.difficulty_level) {
+      query = query.where('difficulty_level', filters.difficulty_level);
+    }
+    
+    if (filters.difficulty) {
+      query = query.where('difficulty', filters.difficulty);
+    }
+    
+    if (filters.type) {
+      query = query.where('type', filters.type);
+    }
+    
+    if (filters.weightage) {
+      query = query.where('weightage', filters.weightage);
+    }
+    
+    if (filters.search) {
+      query = query.where(function() {
+        this.where('question_text', 'like', `%${filters.search}%`)
+            .orWhere('explanation', 'like', `%${filters.search}%`)
+            .orWhere('hint', 'like', `%${filters.search}%`);
+      });
+    }
+    
+    // Apply sorting
+    const sortBy = options.sortBy || 'created_at';
+    const sortOrder = options.sortOrder || 'desc';
+    query = query.orderBy(sortBy, sortOrder);
+    
+    // Apply pagination
+    if (options.limit) {
+      query = query.limit(parseInt(options.limit));
+      
+      if (options.offset) {
+        query = query.offset(parseInt(options.offset));
+      }
+    }
+    
+    return query;
+  }
+
+  // New: Get statistics for question bank
+  static async getStatistics() {
+    const [
+      totalCount,
+      byDomain,
+      bySubject,
+      bySource,
+      byDifficulty,
+      byType
+    ] = await Promise.all([
+      // Total count
+      db('questions').count('* as count').first(),
+      
+      // By domain
+      db('questions')
+        .select('domain')
+        .count('* as count')
+        .groupBy('domain')
+        .orderBy('count', 'desc'),
+        
+      // By subject
+      db('questions')
+        .select('subject')
+        .count('* as count')
+        .groupBy('subject')
+        .orderBy('count', 'desc'),
+        
+      // By source
+      db('questions')
+        .select('source')
+        .count('* as count')
+        .groupBy('source')
+        .orderBy('count', 'desc'),
+        
+      // By difficulty level
+      db('questions')
+        .select('difficulty_level')
+        .count('* as count')
+        .groupBy('difficulty_level')
+        .orderBy('count', 'desc'),
+        
+      // By question type
+      db('questions')
+        .select('type')
+        .count('* as count')
+        .groupBy('type')
+        .orderBy('count', 'desc')
+    ]);
+    
+    return {
+      total: totalCount.count,
+      byDomain,
+      bySubject,
+      bySource,
+      byDifficulty,
+      byType
+    };
+  }
+
   static async findById(id) {
     return db('questions').where({ id }).first();
   }
