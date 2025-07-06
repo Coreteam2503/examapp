@@ -1,9 +1,0 @@
-@echo off
-echo Clearing React development cache...
-cd frontend
-rmdir /s /q node_modules\.cache 2>nul
-rmdir /s /q .cache 2>nul
-echo Installing dependencies...
-npm install
-echo Starting frontend...
-npm start
