@@ -1,22 +1,53 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './TrueFalseQuestion.css';
 
 const TrueFalseQuestion = ({ question, onAnswer, disabled = false, showCorrect = false, userAnswer = null }) => {
+  const [selectedAnswer, setSelectedAnswer] = useState(userAnswer);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleOptionSelect = (answer) => {
-    if (disabled) return;
-    onAnswer(answer);
+    if (disabled || isSubmitting) return;
+    // Convert boolean to string format expected by backend
+    const normalizedAnswer = answer ? 'True' : 'False';
+    setSelectedAnswer(normalizedAnswer);
+    console.log('🎯 True/False option selected:', normalizedAnswer);
+  };
+
+  const handleSubmit = () => {
+    if (!selectedAnswer || disabled || isSubmitting) {
+      console.log('🚫 True/False submit blocked:', { selectedAnswer, disabled, isSubmitting });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    console.log('🎯 True/False submitting:', { selectedAnswer, questionId: question.id });
+    
+    setTimeout(() => {
+      onAnswer(selectedAnswer);
+      console.log('✅ True/False submitted successfully');
+    }, 100);
   };
 
   const getOptionClass = (option) => {
     let classes = ['tf-option'];
 
     if (disabled) classes.push('disabled');
-    if (userAnswer === option) classes.push('selected');
+    
+    // Compare with normalized string format
+    const normalizedUserAnswer = selectedAnswer;
+    const normalizedOption = option ? 'True' : 'False';
+    
+    if (normalizedUserAnswer === normalizedOption) classes.push('selected');
 
     if (showCorrect) {
-      if (option === question.correct_answer) {
+      // Normalize correct answer for comparison
+      const normalizedCorrect = question.correct_answer === true ? 'True' : 
+                               question.correct_answer === false ? 'False' : 
+                               question.correct_answer;
+                               
+      if (normalizedOption === normalizedCorrect) {
         classes.push('correct');
-      } else if (userAnswer === option && option !== question.correct_answer) {
+      } else if (normalizedUserAnswer === normalizedOption && normalizedOption !== normalizedCorrect) {
         classes.push('incorrect');
       }
     }
@@ -43,6 +74,17 @@ const TrueFalseQuestion = ({ question, onAnswer, disabled = false, showCorrect =
         >
           <span className="tf-icon">✗</span>
           <span className="tf-label">False</span>
+        </button>
+      </div>
+
+      {/* Submit button for True/False questions */}
+      <div className="tf-submit">
+        <button 
+          onClick={handleSubmit}
+          disabled={disabled || !selectedAnswer || isSubmitting}
+          className="tf-submit-btn"
+        >
+          {isSubmitting ? 'Submitting...' : 'Submit Answer'}
         </button>
       </div>
 

@@ -46,8 +46,9 @@ const FillInTheBlankQuestion = ({ question, onAnswer, disabled = false, showCorr
 
   // Memoize the parsed question to avoid re-parsing on every render
   const { parts, blanks } = useMemo(() => {
-    const questionText = question.text || question.formatted_text || question.question_text || question.question;
-    return parseQuestionText(questionText || '');
+    // Try different possible text fields (normalized format uses 'text' but fallback to 'question')
+    const questionText = question.text || question.question_text || question.formatted_text || question.question || '';
+    return parseQuestionText(questionText);
   }, [question.text, question.formatted_text, question.question_text, question.question]);
 
   // Initialize answers only when question ID changes
@@ -67,10 +68,8 @@ const FillInTheBlankQuestion = ({ question, onAnswer, disabled = false, showCorr
     };
     setAnswers(newAnswers);
 
-    // Always notify parent of current answers
-    onAnswer(newAnswers);
-
-    // Check if all blanks are filled
+    // Don't auto-submit on every keystroke - wait for explicit submission
+    // Only update if all blanks are filled to prevent premature submission
     const allFilled = blanks.every(blankNum => newAnswers[blankNum] && newAnswers[blankNum].trim() !== '');
     
     if (allFilled && !isAnswered) {
@@ -78,12 +77,28 @@ const FillInTheBlankQuestion = ({ question, onAnswer, disabled = false, showCorr
     }
   };
 
+  const handleSubmit = () => {
+    // Only submit when user explicitly submits
+    onAnswer(answers);
+  };
+
+  const handleKeyPress = (e, blankNumber) => {
+    if (e.key === 'Enter') {
+      // Check if all blanks are filled before submitting
+      const allFilled = blanks.every(blankNum => answers[blankNum] && answers[blankNum].trim() !== '');
+      if (allFilled) {
+        handleSubmit();
+      }
+    }
+  };
+
   const getInputClassName = (blankNumber) => {
-    let className = 'blank-input';
+    let className = 'fill-blank-input';
     
     if (showCorrect) {
       const userAnswer = answers[blankNumber]?.trim().toLowerCase();
-      const correctAnswers = question.correctAnswers[blankNumber] || [];
+      // Use blanks from normalized question format
+      const correctAnswers = question.blanks?.[blankNumber] || question.correctAnswers?.[blankNumber] || [];
       const isCorrect = correctAnswers.some(correct => 
         correct.toLowerCase() === userAnswer
       );
@@ -100,7 +115,8 @@ const FillInTheBlankQuestion = ({ question, onAnswer, disabled = false, showCorr
     if (!showCorrect) return null;
     
     const userAnswer = answers[blankNumber]?.trim().toLowerCase();
-    const correctAnswers = question.correctAnswers[blankNumber] || [];
+    // Use blanks from normalized question format
+    const correctAnswers = question.blanks?.[blankNumber] || question.correctAnswers?.[blankNumber] || [];
     const isCorrect = correctAnswers.some(correct => 
       correct.toLowerCase() === userAnswer
     );
@@ -123,24 +139,40 @@ const FillInTheBlankQuestion = ({ question, onAnswer, disabled = false, showCorr
     );
   };
 
+  // Debug info for development
+  if (process.env.NODE_ENV === 'development' && (!parts || parts.length === 0)) {
+    return (
+      <div className="fill-blank-question">
+        <div className="debug-info" style={{padding: '20px', background: '#f0f0f0', border: '1px solid #ccc'}}>
+          <h4>🐛 Fill Blank Debug Info</h4>
+          <p><strong>Question:</strong> {JSON.stringify(question)}</p>
+          <p><strong>Parts:</strong> {JSON.stringify(parts)}</p>
+          <p><strong>Blanks:</strong> {JSON.stringify(blanks)}</p>
+          <p><strong>Text used:</strong> {question.text || question.question_text || question.formatted_text || question.question}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fill-blank-question">
-      <div className="question-text">
+      <div className="fill-blank-text">
         {parts.map((part, index) => {
           if (part.type === 'text') {
             return (
-              <span key={index} className="text-part">
+              <span key={`text-${index}`} className="fill-text-part">
                 {part.content}
               </span>
             );
-          } else {
+          } else if (part.type === 'blank') {
             return (
-              <span key={index} className="blank-container">
+              <span key={`blank-${index}`} className="fill-blank-input-container">
                 <input
                   type="text"
-                  className={getInputClassName(part.number)}
+                  className="fill-blank-input"
                   value={answers[part.number] || ''}
                   onChange={(e) => handleInputChange(part.number, e.target.value)}
+                  onKeyPress={(e) => handleKeyPress(e, part.number)}
                   disabled={disabled}
                   placeholder={`Blank ${part.number}`}
                   autoComplete="off"
@@ -148,8 +180,21 @@ const FillInTheBlankQuestion = ({ question, onAnswer, disabled = false, showCorr
                 {getBlankFeedback(part.number)}
               </span>
             );
+          } else {
+            return null;
           }
         })}
+      </div>
+
+      {/* Submit button for fill-in-blank */}
+      <div className="fill-blank-submit">
+        <button 
+          onClick={handleSubmit}
+          disabled={disabled || blanks.some(blankNum => !answers[blankNum] || answers[blankNum].trim() === '')}
+          className="fill-blank-submit-btn"
+        >
+          Submit Answer
+        </button>
       </div>
 
       {question.hint && (

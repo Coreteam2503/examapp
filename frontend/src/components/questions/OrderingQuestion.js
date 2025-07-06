@@ -2,14 +2,19 @@ import React, { useState, useEffect } from 'react';
 import './OrderingQuestion.css';
 
 const OrderingQuestion = ({ question, onAnswer, disabled = false, showCorrect = false, userAnswer = null }) => {
-  const [orderedItems, setOrderedItems] = useState(userAnswer || []);
+  // Ensure orderedItems is always an array
+  const initialOrderedItems = Array.isArray(userAnswer) ? userAnswer : [];
+  const [orderedItems, setOrderedItems] = useState(initialOrderedItems);
   const [availableItems, setAvailableItems] = useState([]);
   const [draggedItem, setDraggedItem] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Initialize items on component mount
   useEffect(() => {
     if (question.items && question.items.length > 0) {
-      if (userAnswer && userAnswer.length > 0) {
+      const validUserAnswer = Array.isArray(userAnswer) && userAnswer.length > 0;
+      
+      if (validUserAnswer) {
         // Use existing user answer
         setOrderedItems(userAnswer);
         const remaining = question.items.filter(item => !userAnswer.includes(item));
@@ -20,12 +25,34 @@ const OrderingQuestion = ({ question, onAnswer, disabled = false, showCorrect = 
         setOrderedItems([]);
       }
     }
-  }, [question.items, userAnswer]);
+    // Reset submission state when question changes
+    setIsSubmitting(false);
+  }, [question.items, question.id, userAnswer]); // Added userAnswer to dependencies
 
-  // Notify parent of answer changes
-  useEffect(() => {
-    onAnswer(orderedItems);
-  }, [orderedItems, onAnswer]);
+  // DISABLED: Auto-submit removed to prevent rapid game completion
+  // useEffect(() => {
+  //   onAnswer(orderedItems);
+  // }, [orderedItems, onAnswer]);
+
+  const handleSubmit = () => {
+    if (disabled || isSubmitting || !Array.isArray(orderedItems) || orderedItems.length === 0) {
+      console.log('🚫 Ordering submit blocked:', { 
+        disabled, 
+        isSubmitting, 
+        orderedItemsIsArray: Array.isArray(orderedItems),
+        orderedItemsLength: Array.isArray(orderedItems) ? orderedItems.length : 'N/A'
+      });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    console.log('🎯 Ordering submitting:', { orderedItems, questionId: question.id });
+    
+    setTimeout(() => {
+      onAnswer(orderedItems);
+      console.log('✅ Ordering submitted successfully');
+    }, 100);
+  };
 
   const shuffleArray = (array) => {
     const shuffled = [...array];
@@ -154,7 +181,7 @@ const OrderingQuestion = ({ question, onAnswer, disabled = false, showCorrect = 
             onDragOver={handleDragOver}
             onDrop={(e) => handleDrop(e, null, 'available')}
           >
-            {availableItems.map((item, index) => (
+            {Array.isArray(availableItems) && availableItems.map((item, index) => (
               <div
                 key={`available-${index}`}
                 className={getItemClass(item, index, false)}
@@ -179,7 +206,7 @@ const OrderingQuestion = ({ question, onAnswer, disabled = false, showCorrect = 
             onDragOver={handleDragOver}
             onDrop={(e) => handleDrop(e, null, 'ordered')}
           >
-            {orderedItems.map((item, index) => (
+            {Array.isArray(orderedItems) && orderedItems.map((item, index) => (
               <div key={`ordered-${index}`} className="ordered-item-container">
                 <div className="position-number">{index + 1}</div>
                 <div
@@ -224,6 +251,17 @@ const OrderingQuestion = ({ question, onAnswer, disabled = false, showCorrect = 
             )}
           </div>
         </div>
+      </div>
+
+      {/* Submit button for Ordering questions */}
+      <div className="ordering-submit">
+        <button 
+          onClick={handleSubmit}
+          disabled={disabled || orderedItems.length === 0 || isSubmitting}
+          className="ordering-submit-btn"
+        >
+          {isSubmitting ? 'Submitting...' : `Submit Order (${orderedItems.length}/${question.items.length})`}
+        </button>
       </div>
 
       {showCorrect && question.explanation && (

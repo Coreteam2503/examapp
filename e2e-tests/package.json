@@ -1,0 +1,43 @@
+{
+  "name": "examapp-e2e-tests",
+  "version": "1.0.0",
+  "description": "End-to-end tests for ExamApp using Playwright with authentication support",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:ui": "playwright test --ui",
+    "test:games": "playwright test tests/games/",
+    "test:hangman": "playwright test tests/games/hangman.spec.js",
+    "test:ladder": "playwright test tests/games/word-ladder.spec.js",
+    "test:tower": "playwright test tests/games/knowledge-tower.spec.js",
+    "test:questions": "playwright test tests/questions/",
+    "test:integration": "playwright test tests/integration.spec.js",
+    "test:full-flow": "playwright test --headed --reporter=list",
+    "test:visual": "playwright test --headed --reporter=html",
+    "test:quick": "playwright test tests/games/hangman.spec.js --project=chromium --headed",
+    "test:all-games": "playwright test tests/games/ --headed --reporter=list",
+    "test:smoke": "playwright test --grep 'should start.*game successfully'",
+    "test:bugs": "npm run test:quick && npm run report",
+    "report": "playwright show-report",
+    "report:open": "open playwright-report/index.html || start playwright-report/index.html",
+    "install-browsers": "playwright install",
+    "codegen": "playwright codegen http://localhost:3000",
+    "clean": "rm -rf test-results playwright-report screenshots",
+    "setup": "./setup.sh || setup.bat"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0"
+  },
+  "keywords": [
+    "e2e",
+    "testing", 
+    "playwright",
+    "automation",
+    "games",
+    "quiz",
+    "authentication"
+  ],
+  "author": "ExamApp Team",
+  "license": "MIT"
+}

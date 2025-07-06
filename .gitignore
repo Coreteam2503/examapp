@@ -34,3 +34,9 @@ node_modules/
 # Added by Task Master AI
 tasks.json
 tasks/ 
+# Task Master AI Algae
+.taskmaster/reports/
+node_modules/
+.env
+*.log
+logs/

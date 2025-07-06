@@ -6,6 +6,7 @@ const MatchingQuestion = ({ question, onAnswer, disabled = false, showCorrect = 
   const [selectedRight, setSelectedRight] = useState(null);
   const [matches, setMatches] = useState(userAnswer || {});
   const [shuffledRight, setShuffledRight] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Prevent double-clicks
 
   // Shuffle right-side items on component mount
   useEffect(() => {
@@ -13,12 +14,40 @@ const MatchingQuestion = ({ question, onAnswer, disabled = false, showCorrect = 
       const rightItems = question.pairs.map(pair => pair.right);
       setShuffledRight(shuffleArray([...rightItems]));
     }
-  }, [question.pairs]);
+    // Reset submission state when question changes
+    setIsSubmitting(false);
+  }, [question.pairs, question.id]);
 
-  // Notify parent of answer changes
-  useEffect(() => {
-    onAnswer(matches);
-  }, [matches, onAnswer]);
+  // DISABLED auto-submit to prevent rapid game completion issues
+  // Users must manually click Submit button
+  // useEffect(() => {
+  //   const isComplete = question.pairs && question.pairs.every(pair => matches[pair.left] === pair.right);
+  //   
+  //   if (isComplete && !disabled && !hasAutoSubmitted && question.autoSubmit !== false) {
+  //     setHasAutoSubmitted(true);
+  //     const timer = setTimeout(() => {
+  //       onAnswer(matches);
+  //     }, 1000);
+  //     return () => clearTimeout(timer);
+  //   }
+  // }, [matches, disabled, question.autoSubmit, question.pairs, onAnswer, hasAutoSubmitted]);
+
+  const handleSubmit = () => {
+    if (isSubmitting || disabled) {
+      console.log('🚫 MatchingQuestion submit blocked:', { isSubmitting, disabled });
+      return; // Prevent double-submission
+    }
+    
+    setIsSubmitting(true);
+    console.log('🎯 MatchingQuestion submitting:', { matches, questionId: question.id });
+    
+    // Add a small delay to prevent rapid submissions
+    setTimeout(() => {
+      onAnswer(matches);
+      console.log('✅ MatchingQuestion submitted successfully');
+      // Note: isSubmitting will be reset when question changes in useEffect
+    }, 100);
+  };
 
   const shuffleArray = (array) => {
     const shuffled = [...array];
@@ -161,6 +190,17 @@ const MatchingQuestion = ({ question, onAnswer, disabled = false, showCorrect = 
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Submit button for matching questions */}
+      <div className="matching-submit">
+        <button 
+          onClick={handleSubmit}
+          disabled={disabled || Object.keys(matches).length === 0 || isSubmitting}
+          className="matching-submit-btn"
+        >
+          {isSubmitting ? 'Submitting...' : `Submit Matches (${Object.keys(matches).length}/${question.pairs.length})`}
+        </button>
       </div>
 
       {showCorrect && question.explanation && (

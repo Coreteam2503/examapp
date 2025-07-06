@@ -107,6 +107,53 @@
   line-height: 1.6;
 }
 
+/* Submit button styles for MCQ */
+.mcq-submit {
+  margin-top: 20px;
+  text-align: center;
+  padding: 16px;
+}
+
+.mcq-submit-btn {
+  background: linear-gradient(135deg, #58cc02, #7dd302);
+  color: white;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(88, 204, 2, 0.3);
+  min-width: 180px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mcq-submit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #4ade80, #58cc02);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 24px rgba(88, 204, 2, 0.4);
+}
+
+.mcq-submit-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 2px 8px rgba(88, 204, 2, 0.3);
+}
+
+.mcq-submit-btn:disabled {
+  background: linear-gradient(135deg, #9ca3af, #d1d5db);
+  color: #6b7280;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.mcq-submit-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(88, 204, 2, 0.3), 0 4px 16px rgba(88, 204, 2, 0.3);
+}
+
 .mcq-error {
   padding: 16px;
   background: #fef2f2;
@@ -132,5 +179,15 @@
   .mcq-explanation {
     padding: 12px;
     font-size: 13px;
+  }
+  
+  .mcq-submit {
+    padding: 12px;
+  }
+  
+  .mcq-submit-btn {
+    padding: 12px 24px;
+    font-size: 0.95rem;
+    min-width: 150px;
   }
 }

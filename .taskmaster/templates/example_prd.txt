@@ -1,0 +1,44 @@
+# Project Requirements Document (PRD) Template
+
+## Project Overview
+
+### Project Name
+[Your project name here]
+
+### Description
+[Brief description of what this project does]
+
+### Goals
+- [Goal 1]
+- [Goal 2]
+- [Goal 3]
+
+## Requirements
+
+### Functional Requirements
+1. [Requirement 1]
+2. [Requirement 2]
+3. [Requirement 3]
+
+### Technical Requirements
+- [Technical requirement 1]
+- [Technical requirement 2]
+
+### Non-Functional Requirements
+- Performance: [Performance requirements]
+- Security: [Security requirements]
+- Scalability: [Scalability requirements]
+
+## Implementation Notes
+
+[Any specific implementation notes or constraints]
+
+## Success Criteria
+
+- [Success criteria 1]
+- [Success criteria 2]
+
+---
+
+*This PRD template was created by Task Master AI Algae*
+*Generated on: 2025-07-03T15:31:42.516Z*

@@ -1,17 +1,37 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { extractOptionLetter } from '../../utils/answerNormalization';
 import './MCQQuestion.css';
 
 const MCQQuestion = ({ question, onAnswer, disabled = false, showCorrect = false, userAnswer = null }) => {
+  const [selectedOption, setSelectedOption] = useState(userAnswer);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleOptionSelect = (option) => {
-    if (disabled) return;
-    onAnswer(option);
+    if (disabled || isSubmitting) return;
+    setSelectedOption(option);
+    console.log('🎯 MCQ option selected:', option);
+  };
+
+  const handleSubmit = () => {
+    if (!selectedOption || disabled || isSubmitting) {
+      console.log('🚫 MCQ submit blocked:', { selectedOption, disabled, isSubmitting });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    console.log('🎯 MCQ submitting:', { selectedOption, questionId: question.id });
+    
+    setTimeout(() => {
+      onAnswer(selectedOption);
+      console.log('✅ MCQ submitted successfully');
+    }, 100);
   };
 
   const getOptionClass = (option) => {
     let classes = ['mcq-option'];
 
     if (disabled) classes.push('disabled');
-    if (userAnswer === option) classes.push('selected');
+    if (selectedOption === option) classes.push('selected');
 
     if (showCorrect) {
       // Extract letter from option for comparison
@@ -20,7 +40,7 @@ const MCQQuestion = ({ question, onAnswer, disabled = false, showCorrect = false
       
       if (optionLetter === correctLetter) {
         classes.push('correct');
-      } else if (userAnswer === option) {
+      } else if (selectedOption === option) {
         classes.push('incorrect');
       }
     }
@@ -28,23 +48,8 @@ const MCQQuestion = ({ question, onAnswer, disabled = false, showCorrect = false
     return classes.join(' ');
   };
 
-  // Helper function to extract option letter (A, B, C, D)
-  const extractOptionLetter = (option) => {
-    if (!option || typeof option !== 'string') return option;
-    
-    // Match patterns like "A)", "B)", "C)", "D)" at the start
-    const match = option.match(/^([A-D])\)/);
-    if (match) {
-      return match[1];
-    }
-    
-    // If no pattern found, check if it's already just a letter
-    if (/^[A-D]$/.test(option.trim())) {
-      return option.trim();
-    }
-    
-    return option;
-  };
+  // Helper function to extract option letter (A, B, C, D) - now imported from utils
+  // const extractOptionLetter = ... // Removed duplicate - using imported version
 
   // Ensure we have options to display
   const options = question.options || [];
@@ -72,6 +77,17 @@ const MCQQuestion = ({ question, onAnswer, disabled = false, showCorrect = false
             <span className="mcq-option-text">{option}</span>
           </button>
         ))}
+      </div>
+
+      {/* Submit button for MCQ questions */}
+      <div className="mcq-submit">
+        <button 
+          onClick={handleSubmit}
+          disabled={disabled || !selectedOption || isSubmitting}
+          className="mcq-submit-btn"
+        >
+          {isSubmitting ? 'Submitting...' : 'Submit Answer'}
+        </button>
       </div>
 
       {showCorrect && question.explanation && (

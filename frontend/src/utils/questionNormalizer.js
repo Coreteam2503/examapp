@@ -46,7 +46,8 @@ export const normalizeQuestion = (rawQuestion) => {
       break;
     case 'fill_blank':
       normalized.blanks = extractFillBlanks(rawQuestion);
-      normalized.text = normalized.question; // For fill-in-blank, preserve original text
+      // For fill-in-blank, prefer the 'text' field which should contain ___BLANK_N___ markers
+      normalized.text = rawQuestion.text || rawQuestion.question_text || rawQuestion.formatted_text || rawQuestion.question;
       break;
     case 'ordering':
       normalized.items = extractOrderingItems(rawQuestion);

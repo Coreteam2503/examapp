@@ -1,60 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { QuestionWrapper } from '../questions';
+import { getComprehensiveTestData } from '../../data/mockDataHelper';
 import './HangmanGame.css';
 
 const HangmanGame = ({ gameData, onGameComplete, onAnswerChange }) => {
-  const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const [currentWordGuessedLetters, setCurrentWordGuessedLetters] = useState(new Set()); // Fresh per word
-  const [totalWrongGuesses, setTotalWrongGuesses] = useState(0); // Total wrong guesses across ALL words
+  // Use comprehensive test data for development testing (cached to prevent re-generation)
+  const effectiveGameData = useMemo(() => {
+    return process.env.NODE_ENV === 'development' 
+      ? getComprehensiveTestData() 
+      : (gameData || getComprehensiveTestData());
+  }, [gameData]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [wrongAnswers, setWrongAnswers] = useState(0);
   const [gameStatus, setGameStatus] = useState('playing'); // 'playing', 'won', 'lost'
-  const [showHint, setShowHint] = useState(false);
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [gameResults, setGameResults] = useState([]);
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
-  const [currentWordStatus, setCurrentWordStatus] = useState('playing'); // Status for current word only
+  const [gameCompleted, setGameCompleted] = useState(false); // NEW: Prevent multiple completions
+  const [showResult, setShowResult] = useState(false);
 
-  // Parse word data properly - fix for word not displaying
-  const currentWord = gameData?.questions?.[currentWordIndex];
-  let word = '';
-  let hint = '';
-  let category = '';
-  
-  if (currentWord) {
-    // Handle different data structures
-    if (currentWord.word_data) {
-      let word_data;
-      
-      // If word_data exists as string, parse it
-      if (typeof currentWord.word_data === 'string') {
-        try {
-          word_data = JSON.parse(currentWord.word_data);
-          console.log('✅ Parsed word_data from string:', word_data);
-        } catch (e) {
-          console.warn('❌ Failed to parse word_data string:', currentWord.word_data);
-          word_data = null;
-        }
-      } else if (typeof currentWord.word_data === 'object') {
-        word_data = currentWord.word_data;
-        console.log('✅ Using word_data object:', word_data);
-      }
-      
-      if (word_data) {
-        word = word_data.word || '';
-        hint = word_data.hint || '';
-        category = word_data.category || '';
-      }
-    } else {
-      // Fallback to direct properties
-      word = currentWord.correct_answer || currentWord.word || '';
-      hint = currentWord.hint || 'No hint available';
-      category = currentWord.category || 'General';
-    }
-  }
-  
-  console.log('🎯 Hangman game data:', { currentWord, word, hint, category });
-  const maxTotalWrongGuesses = 6; // Total wrong guesses allowed for entire quiz
-  
-  const totalWords = gameData?.questions?.length || 0;
-  const isLastWord = currentWordIndex >= totalWords - 1;
+  const maxWrongAnswers = 6; // Traditional hangman has 6 wrong guesses before death
+  const totalQuestions = effectiveGameData?.questions?.length || 0;
+  const currentQuestion = effectiveGameData?.questions?.[currentQuestionIndex];
+  const isLastQuestion = currentQuestionIndex >= totalQuestions - 1;
 
   // Timer effect
   useEffect(() => {
@@ -66,126 +34,265 @@ const HangmanGame = ({ gameData, onGameComplete, onAnswerChange }) => {
     return () => clearInterval(interval);
   }, [gameStatus]);
 
-  // Check win/lose conditions for current word and overall game
-  useEffect(() => {
-    if (!word || gameStatus !== 'playing') return;
-
-    // Check if current word is complete using ONLY current word guessed letters
-    const isWordComplete = word.split('').every(letter => 
-      currentWordGuessedLetters.has(letter.toUpperCase()) || !/[A-Z]/.test(letter)
-    );
-
-    // Check if hangman is complete (game over condition)
-    if (totalWrongGuesses >= maxTotalWrongGuesses && gameStatus === 'playing') {
-      // Game over - too many wrong guesses total across ALL words
-      setGameStatus('lost');
-      setCurrentWordStatus('lost');
-      
-      // Record result for current word if not already recorded
-      if (!gameResults.find(r => r.wordIndex === currentWordIndex)) {
-        const result = {
-          wordIndex: currentWordIndex,
-          word: word,
-          status: 'lost', // Lost due to hangman completion
-          wrongGuesses: totalWrongGuesses,
-          timeSpent: timeElapsed,
-          guessedLetters: Array.from(currentWordGuessedLetters)
-        };
-        const updatedResults = [...gameResults, result];
-        setGameResults(updatedResults);
-        
-        if (onAnswerChange) {
-          onAnswerChange({
-            currentWord: currentWordIndex,
-            result: result,
-            allResults: updatedResults
-          });
-        }
-      }
-      return; // Exit early - game is over
-    }
-
-    // Check if current word is complete (but game continues)
-    if (isWordComplete && currentWordStatus === 'playing') {
-      setCurrentWordStatus('won');
-      // Record result for this word
-      const result = {
-        wordIndex: currentWordIndex,
-        word: word,
-        status: 'won',
-        wrongGuesses: totalWrongGuesses, // Keep track of total wrong guesses so far
-        timeSpent: timeElapsed,
-        guessedLetters: Array.from(currentWordGuessedLetters)
-      };
-      
-      const updatedResults = [...gameResults, result];
-      setGameResults(updatedResults);
-      
-      // Check if this was the last word and auto-complete if so
-      if (currentWordIndex >= totalWords - 1) {
-        // This was the last word - auto-submit results
-        setTimeout(() => {
-          const correctWords = updatedResults.filter(r => r.status === 'won').length;
-          const finalScore = updatedResults.length > 0 ? Math.round((correctWords / totalWords) * 100) : 0;
-          
-          console.log('Hangman game auto-completed after final word:', {
-            updatedResults,
-            correctWords,
-            finalScore,
-            totalWords,
-            totalWrongGuesses,
-            completed: true
-          });
-          
-          if (onGameComplete) {
-            onGameComplete({
-              results: updatedResults,
-              totalWords: totalWords,
-              timeElapsed: timeElapsed,
-              completed: true,
-              score: finalScore,
-              correctAnswers: correctWords, // Backend expects this field name
-              correctWords: correctWords, // Keep this for compatibility
-              totalWordsCompleted: updatedResults.length,
-              totalWrongGuesses: totalWrongGuesses,
-              hangmanComplete: totalWrongGuesses < maxTotalWrongGuesses
-            });
-          }
-        }, 2000); // Give user 2 seconds to see the completion screen
-      }
-      
-      if (onAnswerChange) {
-        onAnswerChange({
-          currentWord: currentWordIndex,
-          result: result,
-          allResults: updatedResults
-        });
-      }
-    }
-  }, [currentWordGuessedLetters, totalWrongGuesses, word, gameStatus, currentWordIndex, timeElapsed, gameResults, onAnswerChange, totalWords, onGameComplete, maxTotalWrongGuesses, currentWordStatus]);
-
-  const handleLetterGuess = (letter) => {
-    if (currentWordGuessedLetters.has(letter) || gameStatus !== 'playing' || currentWordStatus !== 'playing') {
-      console.log('Letter already guessed for this word or game not playing:', letter, gameStatus, currentWordStatus);
+  // Handle answer from question component
+  const handleAnswer = (answer, metadata) => {
+    if (gameStatus !== 'playing' || gameCompleted || showResult) {
+      console.log('🚫 Game not active or showing result, ignoring answer:', { gameStatus, gameCompleted, showResult });
       return;
     }
 
-    console.log('Guessing letter:', letter);
-    
-    // Add to current word guessed letters only
-    const newCurrentWordGuessedLetters = new Set(currentWordGuessedLetters);
-    newCurrentWordGuessedLetters.add(letter);
-    setCurrentWordGuessedLetters(newCurrentWordGuessedLetters);
+    console.log('🎯 Hangman answer received:', { 
+      answer, 
+      metadata, 
+      questionType: currentQuestion.type,
+      questionId: currentQuestion.id 
+    });
 
-    if (!word.toUpperCase().includes(letter)) {
-      console.log('Wrong guess, incrementing total wrong guesses');
-      setTotalWrongGuesses(prev => {
-        const newTotalWrongGuesses = prev + 1;
-        console.log('New total wrong guesses count:', newTotalWrongGuesses, 'Max:', maxTotalWrongGuesses);
-        return newTotalWrongGuesses;
-      });
+    // Determine if answer is correct
+    const isCorrect = checkAnswer(answer, currentQuestion);
+    
+    console.log('🎯 Answer validation result:', { isCorrect, answer, expected: currentQuestion.correct_answer });
+
+    const result = {
+      questionIndex: currentQuestionIndex,
+      question: currentQuestion,
+      userAnswer: answer,
+      isCorrect,
+      timestamp: new Date().toISOString(),
+      timeSpent: timeElapsed
+    };
+
+    const newResults = [...gameResults, result];
+    setGameResults(newResults);
+
+    if (isCorrect) {
+      console.log('✅ Correct answer - hangman is safe!');
     } else {
-      console.log('Correct guess!');
+      console.log('❌ Wrong answer - hangman step closer to gallows');
+    }
+
+    // Notify parent of answer change
+    if (onAnswerChange) {
+      onAnswerChange({
+        currentQuestion: currentQuestionIndex,
+        result: result,
+        allResults: newResults
+      });
+    }
+
+    // Show result modal
+    setShowResult(true);
+  };
+
+  const continueToNext = () => {
+    setShowResult(false);
+    
+    const lastResult = gameResults[gameResults.length - 1];
+    if (lastResult.isCorrect) {
+      handleCorrectAnswer(lastResult, gameResults);
+    } else {
+      handleWrongAnswer(lastResult, gameResults);
+    }
+  };
+
+  const retryCurrentQuestion = () => {
+    setShowResult(false);
+    // Remove the current question's answer
+    setGameResults(prev => prev.slice(0, -1));
+  };
+
+  const checkAnswer = (userAnswer, question) => {
+    if (!question) return false;
+
+    console.log('🔍 Checking answer:', { userAnswer, question, type: question.type });
+
+    switch (question.type) {
+      case 'mcq':
+        return checkMCQAnswer(userAnswer, question);
+      case 'true_false':
+        return checkTrueFalseAnswer(userAnswer, question);
+      case 'fill_blank':
+        return checkFillBlankAnswer(userAnswer, question);
+      case 'matching':
+        return checkMatchingAnswer(userAnswer, question);
+      case 'ordering':
+        return checkOrderingAnswer(userAnswer, question);
+      default:
+        console.warn('Unknown question type:', question.type);
+        return false;
+    }
+  };
+
+  const checkMCQAnswer = (userAnswer, question) => {
+    if (!question.correct_answer || !question.options) return false;
+    
+    // Extract letter from both user answer and correct answer
+    const extractLetter = (answer) => {
+      if (typeof answer === 'string') {
+        const match = answer.match(/^([A-D])/i);
+        if (match) return match[1].toUpperCase();
+        // If it's a full option text, find which letter it corresponds to
+        for (let i = 0; i < question.options.length; i++) {
+          if (question.options[i] === answer) {
+            return String.fromCharCode(65 + i); // A, B, C, D
+          }
+        }
+      }
+      return answer;
+    };
+
+    const userLetter = extractLetter(userAnswer);
+    const correctLetter = extractLetter(question.correct_answer);
+    
+    console.log('🔍 MCQ comparison:', { userLetter, correctLetter });
+    return userLetter === correctLetter;
+  };
+
+  const checkTrueFalseAnswer = (userAnswer, question) => {
+    const normalizeBoolean = (answer) => {
+      if (typeof answer === 'boolean') return answer;
+      if (typeof answer === 'string') {
+        const lower = answer.toLowerCase().trim();
+        return lower === 'true' || lower === '1' || lower === 'yes';
+      }
+      return Boolean(answer);
+    };
+
+    const userBool = normalizeBoolean(userAnswer);
+    const correctBool = normalizeBoolean(question.correct_answer);
+    
+    console.log('🔍 True/False comparison:', { userBool, correctBool });
+    return userBool === correctBool;
+  };
+
+  const checkFillBlankAnswer = (userAnswer, question) => {
+    if (!question.blanks || !userAnswer || typeof userAnswer !== 'object') return false;
+    
+    // Check each blank
+    for (const blankNum in question.blanks) {
+      const userBlankAnswer = userAnswer[blankNum]?.trim().toLowerCase();
+      const correctAnswers = question.blanks[blankNum];
+      
+      if (!correctAnswers || !Array.isArray(correctAnswers)) continue;
+      
+      const isBlankCorrect = correctAnswers.some(correct => 
+        correct.toLowerCase().trim() === userBlankAnswer
+      );
+      
+      if (!isBlankCorrect) {
+        console.log('🔍 Fill blank failed at blank', blankNum, { userBlankAnswer, correctAnswers });
+        return false;
+      }
+    }
+    
+    console.log('🔍 Fill blank all correct:', userAnswer);
+    return true;
+  };
+
+  const checkMatchingAnswer = (userAnswer, question) => {
+    if (!question.pairs || !userAnswer || typeof userAnswer !== 'object') return false;
+    
+    // Check if all pairs are correctly matched
+    for (const pair of question.pairs) {
+      if (userAnswer[pair.left] !== pair.right) {
+        console.log('🔍 Matching failed:', { expected: pair, actual: userAnswer[pair.left] });
+        return false;
+      }
+    }
+    
+    console.log('🔍 Matching all correct:', userAnswer);
+    return true;
+  };
+
+  const checkOrderingAnswer = (userAnswer, question) => {
+    if (!question.correct_sequence || !Array.isArray(userAnswer)) return false;
+    
+    if (userAnswer.length !== question.correct_sequence.length) return false;
+    
+    const isCorrect = userAnswer.every((item, index) => 
+      item === question.correct_sequence[index]
+    );
+    
+    console.log('🔍 Ordering comparison:', { userAnswer, correct: question.correct_sequence, isCorrect });
+    return isCorrect;
+  };
+
+  const handleCorrectAnswer = (result, newResults) => {
+    // Move to next question
+    if (currentQuestionIndex < totalQuestions - 1) {
+      setTimeout(() => {
+        setCurrentQuestionIndex(prev => prev + 1);
+      }, 1500); // Brief pause to show success
+    } else {
+      // All questions completed successfully
+      setTimeout(() => {
+        completeGame(newResults, 'won');
+      }, 2000);
+    }
+  };
+
+  const handleWrongAnswer = (result, newResults) => {
+    const newWrongCount = wrongAnswers + 1;
+    setWrongAnswers(newWrongCount);
+
+    if (newWrongCount >= maxWrongAnswers) {
+      // Hangman is dead - game over
+      setTimeout(() => {
+        setGameStatus('lost');
+        completeGame(newResults, 'lost');
+      }, 2000);
+    } else {
+      // Continue with next question after brief pause
+      if (currentQuestionIndex < totalQuestions - 1) {
+        setTimeout(() => {
+          setCurrentQuestionIndex(prev => prev + 1);
+        }, 1500);
+      } else {
+        // No more questions but hangman survived
+        setTimeout(() => {
+          completeGame(newResults, 'survived');
+        }, 2000);
+      }
+    }
+  };
+
+  const completeGame = (finalResults, status) => {
+    // Prevent multiple completions
+    if (gameCompleted) {
+      console.log('🚫 Game already completed, ignoring duplicate completion call');
+      return;
+    }
+    
+    setGameCompleted(true);
+    setGameStatus(status);
+    
+    const correctAnswers = finalResults.filter(r => r.isCorrect).length;
+    const totalAnswered = finalResults.length;
+    const finalScore = totalAnswered > 0 ? Math.round((correctAnswers / totalAnswered) * 100) : 0;
+
+    console.log('🎯 Hangman game completed:', {
+      status,
+      correctAnswers,
+      totalAnswered,
+      totalQuestions,
+      finalScore,
+      wrongAnswers,
+      survivalStatus: wrongAnswers < maxWrongAnswers ? 'survived' : 'hanged'
+    });
+
+    if (onGameComplete) {
+      onGameComplete({
+        results: finalResults,
+        totalQuestions: totalQuestions,
+        totalAnswered: totalAnswered,
+        correctAnswers: correctAnswers,
+        wrongAnswers: wrongAnswers,
+        timeElapsed: timeElapsed,
+        completed: true,
+        score: finalScore,
+        status: status,
+        hangmanSurvived: wrongAnswers < maxWrongAnswers
+      });
     }
   };
 
@@ -194,48 +301,22 @@ const HangmanGame = ({ gameData, onGameComplete, onAnswerChange }) => {
   };
 
   const confirmExitGame = () => {
-    // Calculate final results from current progress
     const finalResults = [...gameResults];
-    
-    // Add current word result if game is in progress and not already recorded
-    if (gameStatus === 'playing' && currentWordIndex < totalWords && !gameResults.find(r => r.wordIndex === currentWordIndex)) {
-      const currentResult = {
-        wordIndex: currentWordIndex,
-        word: word,
-        status: 'incomplete',
-        wrongGuesses: totalWrongGuesses,
-        timeSpent: timeElapsed,
-        guessedLetters: Array.from(currentWordGuessedLetters)
-      };
-      finalResults.push(currentResult);
-    }
-    
-    const totalWordsAttempted = finalResults.length;
-    const correctWords = finalResults.filter(result => result.status === 'won').length;
-    const finalScore = totalWordsAttempted > 0 ? Math.round((correctWords / totalWordsAttempted) * 100) : 0;
-    
-    console.log('Hangman game exited early:', {
-      finalResults,
-      totalWordsAttempted,
-      correctWords,
-      finalScore,
-      timeElapsed,
-      totalWrongGuesses
-    });
-    
+    const correctAnswers = finalResults.filter(r => r.isCorrect).length;
+    const finalScore = finalResults.length > 0 ? Math.round((correctAnswers / finalResults.length) * 100) : 0;
+
     if (onGameComplete) {
       onGameComplete({
         results: finalResults,
-        totalWords: totalWords,
+        totalQuestions: totalQuestions,
+        totalAnswered: finalResults.length,
+        correctAnswers: correctAnswers,
+        wrongAnswers: wrongAnswers,
         timeElapsed: timeElapsed,
-        completed: false, // Mark as incomplete/exited
+        completed: false,
         score: finalScore,
-        correctAnswers: correctWords, // Backend expects this field name
-        correctWords: correctWords, // Keep this for compatibility
-        totalWordsCompleted: totalWordsAttempted,
-        exitedEarly: true,
-        totalWrongGuesses: totalWrongGuesses,
-        hangmanComplete: totalWrongGuesses < maxTotalWrongGuesses
+        status: 'exited',
+        hangmanSurvived: wrongAnswers < maxWrongAnswers
       });
     }
   };
@@ -244,61 +325,27 @@ const HangmanGame = ({ gameData, onGameComplete, onAnswerChange }) => {
     setShowExitConfirmation(false);
   };
 
-  const nextWord = () => {
-    if (currentWordIndex < totalWords - 1) {
-      setCurrentWordIndex(prev => prev + 1);
-      // Reset ONLY the current word guessed letters (fresh keyboard for each word)
-      setCurrentWordGuessedLetters(new Set());
-      // Keep allGuessedLetters for continuous hangman experience
-      setCurrentWordStatus('playing');
-      setShowHint(false);
-      // Don't reset time or wrong guesses - these continue through the whole game
-    }
-    // Note: Final completion is now handled automatically in useEffect
-  };
-
-  const restartCurrentWord = () => {
-    // Only reset word-specific state, keep overall game state
-    setCurrentWordStatus('playing');
-    setShowHint(false);
-    // Don't reset guessed letters, time, or wrong guesses for continuous hangman
-  };
-
-  const renderWord = () => {
-    if (!word) {
-      return (
-        <div className="word-display-error">
-          <span className="error-text">No word to display</span>
-        </div>
-      );
-    }
-    
-    console.log('Rendering word:', word);
-    
-    return word.split('').map((letter, index) => {
-      if (!/[A-Z]/i.test(letter)) {
-        return <span key={index} className="letter space">{letter}</span>;
-      }
-      
-      const isGuessed = currentWordGuessedLetters.has(letter.toUpperCase());
-      return (
-        <span key={index} className={`letter ${isGuessed ? 'revealed' : 'hidden'}`}>
-          {isGuessed ? letter.toUpperCase() : '_'}
-        </span>
-      );
-    });
-  };
-
+  // Render hangman visual based on wrong answers
   const renderHangman = () => {
-    const parts = [
-      '   +---+',
-      '   |   |',
-      totalWrongGuesses > 0 ? '   O   |' : '       |',
-      totalWrongGuesses > 2 ? (totalWrongGuesses > 1 ? '  /|\\  |' : '  /|   |') : (totalWrongGuesses > 1 ? '   |   |' : '       |'),
-      totalWrongGuesses > 4 ? (totalWrongGuesses > 3 ? '  / \\  |' : '  /    |') : (totalWrongGuesses > 3 ? '   |   |' : '       |'),
-      '       |',
-      '========='
+    const hangmanStages = [
+      // Stage 0: Empty gallows
+      ['   +---+', '   |   |', '       |', '       |', '       |', '       |', '========='],
+      // Stage 1: Head
+      ['   +---+', '   |   |', '   O   |', '       |', '       |', '       |', '========='],
+      // Stage 2: Body
+      ['   +---+', '   |   |', '   O   |', '   |   |', '       |', '       |', '========='],
+      // Stage 3: Left arm
+      ['   +---+', '   |   |', '   O   |', '  /|   |', '       |', '       |', '========='],
+      // Stage 4: Right arm
+      ['   +---+', '   |   |', '   O   |', '  /|\\  |', '       |', '       |', '========='],
+      // Stage 5: Left leg
+      ['   +---+', '   |   |', '   O   |', '  /|\\  |', '  /    |', '       |', '========='],
+      // Stage 6: Right leg (dead)
+      ['   +---+', '   |   |', '   O   |', '  /|\\  |', '  / \\  |', '       |', '=========']
     ];
+
+    const currentStage = Math.min(wrongAnswers, hangmanStages.length - 1);
+    const parts = hangmanStages[currentStage];
 
     return (
       <div className="hangman-display">
@@ -309,43 +356,64 @@ const HangmanGame = ({ gameData, onGameComplete, onAnswerChange }) => {
     );
   };
 
-  const renderKeyboard = () => {
-    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-    
-    return (
-      <div className="keyboard">
-        {alphabet.map(letter => {
-          const isGuessed = currentWordGuessedLetters.has(letter); // Use current word letters for keyboard state
-          const isCorrect = isGuessed && word.toUpperCase().includes(letter);
-          const isWrong = isGuessed && !word.toUpperCase().includes(letter);
-          
-          return (
-            <button
-              key={letter}
-              className={`key ${isCorrect ? 'correct' : ''} ${isWrong ? 'wrong' : ''} ${isGuessed ? 'guessed' : ''}`}
-              onClick={() => handleLetterGuess(letter)}
-              disabled={isGuessed || gameStatus !== 'playing' || currentWordStatus !== 'playing'}
-            >
-              {letter}
-            </button>
-          );
-        })}
-      </div>
-    );
-  };
-
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  if (!gameData || !currentWord) {
+  // Error state
+  if (!effectiveGameData || !currentQuestion) {
     return (
       <div className="hangman-game">
         <div className="error-message">
           <h3>Game data not available</h3>
           <p>Unable to load hangman game data.</p>
+          <div className="debug-info">
+            <small>Game Data: {effectiveGameData ? 'Available' : 'Missing'}</small><br/>
+            <small>Questions: {effectiveGameData?.questions?.length || 0}</small><br/>
+            <small>Current Question: {currentQuestion ? 'Available' : 'Missing'}</small>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Game over screens
+  if (gameStatus === 'lost') {
+    return (
+      <div className="hangman-game">
+        <div className="game-over">
+          <div className="hangman-section">
+            {renderHangman()}
+          </div>
+          <h2>💀 Game Over!</h2>
+          <p>The hangman has been hanged!</p>
+          <div className="final-stats">
+            <p>Questions answered: {gameResults.length} / {totalQuestions}</p>
+            <p>Correct answers: {gameResults.filter(r => r.isCorrect).length}</p>
+            <p>Time played: {formatTime(timeElapsed)}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (gameStatus === 'won' || gameStatus === 'survived') {
+    return (
+      <div className="hangman-game">
+        <div className="game-won">
+          <div className="hangman-section">
+            {renderHangman()}
+          </div>
+          <h2>🎉 Congratulations!</h2>
+          <p>{gameStatus === 'won' ? 'All questions answered correctly!' : 'You saved the hangman!'}</p>
+          <div className="final-stats">
+            <p>Questions answered: {gameResults.length} / {totalQuestions}</p>
+            <p>Correct answers: {gameResults.filter(r => r.isCorrect).length}</p>
+            <p>Wrong answers: {wrongAnswers}</p>
+            <p>Time: {formatTime(timeElapsed)}</p>
+          </div>
         </div>
       </div>
     );
@@ -353,15 +421,33 @@ const HangmanGame = ({ gameData, onGameComplete, onAnswerChange }) => {
 
   return (
     <div className="hangman-game">
+      {/* Exit Confirmation Modal */}
+      {showExitConfirmation && (
+        <div className="modal-overlay">
+          <div className="exit-confirmation-modal">
+            <h3>Exit Game?</h3>
+            <p>Are you sure you want to exit? Your progress will be saved.</p>
+            <div className="modal-actions">
+              <button onClick={confirmExitGame} className="confirm-btn">
+                Yes, Exit
+              </button>
+              <button onClick={cancelExitGame} className="cancel-btn">
+                Continue Playing
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Game Header */}
       <div className="game-header">
         <div className="game-info">
           <h2>🎯 Hangman Game</h2>
           <div className="game-stats">
-            <span className="word-progress">Word {currentWordIndex + 1} of {totalWords}</span>
+            <span className="question-progress">Question {currentQuestionIndex + 1} of {totalQuestions}</span>
             <span className="time">Time: {formatTime(timeElapsed)}</span>
-            <span className="wrong-guesses">Wrong: {totalWrongGuesses}/{maxTotalWrongGuesses}</span>
-            <span className="words-completed">Completed: {gameResults.filter(r => r.status === 'won').length}/{totalWords}</span>
+            <span className="wrong-answers">Wrong: {wrongAnswers}/{maxWrongAnswers}</span>
+            <span className="correct-answers">Correct: {gameResults.filter(r => r.isCorrect).length}</span>
           </div>
         </div>
         
@@ -371,13 +457,8 @@ const HangmanGame = ({ gameData, onGameComplete, onAnswerChange }) => {
             onClick={handleExitGame}
             title="Exit Game"
           >
-            🚪 Exit Quiz
+            🚪 Exit Game
           </button>
-        </div>
-        
-        <div className="category">
-          <span className="category-label">Category:</span>
-          <span className="category-value">{category}</span>
         </div>
       </div>
 
@@ -387,265 +468,40 @@ const HangmanGame = ({ gameData, onGameComplete, onAnswerChange }) => {
         <div className="hangman-section">
           {renderHangman()}
           <div className="lives-display">
-            <span>Lives remaining: {maxTotalWrongGuesses - totalWrongGuesses}</span>
+            <span>Lives remaining: {maxWrongAnswers - wrongAnswers}</span>
             <div className="lives-hearts">
-              {Array.from({ length: maxTotalWrongGuesses }, (_, i) => (
-                <span key={i} className={`heart ${i < totalWrongGuesses ? 'lost' : 'remaining'}`}>
-                  {i < totalWrongGuesses ? '💔' : '❤️'}
+              {Array.from({ length: maxWrongAnswers }, (_, i) => (
+                <span key={i} className={`heart ${i < wrongAnswers ? 'lost' : 'remaining'}`}>
+                  {i < wrongAnswers ? '💔' : '❤️'}
                 </span>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Word Display */}
-        <div className="word-section">
-          {/* Debug info */}
-          <div className="debug-info" style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)', marginBottom: '10px' }}>
-            Debug: Word="{word}", Category="{category}", HasHint={!!hint}
-          </div>
-          
-          <div className="word-display">
-            {renderWord()}
-          </div>
-          
-          {/* Hint Section */}
-          <div className="hint-section">
-            {!showHint && hint ? (
-              <button 
-                className="hint-button"
-                onClick={() => {
-                  console.log('Showing hint:', hint);
-                  setShowHint(true);
-                }}
-                disabled={gameStatus !== 'playing' || currentWordStatus !== 'playing'}
-              >
-                💡 Show Hint
-              </button>
-            ) : showHint && hint ? (
-              <div className="hint-display">
-                <span className="hint-label">💡 Hint:</span>
-                <span className="hint-text">{hint}</span>
-              </div>
-            ) : (
-              <div className="no-hint">
-                <span className="no-hint-text">No hint available for this word</span>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Keyboard */}
-      <div className="keyboard-section">
-        {renderKeyboard()}
-      </div>
-
-      {/* Game Status Messages and Game Over Overlay */}
-      {(currentWordStatus !== 'playing' || gameStatus !== 'playing') && (
-        <div className={`game-status-overlay ${currentWordStatus === 'won' ? 'won' : 'lost'}`}>
-          <div className="status-content">
-            <div className="status-icon">
-              {gameStatus === 'lost' ? '☠️' : currentWordStatus === 'won' ? '🎉' : '😵'}
-            </div>
-            <h3>
-              {gameStatus === 'lost' ? '☠️ Game Over!' : 
-               currentWordStatus === 'won' && isLastWord ? '🏆 Quiz Complete!' :
-               currentWordStatus === 'won' ? '🎉 Word Complete!' : '😵 Word Failed!'}
-            </h3>
-            <p className="status-message">
-              {gameStatus === 'lost' ? 
-                `The hangman is complete! You used all ${maxTotalWrongGuesses} wrong guesses.` :
-               currentWordStatus === 'won' ? 
-                `You guessed "${word}" correctly!` : 
-                `You couldn't guess "${word}" before the hangman was completed.`
-              }
+        {/* Question Section */}
+        <div className="question-section">
+          <div className="question-header">
+            <h3>Answer correctly to save the hangman!</h3>
+            <p className="question-instruction">
+              ✅ Correct answer = Hangman stays safe, next question<br/>
+              ❌ Wrong answer = Hangman moves closer to gallows
             </p>
-            
-            {gameStatus === 'lost' && (
-              <div className="game-over-stats">
-                <h4>📊 Final Results</h4>
-                <div className="final-stats-grid">
-                  <div className="stat-item">
-                    <span className="stat-value">{gameResults.filter(r => r.status === 'won').length}</span>
-                    <span className="stat-label">Words Guessed</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-value">{totalWords}</span>
-                    <span className="stat-label">Total Words</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-value">{Math.round((gameResults.filter(r => r.status === 'won').length / Math.max(gameResults.length, 1)) * 100)}%</span>
-                    <span className="stat-label">Success Rate</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-value">{formatTime(timeElapsed)}</span>
-                    <span className="stat-label">Total Time</span>
-                  </div>
-                </div>
-                <p style={{ fontSize: '14px', opacity: 0.8, marginTop: '15px' }}>
-                  🔄 Submitting results automatically in 2 seconds...
-                </p>
-                <button className="complete-game-btn" onClick={() => {
-                  const finalResults = [...gameResults];
-                  if (!gameResults.find(r => r.wordIndex === currentWordIndex)) {
-                    finalResults.push({
-                      wordIndex: currentWordIndex,
-                      word: word,
-                      status: 'lost',
-                      wrongGuesses: totalWrongGuesses,
-                      timeSpent: timeElapsed,
-                      guessedLetters: Array.from(currentWordGuessedLetters)
-                    });
-                  }
-                  const correctWords = finalResults.filter(result => result.status === 'won').length;
-                  const finalScore = finalResults.length > 0 ? Math.round((correctWords / finalResults.length) * 100) : 0;
-                  
-                  console.log('Manual game over completion triggered');
-                  
-                  onGameComplete && onGameComplete({
-                    results: finalResults,
-                    totalWords: totalWords,
-                    timeElapsed: timeElapsed,
-                    completed: false, // Lost due to hangman
-                    score: finalScore,
-                    correctAnswers: correctWords, // Backend expects this field name
-                    correctWords: correctWords, // Keep this for compatibility
-                    totalWordsCompleted: finalResults.length,
-                    totalWrongGuesses: totalWrongGuesses,
-                    hangmanComplete: false
-                  });
-                }}>
-                  Complete Now ✅
-                </button>
-              </div>
-            )}
-            
-            <div className="status-actions">
-              {currentWordStatus === 'won' && !isLastWord && gameStatus === 'playing' && (
-                <button className="next-word-btn" onClick={nextWord}>
-                  Next Word ➡️
-                </button>
-              )}
-              
-              {currentWordStatus === 'won' && isLastWord && (
-                <div className="hangman-final-score">
-                  <h4>🏆 Game Completed!</h4>
-                  <div className="hangman-final-stats">
-                    <div className="hangman-stat-item">
-                      <span className="hangman-stat-value">{Math.round((gameResults.filter(r => r.status === 'won').length / gameResults.length) * 100)}%</span>
-                      <span className="hangman-stat-label">Final Score</span>
-                    </div>
-                    <div className="hangman-stat-item">
-                      <span className="hangman-stat-value">{gameResults.filter(r => r.status === 'won').length}/{gameResults.length}</span>
-                      <span className="hangman-stat-label">Words Guessed</span>
-                    </div>
-                    <div className="hangman-stat-item">
-                      <span className="hangman-stat-value">{formatTime(timeElapsed)}</span>
-                      <span className="hangman-stat-label">Total Time</span>
-                    </div>
-                  </div>
-                  <p style={{ fontSize: '14px', opacity: 0.8, marginBottom: '15px' }}>
-                    🔄 Submitting results automatically in 2 seconds...
-                  </p>
-                  <button className="complete-game-btn" onClick={() => {
-                    const finalResults = [...gameResults];
-                    const correctWords = finalResults.filter(result => result.status === 'won').length;
-                    const finalScore = finalResults.length > 0 ? Math.round((correctWords / finalResults.length) * 100) : 0;
-                    
-                    console.log('Manual game completion triggered');
-                    
-                    onGameComplete && onGameComplete({
-                      results: finalResults,
-                      totalWords: totalWords,
-                      timeElapsed: timeElapsed,
-                      completed: true,
-                      score: finalScore,
-                      correctAnswers: correctWords, // Backend expects this field name
-                      correctWords: correctWords, // Keep this for compatibility
-                      totalWordsCompleted: finalResults.length,
-                      totalWrongGuesses: totalWrongGuesses,
-                      hangmanComplete: totalWrongGuesses < maxTotalWrongGuesses
-                    });
-                  }}>
-                    Complete Now ✅
-                  </button>
-                </div>
-              )}
-              
-              {currentWordStatus !== 'won' && gameStatus === 'playing' && (
-                <button className="skip-word-btn" onClick={nextWord}>
-                  Skip to Next Word ⏭️
-                </button>
-              )}
-            </div>
           </div>
-        </div>
-      )}
-
-      {/* Exit Confirmation Dialog */}
-      {showExitConfirmation && (
-        <div className="exit-confirmation-overlay">
-          <div className="exit-confirmation-dialog">
-            <div className="exit-confirmation-content">
-              <h3>🚪 Exit Quiz?</h3>
-              <p>Are you sure you want to exit the Hangman game?</p>
-              <div className="exit-current-progress">
-                <p><strong>Current Progress:</strong></p>
-                <ul>
-                  <li>Words completed: {gameResults.filter(r => r.status === 'won').length}/{currentWordIndex + (currentWordStatus === 'won' ? 1 : 0)}</li>
-                  <li>Time elapsed: {formatTime(timeElapsed)}</li>
-                  <li>Wrong guesses: {totalWrongGuesses}/{maxTotalWrongGuesses}</li>
-                  <li>Current word: {word ? `"${word}"` : 'N/A'}</li>
-                </ul>
-                <p className="exit-warning">
-                  ⚠️ Your progress will be saved, but the quiz will be marked as incomplete.
-                </p>
-              </div>
-              <div className="exit-confirmation-actions">
-                <button 
-                  className="exit-cancel-btn"
-                  onClick={cancelExitGame}
-                >
-                  ❌ Cancel
-                </button>
-                <button 
-                  className="exit-confirm-btn"
-                  onClick={confirmExitGame}
-                >
-                  🚪 Exit Quiz
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Progress Bar */}
-      <div className="progress-section">
-        <div className="progress-bar">
-          <div 
-            className="progress-fill"
-            style={{ width: `${((currentWordIndex + 1) / totalWords) * 100}%` }}
+          
+          {/* Universal Question Component */}
+          <QuestionWrapper
+            question={currentQuestion}
+            onAnswer={handleAnswer}
+            gameMode="hangman"
+            disabled={gameStatus !== 'playing' || showResult}
+            showResult={showResult}
+            isCorrect={gameResults[gameResults.length - 1]?.isCorrect}
+            userAnswer={gameResults[gameResults.length - 1]?.userAnswer}
+            onRetry={retryCurrentQuestion}
+            onContinue={continueToNext}
+            className="hangman-question"
           />
-        </div>
-        <span className="progress-text">
-          Progress: {currentWordIndex + 1}/{totalWords} words
-        </span>
-      </div>
-
-      {/* Guessed Letters Display */}
-      <div className="guessed-letters">
-        <h4>Guessed Letters (Current Word):</h4>
-        <div className="letters-grid">
-          {Array.from(currentWordGuessedLetters).map(letter => {
-            const appearsInCurrentWord = word.toUpperCase().includes(letter);
-            return (
-              <span key={letter} className={`guessed-letter ${appearsInCurrentWord ? 'correct' : 'wrong'}`}>
-                {letter}
-              </span>
-            );
-          })}
         </div>
       </div>
     </div>

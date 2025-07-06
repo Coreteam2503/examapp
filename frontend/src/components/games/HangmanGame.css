@@ -830,3 +830,279 @@
     width: 100%;
   }
 }
+
+/* ===== QUESTION-BASED HANGMAN STYLES ===== */
+
+.question-section {
+  flex: 1;
+  max-width: 600px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 15px;
+  padding: 25px;
+  color: #333;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.question-header {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.question-header h3 {
+  margin: 0 0 10px 0;
+  color: #2d3748;
+  font-size: 1.4em;
+  font-weight: 600;
+}
+
+.question-instruction {
+  margin: 0;
+  color: #4a5568;
+  font-size: 14px;
+  line-height: 1.5;
+  background: #f7fafc;
+  padding: 12px;
+  border-radius: 8px;
+  border-left: 4px solid #3182ce;
+}
+
+/* Question wrapper specific styling for hangman */
+.hangman-question {
+  background: transparent;
+}
+
+.hangman-question .question-text h3 {
+  color: #2d3748;
+  font-size: 1.2em;
+  margin-bottom: 20px;
+  text-align: center;
+  padding: 15px;
+  background: #edf2f7;
+  border-radius: 10px;
+  border: 2px solid #e2e8f0;
+}
+
+/* Enhanced game over and won screens */
+.game-over, .game-won {
+  text-align: center;
+  padding: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.game-over h2 {
+  color: #ff6b6b;
+  font-size: 3em;
+  margin: 20px 0;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.game-won h2 {
+  color: #51cf66;
+  font-size: 3em;
+  margin: 20px 0;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.final-stats {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 20px;
+  border-radius: 15px;
+  margin-top: 20px;
+}
+
+.final-stats p {
+  margin: 8px 0;
+  font-size: 1.1em;
+  font-weight: 500;
+}
+
+/* Updated game stats for question-based mode */
+.question-progress {
+  background: rgba(59, 130, 246, 0.2) !important;
+  color: #1e40af !important;
+}
+
+.wrong-answers {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #dc2626 !important;
+}
+
+.correct-answers {
+  background: rgba(34, 197, 94, 0.2) !important;
+  color: #16a34a !important;
+}
+
+/* Modal styles for exit confirmation */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.exit-confirmation-modal {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  color: #333;
+}
+
+.exit-confirmation-modal h3 {
+  margin: 0 0 15px 0;
+  color: #2d3748;
+  font-size: 1.5em;
+}
+
+.exit-confirmation-modal p {
+  margin: 0 0 25px 0;
+  color: #4a5568;
+  line-height: 1.5;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.confirm-btn, .cancel-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.confirm-btn {
+  background: #dc2626;
+  color: white;
+}
+
+.confirm-btn:hover {
+  background: #b91c1c;
+  transform: translateY(-1px);
+}
+
+.cancel-btn {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.cancel-btn:hover {
+  background: #d1d5db;
+  transform: translateY(-1px);
+}
+
+/* Error message styling */
+.error-message {
+  text-align: center;
+  padding: 40px;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 15px;
+  border: 2px solid rgba(239, 68, 68, 0.3);
+}
+
+.error-message h3 {
+  color: #dc2626;
+  font-size: 2em;
+  margin: 0 0 15px 0;
+}
+
+.error-message p {
+  color: #7f1d1d;
+  font-size: 1.1em;
+  margin: 0;
+}
+
+/* Mobile responsiveness for question-based hangman */
+@media (max-width: 768px) {
+  .game-content {
+    flex-direction: column;
+  }
+  
+  .hangman-section {
+    margin-bottom: 20px;
+    order: 2;
+  }
+  
+  .question-section {
+    order: 1;
+    max-width: 100%;
+    margin-bottom: 20px;
+  }
+  
+  .question-header h3 {
+    font-size: 1.2em;
+  }
+  
+  .question-instruction {
+    font-size: 13px;
+    padding: 10px;
+  }
+  
+  .hangman-question .question-text h3 {
+    font-size: 1.1em;
+    padding: 12px;
+  }
+  
+  .game-over h2, .game-won h2 {
+    font-size: 2.2em;
+  }
+  
+  .exit-confirmation-modal {
+    padding: 20px;
+  }
+  
+  .modal-actions {
+    flex-direction: column;
+  }
+  
+  .confirm-btn, .cancel-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .hangman-game {
+    padding: 15px;
+  }
+  
+  .game-header {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+  
+  .game-stats {
+    justify-content: center;
+    gap: 15px;
+  }
+  
+  .game-stats span {
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+  
+  .question-section {
+    padding: 20px;
+  }
+  
+  .hangman-question .question-text h3 {
+    font-size: 1em;
+    padding: 10px;
+  }
+}
