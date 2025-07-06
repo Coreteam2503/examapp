@@ -271,25 +271,21 @@ const QuizGeneratorForm = () => {
   const isFormValid = availableQuestions > 0 && criteria.num_questions <= availableQuestions;
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
+    <div className="quiz-generator-form">
       {/* Header */}
-      <div className="text-center">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">
-          Generate Quiz
-        </h2>
-        <p className="text-gray-600">
-          Create a custom quiz by selecting your preferences below
-        </p>
+      <div className="header-section">
+        <h2>Generate Quiz</h2>
+        <p>Create a custom quiz by selecting your preferences below</p>
       </div>
 
       {/* Main form */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="form-card">
+        <div className="form-grid">
           
           {/* Criteria Selection */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-              <AdjustmentsHorizontalIcon className="w-5 h-5 mr-2" />
+          <div className="form-section">
+            <h3 className="section-title">
+              <AdjustmentsHorizontalIcon />
               Quiz Criteria
             </h3>
             
@@ -299,7 +295,7 @@ const QuizGeneratorForm = () => {
               options={options.domains}
               value={criteria.domain}
               onChange={(value) => handleCriteriaChange('domain', value)}
-              placeholder="All domains"
+              placeholder="Select domain..."
               loading={loading.options}
               showCount={true}
               error={errors.domain}
@@ -313,7 +309,7 @@ const QuizGeneratorForm = () => {
               )}
               value={criteria.subject}
               onChange={(value) => handleCriteriaChange('subject', value)}
-              placeholder="All subjects"
+              placeholder="Select subject..."
               loading={loading.options}
               showCount={true}
               error={errors.subject}
@@ -325,7 +321,7 @@ const QuizGeneratorForm = () => {
               options={options.sources}
               value={criteria.source}
               onChange={(value) => handleCriteriaChange('source', value)}
-              placeholder="All sources"
+              placeholder="Select source..."
               loading={loading.options}
               showCount={true}
               error={errors.source}
@@ -345,47 +341,41 @@ const QuizGeneratorForm = () => {
           </div>
 
           {/* Game Format & Settings */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-              <PlayIcon className="w-5 h-5 mr-2" />
+          <div className="form-section">
+            <h3 className="section-title">
+              <PlayIcon />
               Game Format
             </h3>
             
             {/* Game Format Selection */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Choose Game Format
-              </label>
-              <div className="grid grid-cols-1 gap-2">
-                {gameFormats.map((format) => (
-                  <label
-                    key={format.id}
-                    className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors
-                               ${criteria.game_format === format.id 
-                                 ? 'border-blue-500 bg-blue-50' 
-                                 : 'border-gray-300 hover:border-gray-400'}`}
-                  >
-                    <input
-                      type="radio"
-                      name="game_format"
-                      value={format.id}
-                      checked={criteria.game_format === format.id}
-                      onChange={(e) => handleCriteriaChange('game_format', e.target.value)}
-                      className="sr-only"
-                    />
-                    <span className="text-2xl mr-3">{format.icon}</span>
-                    <div>
-                      <div className="font-medium text-gray-900">{format.name}</div>
-                      <div className="text-sm text-gray-600">{format.description}</div>
-                    </div>
-                  </label>
-                ))}
-              </div>
+            <div className="game-format-grid">
+              {gameFormats.map((format) => (
+                <label
+                  key={format.id}
+                  className={`game-format-option ${
+                    criteria.game_format === format.id ? 'selected' : ''
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="game_format"
+                    value={format.id}
+                    checked={criteria.game_format === format.id}
+                    onChange={(e) => handleCriteriaChange('game_format', e.target.value)}
+                    style={{ display: 'none' }}
+                  />
+                  <span className="game-format-icon">{format.icon}</span>
+                  <div className="game-format-content">
+                    <div className="game-format-name">{format.name}</div>
+                    <div className="game-format-description">{format.description}</div>
+                  </div>
+                </label>
+              ))}
             </div>
             
             {/* Number of Questions */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="number-input-group">
+              <label className="number-input-label">
                 Number of Questions
               </label>
               <input
@@ -394,30 +384,28 @@ const QuizGeneratorForm = () => {
                 max="50"
                 value={criteria.num_questions}
                 onChange={(e) => handleCriteriaChange('num_questions', parseInt(e.target.value) || 1)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={`number-input ${errors.num_questions ? 'input-error' : ''}`}
               />
               {errors.num_questions && (
-                <p className="mt-1 text-sm text-red-600">{errors.num_questions}</p>
+                <p className="error-message">{errors.num_questions}</p>
               )}
             </div>
           </div>
         </div>
 
         {/* Question Availability */}
-        <div className="mt-6 p-4 border border-gray-200 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <InformationCircleIcon className="w-5 h-5 text-blue-500 mr-2" />
-              <span className="text-sm font-medium text-gray-700">
-                Available Questions
-              </span>
+        <div className="availability-section">
+          <div className="availability-header">
+            <div className="availability-label">
+              <InformationCircleIcon />
+              <span>Available Questions</span>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="availability-count">
               {loading.questionCount ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                <div className="availability-spinner"></div>
               ) : (
-                <span className={`text-sm font-semibold ${
-                  availableQuestions >= criteria.num_questions ? 'text-green-600' : 'text-red-600'
+                <span className={`count-text ${
+                  availableQuestions >= criteria.num_questions ? 'count-sufficient' : 'count-insufficient'
                 }`}>
                   {availableQuestions} questions
                 </span>
@@ -426,9 +414,9 @@ const QuizGeneratorForm = () => {
           </div>
           
           {availableQuestions < criteria.num_questions && (
-            <div className="mt-2 flex items-start">
-              <ExclamationTriangleIcon className="w-4 h-4 text-yellow-500 mr-2 mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-yellow-700">
+            <div className="warning-message">
+              <ExclamationTriangleIcon />
+              <p className="warning-text">
                 Not enough questions available. Please adjust your criteria or reduce the number of questions.
               </p>
             </div>
@@ -437,29 +425,27 @@ const QuizGeneratorForm = () => {
 
         {/* Error Messages */}
         {errors.general && (
-          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-center">
-              <ExclamationTriangleIcon className="w-5 h-5 text-red-500 mr-2" />
-              <span className="text-red-800 font-medium">Error</span>
+          <div className="error-container">
+            <div className="error-header">
+              <ExclamationTriangleIcon />
+              <span className="error-title">Error</span>
             </div>
-            <p className="mt-1 text-sm text-red-700">{errors.general}</p>
+            <p className="error-content">{errors.general}</p>
           </div>
         )}
 
         {/* Generation Result */}
         {generationResult && (
-          <div className={`mt-4 p-4 rounded-lg border ${
-            generationResult.success 
-              ? 'bg-green-50 border-green-200' 
-              : 'bg-red-50 border-red-200'
+          <div className={`success-container ${
+            generationResult.success ? 'success' : 'error'
           }`}>
-            <div className={`font-medium ${
-              generationResult.success ? 'text-green-800' : 'text-red-800'
+            <div className={`result-title ${
+              generationResult.success ? 'success' : 'error'
             }`}>
               {generationResult.success ? '✅ Quiz Generated Successfully!' : '❌ Generation Failed'}
             </div>
-            <div className={`text-sm mt-1 ${
-              generationResult.success ? 'text-green-700' : 'text-red-700'
+            <div className={`result-content ${
+              generationResult.success ? 'success' : 'error'
             }`}>
               {generationResult.success 
                 ? `Generated quiz with ${generationResult.questionsUsed} questions. Redirecting to game...`
@@ -470,24 +456,22 @@ const QuizGeneratorForm = () => {
         )}
 
         {/* Generate Button */}
-        <div className="mt-6 flex justify-center">
+        <div className="button-container">
           <button
             onClick={handleGenerateQuiz}
             disabled={!isFormValid || loading.generating}
-            className={`px-8 py-3 rounded-lg font-medium transition-colors flex items-center space-x-2 ${
-              isFormValid && !loading.generating
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            className={`generate-button ${
+              isFormValid && !loading.generating ? 'enabled' : 'disabled'
             }`}
           >
             {loading.generating ? (
               <>
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                <div className="button-spinner"></div>
                 <span>Generating Quiz...</span>
               </>
             ) : (
               <>
-                <PlayIcon className="w-5 h-5" />
+                <PlayIcon />
                 <span>Generate Quiz</span>
               </>
             )}

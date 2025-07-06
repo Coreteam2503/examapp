@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDownIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import './QuizCriteriaSelector.css';
 
 const QuizCriteriaSelector = ({ 
   label, 
@@ -63,8 +64,12 @@ const QuizCriteriaSelector = ({
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (isOpen) {
-        setIsOpen(false);
-        setSearchTerm('');
+        // Only close if the click is outside the dropdown component
+        const dropdownElement = event.target.closest('.quiz-criteria-selector');
+        if (!dropdownElement) {
+          setIsOpen(false);
+          setSearchTerm('');
+        }
       }
     };
 
@@ -75,40 +80,35 @@ const QuizCriteriaSelector = ({
   return (
     <div className="quiz-criteria-selector">
       {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="selector-label">
           {label}
         </label>
       )}
       
-      <div className="relative">
+      <div className="selector-container">
         {/* Main selector button */}
         <button
           type="button"
           onClick={() => !disabled && !loading && setIsOpen(!isOpen)}
           disabled={disabled || loading}
-          className={`w-full px-3 py-2 text-left bg-white border border-gray-300 rounded-lg 
-                     shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                     ${disabled || loading ? 'bg-gray-50 cursor-not-allowed' : 'hover:border-gray-400 cursor-pointer'}
-                     ${error ? 'border-red-300' : ''}
-                     ${isOpen ? 'ring-2 ring-blue-500 border-blue-500' : ''}`}
+          className={`selector-button ${isOpen ? 'open' : ''} ${error ? 'error' : ''}`}
         >
-          <div className="flex items-center justify-between">
-            <span className={`block truncate ${!value ? 'text-gray-500' : 'text-gray-900'}`}>
+          <div className="button-content">
+            <span className={`button-text ${!value ? 'placeholder' : 'selected'}`}>
               {loading ? 'Loading...' : getDisplayText()}
             </span>
-            <div className="flex items-center space-x-1">
+            <div className="button-actions">
               {clearable && value && !disabled && !loading && (
                 <button
                   onClick={handleClear}
-                  className="text-gray-400 hover:text-gray-600 p-1"
+                  className="clear-button"
                   type="button"
                 >
-                  <span className="text-lg leading-none">×</span>
+                  ×
                 </button>
               )}
               <ChevronDownIcon 
-                className={`w-5 h-5 text-gray-400 transition-transform duration-200 
-                           ${isOpen ? 'transform rotate-180' : ''}`} 
+                className={`chevron-icon ${isOpen ? 'open' : ''}`}
               />
             </div>
           </div>
@@ -116,18 +116,18 @@ const QuizCriteriaSelector = ({
 
         {/* Dropdown menu */}
         {isOpen && !disabled && !loading && (
-          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-hidden">
+          <div className="dropdown-menu">
             {/* Search input */}
             {searchable && (
-              <div className="p-2 border-b border-gray-200">
-                <div className="relative">
-                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <div className="search-section">
+                <div className="search-container">
+                  <MagnifyingGlassIcon className="search-icon" />
                   <input
                     type="text"
                     placeholder="Search..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="search-input"
                     autoFocus
                   />
                 </div>
@@ -135,9 +135,9 @@ const QuizCriteriaSelector = ({
             )}
 
             {/* Options list */}
-            <div className="max-h-48 overflow-y-auto">
+            <div className="options-list">
               {filteredOptions.length === 0 ? (
-                <div className="px-3 py-2 text-sm text-gray-500">
+                <div className="no-options">
                   {searchTerm ? 'No options found' : 'No options available'}
                 </div>
               ) : (
@@ -152,13 +152,12 @@ const QuizCriteriaSelector = ({
                       key={index}
                       type="button"
                       onClick={() => handleSelect(option)}
-                      className={`w-full px-3 py-2 text-left text-sm hover:bg-blue-50 focus:outline-none focus:bg-blue-50
-                                 ${isSelected ? 'bg-blue-100 text-blue-900 font-medium' : 'text-gray-900'}`}
+                      className={`option-item ${isSelected ? 'selected' : ''}`}
                     >
-                      <div className="flex items-center justify-between">
-                        <span className="truncate">{optionLabel}</span>
+                      <div className="option-content">
+                        <span className="option-label">{optionLabel}</span>
                         {showCount && optionCount !== undefined && (
-                          <span className="ml-2 text-xs text-gray-500">
+                          <span className="option-count">
                             {optionCount}
                           </span>
                         )}
@@ -174,7 +173,7 @@ const QuizCriteriaSelector = ({
 
       {/* Error message */}
       {error && (
-        <p className="mt-1 text-sm text-red-600">{error}</p>
+        <p className="error-message">{error}</p>
       )}
     </div>
   );

@@ -30,9 +30,9 @@ const validateQuestionData = (questions) => {
     throw new Error('At least one question is required');
   }
   
-  // Basic validation for required fields
+  // Basic validation for required fields (aligned with backend schema)
   questions.forEach((question, index) => {
-    const requiredFields = ['domain', 'subject', 'source', 'question_type', 'type', 'question', 'explanation', 'difficulty_level'];
+    const requiredFields = ['domain', 'subject', 'source', 'type', 'question_text', 'explanation', 'difficulty_level'];
     requiredFields.forEach(field => {
       if (!question[field]) {
         throw new Error(`Question ${index + 1}: ${field} is required`);
@@ -256,14 +256,13 @@ export const questionService = {
   validateQuestion: (question) => {
     const errors = [];
     
-    // Required fields validation
+    // Required fields validation (aligned with backend schema)
     const requiredFields = {
       domain: 'Domain',
       subject: 'Subject', 
       source: 'Source',
-      question_type: 'Question Type',
       type: 'Type',
-      question: 'Question',
+      question_text: 'Question Text',
       explanation: 'Explanation',
       difficulty_level: 'Difficulty Level'
     };
@@ -275,16 +274,20 @@ export const questionService = {
     });
     
     // Type-specific validation
-    if (question.type === 'mcq' && (!question.options || !Array.isArray(question.options) || question.options.length < 2)) {
-      errors.push('MCQ questions must have at least 2 options');
+    if (question.type === 'multiple_choice' && (!question.options || question.options.toString().trim() === '')) {
+      errors.push('Multiple choice questions must have options');
     }
     
-    if (question.type === 'matching' && (!question.pairs || !Array.isArray(question.pairs) || question.pairs.length < 2)) {
-      errors.push('Matching questions must have at least 2 pairs');
+    if (question.type === 'true_false' && (!question.correct_answer || !['true', 'false'].includes(question.correct_answer.toLowerCase()))) {
+      errors.push('True/false questions require correct_answer to be "true" or "false"');
     }
     
-    if (question.type === 'ordering' && (!question.items || !Array.isArray(question.items) || question.items.length < 2)) {
-      errors.push('Ordering questions must have at least 2 items');
+    if (question.type === 'matching' && (!question.pairs || question.pairs.toString().trim() === '')) {
+      errors.push('Matching questions require pairs data');
+    }
+    
+    if ((question.type === 'fill_blank' || question.type === 'fill_in_the_blank') && (!question.correct_answer || question.correct_answer.toString().trim() === '')) {
+      errors.push('Fill-in-the-blank questions require correct_answer');
     }
     
     // Difficulty level validation

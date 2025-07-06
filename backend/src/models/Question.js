@@ -13,15 +13,26 @@ class Question {
   // New: Bulk create with transaction support
   static async bulkCreate(questionsData) {
     try {
+      console.log(`🔄 [Question Model] Inserting ${questionsData.length} questions`);
+      
       const insertedIds = await db('questions').insert(questionsData);
+      
+      console.log(`📊 [Question Model] Insert returned:`, insertedIds);
       
       // Return the created questions
       if (insertedIds.length > 0) {
-        const firstId = insertedIds[0];
-        const lastId = firstId + insertedIds.length - 1;
-        return db('questions')
-          .whereBetween('id', [firstId, lastId])
+        // For SQLite, insertedIds contains the actual IDs
+        // Get all questions that were just inserted
+        const minId = Math.min(...insertedIds);
+        const maxId = Math.max(...insertedIds);
+        
+        const createdQuestions = await db('questions')
+          .whereBetween('id', [minId, maxId])
           .orderBy('id');
+        
+        console.log(`✅ [Question Model] Retrieved ${createdQuestions.length} created questions (IDs: ${minId}-${maxId})`);
+        
+        return createdQuestions;
       }
       return [];
     } catch (error) {

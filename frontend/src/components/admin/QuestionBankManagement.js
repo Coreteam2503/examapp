@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import QuestionBankForm from '../QuestionBankForm';
 import { questionService } from '../../services/questionService';
+import './QuestionBankManagement.css';
 
 const QuestionBankManagement = () => {
   const [statistics, setStatistics] = useState(null);
@@ -37,130 +38,134 @@ const QuestionBankManagement = () => {
 
   return (
     <div className="question-bank-management">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Question Bank Management
-        </h1>
-        <p className="text-gray-600">
+      <div className="header-section">
+        <h1>Question Bank Management</h1>
+        <p className="header-description">
           Create, manage, and organize your question bank for quizzes and assessments.
         </p>
       </div>
 
       {/* Statistics Overview */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">
+      <div className="statistics-section">
+        <h2 className="statistics-header">
           Question Bank Statistics
         </h2>
         
         {loading ? (
-          <div className="flex items-center justify-center p-8 bg-white rounded-lg shadow">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <span className="ml-2 text-gray-600">Loading statistics...</span>
+          <div className="loading-container">
+            <div className="loading-spinner"></div>
+            <span className="loading-text">Loading statistics...</span>
           </div>
         ) : error ? (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-            <div className="text-red-800 font-medium">Error Loading Statistics</div>
-            <div className="text-red-600 text-sm mt-1">{error}</div>
+          <div className="error-container">
+            <div className="error-title">Error Loading Statistics</div>
+            <div className="error-message">{error}</div>
             <button 
               onClick={loadStatistics}
-              className="mt-2 text-red-600 hover:text-red-800 text-sm underline"
+              className="error-retry"
             >
               Try Again
             </button>
           </div>
         ) : statistics ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="stats-grid">
             {/* Total Questions */}
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="flex items-center">
-                <div className="p-3 rounded-full bg-blue-100">
-                  <span className="text-2xl">📚</span>
+            <div className="stat-card">
+              <div className="stat-card-header">
+                <div className="stat-icon total">
+                  <span>📚</span>
                 </div>
-                <div className="ml-4">
-                  <div className="text-2xl font-bold text-gray-900">
+                <div className="stat-info">
+                  <div className="stat-number">
                     {statistics.total}
                   </div>
-                  <div className="text-gray-600">Total Questions</div>
+                  <div className="stat-label">Total Questions</div>
                 </div>
               </div>
             </div>
 
             {/* By Domain */}
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="flex items-center mb-3">
-                <div className="p-3 rounded-full bg-green-100">
-                  <span className="text-2xl">🎯</span>
+            <div className="stat-card">
+              <div className="stat-card-header">
+                <div className="stat-icon domains">
+                  <span>🎯</span>
                 </div>
-                <div className="ml-4">
-                  <div className="text-lg font-semibold text-gray-900">Domains</div>
-                  <div className="text-gray-600">{statistics.byDomain.length} different</div>
+                <div className="stat-info">
+                  <div className="stat-number">{statistics.byDomain.length}</div>
+                  <div className="stat-label">Different Domains</div>
                 </div>
               </div>
-              <div className="space-y-1">
-                {statistics.byDomain.slice(0, 3).map((domain, index) => (
-                  <div key={index} className="flex justify-between text-sm">
-                    <span className="text-gray-700 truncate">
-                      {domain.domain || 'Unknown'}
-                    </span>
-                    <span className="text-gray-500 ml-2">{domain.count}</span>
-                  </div>
-                ))}
-                {statistics.byDomain.length > 3 && (
-                  <div className="text-xs text-gray-500">
-                    +{statistics.byDomain.length - 3} more
-                  </div>
-                )}
+              <div className="stat-details">
+                <div className="stat-list">
+                  {statistics.byDomain.slice(0, 3).map((domain, index) => (
+                    <div key={index} className="stat-item">
+                      <span className="stat-item-label">
+                        {domain.domain || 'Unknown'}
+                      </span>
+                      <span className="stat-item-value">{domain.count}</span>
+                    </div>
+                  ))}
+                  {statistics.byDomain.length > 3 && (
+                    <div className="stat-more">
+                      +{statistics.byDomain.length - 3} more
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
             {/* By Type */}
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="flex items-center mb-3">
-                <div className="p-3 rounded-full bg-purple-100">
-                  <span className="text-2xl">🔧</span>
+            <div className="stat-card">
+              <div className="stat-card-header">
+                <div className="stat-icon types">
+                  <span>🔧</span>
                 </div>
-                <div className="ml-4">
-                  <div className="text-lg font-semibold text-gray-900">Types</div>
-                  <div className="text-gray-600">{statistics.byType.length} different</div>
+                <div className="stat-info">
+                  <div className="stat-number">{statistics.byType.length}</div>
+                  <div className="stat-label">Different Types</div>
                 </div>
               </div>
-              <div className="space-y-1">
-                {statistics.byType.slice(0, 3).map((type, index) => (
-                  <div key={index} className="flex justify-between text-sm">
-                    <span className="text-gray-700 truncate">
-                      {type.type.replace('_', ' ')}
-                    </span>
-                    <span className="text-gray-500 ml-2">{type.count}</span>
-                  </div>
-                ))}
-                {statistics.byType.length > 3 && (
-                  <div className="text-xs text-gray-500">
-                    +{statistics.byType.length - 3} more
-                  </div>
-                )}
+              <div className="stat-details">
+                <div className="stat-list">
+                  {statistics.byType.slice(0, 3).map((type, index) => (
+                    <div key={index} className="stat-item">
+                      <span className="stat-item-label">
+                        {type.type.replace('_', ' ')}
+                      </span>
+                      <span className="stat-item-value">{type.count}</span>
+                    </div>
+                  ))}
+                  {statistics.byType.length > 3 && (
+                    <div className="stat-more">
+                      +{statistics.byType.length - 3} more
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
             {/* By Difficulty */}
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="flex items-center mb-3">
-                <div className="p-3 rounded-full bg-orange-100">
-                  <span className="text-2xl">⚡</span>
+            <div className="stat-card">
+              <div className="stat-card-header">
+                <div className="stat-icon difficulty">
+                  <span>⚡</span>
                 </div>
-                <div className="ml-4">
-                  <div className="text-lg font-semibold text-gray-900">Difficulty</div>
-                  <div className="text-gray-600">Distribution</div>
+                <div className="stat-info">
+                  <div className="stat-number">Distribution</div>
+                  <div className="stat-label">Difficulty Levels</div>
                 </div>
               </div>
-              <div className="space-y-1">
-                {statistics.byDifficulty.map((difficulty, index) => (
-                  <div key={index} className="flex justify-between text-sm">
-                    <span className="text-gray-700">
-                      {difficulty.difficulty_level || 'Unknown'}
-                    </span>
-                    <span className="text-gray-500">{difficulty.count}</span>
-                  </div>
-                ))}
+              <div className="stat-details">
+                <div className="stat-list">
+                  {statistics.byDifficulty.map((difficulty, index) => (
+                    <div key={index} className="stat-item">
+                      <span className="stat-item-label">
+                        {difficulty.difficulty_level || 'Unknown'}
+                      </span>
+                      <span className="stat-item-value">{difficulty.count}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -168,7 +173,9 @@ const QuestionBankManagement = () => {
       </div>
 
       {/* Question Bank Form */}
-      <QuestionBankForm onQuestionCreated={handleQuestionCreated} />
+      <div className="form-container">
+        <QuestionBankForm onQuestionCreated={handleQuestionCreated} />
+      </div>
     </div>
   );
 };

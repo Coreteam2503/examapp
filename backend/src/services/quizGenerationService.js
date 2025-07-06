@@ -6,9 +6,9 @@ class QuizGenerationService {
   constructor() {
     // Define validation schema for quiz generation criteria
     this.criteriaSchema = Joi.object({
-      domain: Joi.string().max(255).optional(),
-      subject: Joi.string().max(255).optional(),
-      source: Joi.string().max(255).optional(),
+      domain: Joi.string().max(255).allow('').optional(),
+      subject: Joi.string().max(255).allow('').optional(),
+      source: Joi.string().max(255).allow('').optional(),
       difficulty_level: Joi.string().valid('Easy', 'Medium', 'Hard').optional(),
       difficulty: Joi.string().valid('easy', 'medium', 'hard').optional(),
       type: Joi.string().valid(

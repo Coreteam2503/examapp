@@ -1,0 +1,300 @@
+/* Question Bank Management Styles */
+.question-bank-management {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+/* Header Section */
+.question-bank-management .header-section {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.question-bank-management h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.question-bank-management .header-description {
+  color: #6c757d;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+/* Statistics Section */
+.question-bank-management .statistics-section {
+  margin-bottom: 2rem;
+}
+
+.question-bank-management .statistics-header {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid #e9ecef;
+  padding-bottom: 0.5rem;
+}
+
+/* Loading State */
+.question-bank-management .loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.question-bank-management .loading-spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid #e9ecef;
+  border-top: 3px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.question-bank-management .loading-text {
+  margin-left: 1rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+/* Error State */
+.question-bank-management .error-container {
+  padding: 1rem;
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 8px;
+  color: #721c24;
+}
+
+.question-bank-management .error-title {
+  font-weight: 600;
+  color: #721c24;
+}
+
+.question-bank-management .error-message {
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  color: #721c24;
+}
+
+.question-bank-management .error-retry {
+  margin-top: 0.5rem;
+  color: #721c24;
+  text-decoration: underline;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.question-bank-management .error-retry:hover {
+  color: #5a1b23;
+}
+
+/* Statistics Grid */
+.question-bank-management .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.question-bank-management .stat-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.question-bank-management .stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+.question-bank-management .stat-card-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.question-bank-management .stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  margin-right: 1rem;
+}
+
+.question-bank-management .stat-icon.total {
+  background-color: #dbeafe;
+}
+
+.question-bank-management .stat-icon.domains {
+  background-color: #dcfce7;
+}
+
+.question-bank-management .stat-icon.types {
+  background-color: #f3e8ff;
+}
+
+.question-bank-management .stat-icon.difficulty {
+  background-color: #fed7aa;
+}
+
+.question-bank-management .stat-info {
+  flex: 1;
+}
+
+.question-bank-management .stat-number {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.question-bank-management .stat-label {
+  color: #6c757d;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+/* Stat Details */
+.question-bank-management .stat-details {
+  margin-top: 1rem;
+}
+
+.question-bank-management .stat-details-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.question-bank-management .stat-details-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 1rem 0 0;
+}
+
+.question-bank-management .stat-details-count {
+  color: #6c757d;
+  font-size: 0.875rem;
+}
+
+.question-bank-management .stat-list {
+  space-y: 0.25rem;
+}
+
+.question-bank-management .stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.875rem;
+  padding: 0.25rem 0;
+}
+
+.question-bank-management .stat-item-label {
+  color: #374151;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  margin-right: 0.5rem;
+}
+
+.question-bank-management .stat-item-value {
+  color: #6b7280;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.question-bank-management .stat-more {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+}
+
+/* Question Bank Form Container */
+.question-bank-management .form-container {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  padding: 2rem;
+  margin-top: 2rem;
+}
+
+/* Animations */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .question-bank-management {
+    padding: 1rem;
+  }
+  
+  .question-bank-management h1 {
+    font-size: 1.75rem;
+  }
+  
+  .question-bank-management .header-description {
+    font-size: 1rem;
+  }
+  
+  .question-bank-management .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .question-bank-management .stat-card {
+    padding: 1rem;
+  }
+  
+  .question-bank-management .stat-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.25rem;
+  }
+  
+  .question-bank-management .stat-number {
+    font-size: 1.25rem;
+  }
+  
+  .question-bank-management .form-container {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .question-bank-management {
+    padding: 0.5rem;
+  }
+  
+  .question-bank-management .stat-card-header {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .question-bank-management .stat-icon {
+    margin-right: 0;
+    margin-bottom: 0.5rem;
+  }
+}

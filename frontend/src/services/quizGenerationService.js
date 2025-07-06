@@ -23,7 +23,7 @@ const retryApiCall = async (apiCall, retries = RETRY_CONFIG.maxRetries) => {
 // Helper function to validate quiz generation criteria
 const validateCriteria = (criteria) => {
   const requiredFields = ['domain', 'subject', 'source', 'game_format', 'difficulty_level', 'num_questions'];
-  const missing = requiredFields.filter(field => !criteria[field]);
+  const missing = requiredFields.filter(field => !criteria[field] || criteria[field] === '');
   
   if (missing.length > 0) {
     throw new Error(`Missing required fields: ${missing.join(', ')}`);
