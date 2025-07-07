@@ -19,7 +19,7 @@ const QuizGeneratorForm = () => {
     subject: '',
     source: '',
     difficulty_level: 'Medium',
-    game_format: 'traditional',
+    game_format: 'hangman', // Default to hangman since traditional is removed
     num_questions: 10
   });
 
@@ -45,12 +45,12 @@ const QuizGeneratorForm = () => {
 
   // Game format definitions
   const gameFormats = [
-    {
-      id: 'traditional',
-      name: 'Traditional Quiz',
-      description: 'Standard question and answer format',
-      icon: '📝'
-    },
+    // {
+    //   id: 'traditional',
+    //   name: 'Traditional Quiz',
+    //   description: 'Standard question and answer format',
+    //   icon: '📝'
+    // },
     {
       id: 'hangman',
       name: 'Hangman',
@@ -68,13 +68,14 @@ const QuizGeneratorForm = () => {
       name: 'Word Ladder',
       description: 'Climb the ladder with correct answers',
       icon: '🪜'
-    },
-    {
-      id: 'memory_grid',
-      name: 'Memory Grid',
-      description: 'Memory-based question challenge',
-      icon: '🧩'
     }
+    // ,
+    // {
+    //   id: 'memory_grid',
+    //   name: 'Memory Grid',
+    //   description: 'Memory-based question challenge',
+    //   icon: '🧩'
+    // }
   ];
 
   // Difficulty levels
@@ -248,7 +249,7 @@ const QuizGeneratorForm = () => {
 
   // Navigate to appropriate game component
   const navigateToGame = (quiz) => {
-    const gameFormat = quiz.game_format || 'traditional';
+    const gameFormat = quiz.game_format || 'hangman'; // Default to hangman instead of traditional
     
     switch (gameFormat) {
       case 'hangman':
@@ -263,8 +264,13 @@ const QuizGeneratorForm = () => {
       case 'memory_grid':
         navigate(`/games/memory-grid/${quiz.id}`);
         break;
+      case 'traditional':
+        // If traditional is somehow returned, redirect to hangman instead
+        navigate(`/games/hangman/${quiz.id}`);
+        break;
       default:
-        navigate(`/quiz/${quiz.id}`);
+        // Default to hangman for any unknown game format
+        navigate(`/games/hangman/${quiz.id}`);
     }
   };
 

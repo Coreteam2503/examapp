@@ -10,33 +10,84 @@ class Question {
     return db('questions').insert(questionsData);
   }
 
-  // New: Bulk create with transaction support
+  // New: Bulk create with duplicate detection
   static async bulkCreate(questionsData) {
     try {
-      console.log(`🔄 [Question Model] Inserting ${questionsData.length} questions`);
+      console.log(`🔄 [Question Model] Processing ${questionsData.length} questions for bulk creation`);
       
-      const insertedIds = await db('questions').insert(questionsData);
+      // Step 1: Get all existing question texts from database
+      const existingQuestions = await db('questions').select('question_text');
+      const existingTexts = new Set(existingQuestions.map(q => q.question_text.trim()));
       
-      console.log(`📊 [Question Model] Insert returned:`, insertedIds);
+      console.log(`📊 [Question Model] Found ${existingTexts.size} existing questions in database`);
       
-      // Return the created questions
-      if (insertedIds.length > 0) {
-        // For SQLite, insertedIds contains the actual IDs
-        // Get all questions that were just inserted
-        const minId = Math.min(...insertedIds);
-        const maxId = Math.max(...insertedIds);
+      // Step 2: Filter out duplicates from incoming questions
+      const uniqueQuestions = [];
+      const duplicateQuestions = [];
+      const seenInBatch = new Set();
+      
+      questionsData.forEach((question, index) => {
+        const questionText = question.question_text.trim();
         
-        const createdQuestions = await db('questions')
-          .whereBetween('id', [minId, maxId])
-          .orderBy('id');
+        // Check if question exists in database or already seen in this batch
+        if (existingTexts.has(questionText)) {
+          duplicateQuestions.push({
+            index: index + 1,
+            question_text: questionText.substring(0, 100) + '...',
+            reason: 'exists_in_database'
+          });
+        } else if (seenInBatch.has(questionText)) {
+          duplicateQuestions.push({
+            index: index + 1,
+            question_text: questionText.substring(0, 100) + '...',
+            reason: 'duplicate_in_batch'
+          });
+        } else {
+          uniqueQuestions.push(question);
+          seenInBatch.add(questionText);
+        }
+      });
+      
+      console.log(`📊 [Question Model] Filtered results: ${uniqueQuestions.length} unique, ${duplicateQuestions.length} duplicates`);
+      
+      // Step 3: Insert only unique questions
+      let createdQuestions = [];
+      let insertedIds = [];
+      
+      if (uniqueQuestions.length > 0) {
+        console.log(`🔄 [Question Model] Inserting ${uniqueQuestions.length} unique questions`);
+        insertedIds = await db('questions').insert(uniqueQuestions);
         
-        console.log(`✅ [Question Model] Retrieved ${createdQuestions.length} created questions (IDs: ${minId}-${maxId})`);
-        
-        return createdQuestions;
+        // Get the created questions
+        if (insertedIds.length > 0) {
+          const minId = Math.min(...insertedIds);
+          const maxId = Math.max(...insertedIds);
+          
+          createdQuestions = await db('questions')
+            .whereBetween('id', [minId, maxId])
+            .orderBy('id');
+          
+          console.log(`✅ [Question Model] Successfully created ${createdQuestions.length} questions (IDs: ${minId}-${maxId})`);
+        }
+      } else {
+        console.log(`⚠️ [Question Model] No unique questions to insert - all were duplicates`);
       }
-      return [];
+      
+      // Step 4: Return detailed result
+      const result = {
+        created_questions: createdQuestions,
+        created_count: createdQuestions.length,
+        duplicate_count: duplicateQuestions.length,
+        total_processed: questionsData.length,
+        duplicates: duplicateQuestions
+      };
+      
+      console.log(`📊 [Question Model] Bulk create summary: ${result.created_count} created, ${result.duplicate_count} duplicates`);
+      
+      return result;
+      
     } catch (error) {
-      console.error('Bulk create error:', error);
+      console.error('❌ [Question Model] Bulk create error:', error);
       throw error;
     }
   }

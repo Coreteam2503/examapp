@@ -24,17 +24,26 @@ class QuestionController {
       
       console.log(`📝 [QuestionController] Creating ${validatedData.questions.length} questions`);
       
-      // Bulk insert questions
-      const createdQuestions = await Question.bulkCreate(validatedData.questions);
+      // Bulk insert questions with duplicate detection
+      const result = await Question.bulkCreate(validatedData.questions);
       
-      console.log(`✅ [QuestionController] Successfully created ${createdQuestions.length} questions`);
+      console.log(`✅ [QuestionController] Bulk create completed: ${result.created_count} created, ${result.duplicate_count} duplicates`);
       
-      res.status(201).json({
+      // Prepare response based on results
+      const statusCode = result.created_count > 0 ? 201 : 200;
+      const message = result.duplicate_count > 0 
+        ? `Created ${result.created_count} questions, skipped ${result.duplicate_count} duplicates`
+        : `Successfully created ${result.created_count} questions`;
+      
+      res.status(statusCode).json({
         success: true,
-        message: `Successfully created ${createdQuestions.length} questions`,
+        message: message,
         data: {
-          questions: createdQuestions,
-          count: createdQuestions.length
+          questions: result.created_questions,
+          created_count: result.created_count,
+          duplicate_count: result.duplicate_count,
+          total_processed: result.total_processed,
+          duplicates: result.duplicates
         }
       });
       

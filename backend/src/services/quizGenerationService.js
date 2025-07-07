@@ -18,7 +18,7 @@ class QuizGenerationService {
       ).optional(),
       game_format: Joi.string().valid(
         'traditional', 'hangman', 'knowledge_tower', 'word_ladder', 'memory_grid'
-      ).default('traditional'),
+      ).default('hangman'), // Default to hangman instead of traditional
       num_questions: Joi.number().integer().min(1).max(50).default(10),
       randomSeed: Joi.number().optional(),
       excludeQuestionIds: Joi.array().items(Joi.number().integer()).default([])
@@ -63,6 +63,12 @@ class QuizGenerationService {
 
     if (error) {
       throw new QuizGenerationError('Invalid criteria', error.details);
+    }
+
+    // Convert deprecated game formats to hangman
+    if (value.game_format === 'traditional' || value.game_format === 'memory_grid') {
+      console.log(`🔄 [QuizGenerationService] Converting deprecated game format '${value.game_format}' to 'hangman'`);
+      value.game_format = 'hangman';
     }
 
     return value;
