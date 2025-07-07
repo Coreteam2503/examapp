@@ -145,7 +145,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 2500; /* Increased to be above tower game elements */
   animation: modalFadeIn 0.3s ease-out;
 }
 

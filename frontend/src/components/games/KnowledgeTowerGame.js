@@ -280,13 +280,15 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
       </div>
 
       {showExitConfirmation && (
-        <div className="exit-confirmation-modal">
-          <div className="modal-content">
-            <h3>Exit Game?</h3>
-            <p>Are you sure you want to exit? Your progress will be lost.</p>
-            <div className="modal-actions">
-              <button onClick={() => setShowExitConfirmation(false)}>Cancel</button>
-              <button onClick={() => window.history.back()}>Exit</button>
+        <div className="exit-confirmation-overlay">
+          <div className="exit-confirmation-modal">
+            <div className="modal-content">
+              <h3>Exit Game?</h3>
+              <p>Are you sure you want to exit? Your progress will be lost.</p>
+              <div className="modal-actions">
+                <button onClick={() => setShowExitConfirmation(false)}>Cancel</button>
+                <button onClick={() => window.history.back()}>Exit</button>
+              </div>
             </div>
           </div>
         </div>

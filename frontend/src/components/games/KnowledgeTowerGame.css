@@ -206,6 +206,90 @@
   margin-top: 15px;
 }
 
+/* Exit Confirmation Modal Styles */
+.exit-confirmation-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000; /* Higher than result modal to prevent conflicts */
+  backdrop-filter: blur(5px);
+}
+
+.exit-confirmation-modal {
+  background: white;
+  padding: 2rem;
+  border-radius: 16px;
+  max-width: 500px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  transform: scale(1);
+  animation: modalAppear 0.3s ease;
+}
+
+.exit-confirmation-modal h3 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.exit-confirmation-modal p {
+  color: #7f8c8d;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.modal-actions button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-actions button:first-child {
+  background: #95a5a6;
+  color: white;
+}
+
+.modal-actions button:first-child:hover {
+  background: #7f8c8d;
+}
+
+.modal-actions button:last-child {
+  background: #e74c3c;
+  color: white;
+}
+
+.modal-actions button:last-child:hover {
+  background: #c0392b;
+}
+
+@keyframes modalAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 /* Game Content */
 .game-content {
   display: grid;
@@ -213,12 +297,14 @@
   gap: 40px;
   margin-bottom: 30px;
   align-items: start;
+  justify-content: center; /* Center the entire grid */
+  max-width: 1000px; /* Limit max width for better centering */
+  margin: 0 auto 30px auto; /* Center horizontally */
 }
 
 /* Tower Section */
 .tower-section {
-  position: sticky;
-  top: 20px;
+  /* Removed sticky positioning to prevent modal overlap issues */
 }
 
 .tower-container {
@@ -233,7 +319,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  z-index: 2;
+  /* Removed problematic z-index to prevent modal interference */
 }
 
 .tower-level {
@@ -781,13 +867,24 @@
 /* Responsive Design */
 @media (max-width: 968px) {
   .game-content {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 20px;
+    align-items: center; /* Center content on mobile */
+    max-width: 100%; /* Full width on mobile */
   }
   
   .tower-section {
-    position: static;
-    order: 2;
+    order: 1; /* Tower goes to top on mobile, like hangman */
+    margin-bottom: 20px;
+    width: 100%; /* Full width for tower section */
+    display: flex;
+    justify-content: center; /* Center tower within its section */
+  }
+  
+  .question-area {
+    order: 2; /* Questions go below on mobile */
+    width: 100%; /* Full width for question area */
   }
   
   .tower-container {

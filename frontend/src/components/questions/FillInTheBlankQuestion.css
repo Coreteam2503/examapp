@@ -37,7 +37,7 @@
   padding: 8px 12px;
   font-size: 16px;
   font-weight: 500;
-  color: #2d3748;
+  color: #2d3748 !important;
   background: #f7fafc;
   border: 2px solid #cbd5e0;
   border-radius: 6px;
