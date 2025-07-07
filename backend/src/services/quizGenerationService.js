@@ -1,5 +1,6 @@
-const Question = require('../models/Question');
 const Quiz = require('../models/Quiz');
+const Question = require('../models/Question');
+const { db } = require('../config/database');
 const Joi = require('joi');
 
 class QuizGenerationService {
@@ -28,7 +29,7 @@ class QuizGenerationService {
    * Get or create system upload ID for dynamic quizzes
    */
   async _getSystemUploadId() {
-    const systemUpload = await Question.constructor.knex('uploads')
+    const systemUpload = await db('uploads')
       .where('filename', 'SYSTEM_DYNAMIC_QUIZ')
       .first();
     
@@ -37,7 +38,7 @@ class QuizGenerationService {
     }
     
     // If not found, create it
-    const [uploadId] = await Question.constructor.knex('uploads').insert({
+    const [uploadId] = await db('uploads').insert({
       user_id: 1,
       filename: 'SYSTEM_DYNAMIC_QUIZ',
       original_name: 'Dynamic Quiz Generation System',
@@ -142,18 +143,21 @@ class QuizGenerationService {
     const quiz = await Quiz.create(quizData);
     console.log(`🎉 [QuizGenerationService] Created quiz with ID: ${quiz.id}`);
     
-    // Create questions linked to this quiz
-    const questionsForQuiz = selectedQuestions.map((question, index) => ({
-      ...question,
-      id: undefined, // Let database assign new IDs
+    console.log('🔍 DEBUG - About to create junction table associations (NOT copying questions)');
+    
+    // Instead of copying questions, create associations in junction table
+    const quizQuestionAssociations = selectedQuestions.map((question, index) => ({
       quiz_id: quiz.id,
+      question_id: question.id,
       question_number: index + 1,
       created_at: new Date(),
       updated_at: new Date()
     }));
     
-    await Question.bulkCreate(questionsForQuiz);
-    console.log(`📝 [QuizGenerationService] Created ${questionsForQuiz.length} questions for quiz`);
+    console.log('🔍 DEBUG - Junction table associations:', quizQuestionAssociations);
+    
+    await db('quiz_questions').insert(quizQuestionAssociations);
+    console.log(`📝 [QuizGenerationService] Associated ${selectedQuestions.length} questions with quiz ${quiz.id}`);
     
     // Format response for frontend
     const formattedQuiz = await this._formatQuizForFrontend(quiz, selectedQuestions);
@@ -365,7 +369,7 @@ class QuizGenerationService {
       question_number: index + 1,
       type: q.type,
       question_text: q.question_text,
-      options: q.options ? JSON.parse(q.options) : null,
+      options: q.options ? this._parseOptionsField(q.options) : null,
       correct_answer: q.correct_answer,
       explanation: q.explanation,
       hint: q.hint,
@@ -392,6 +396,24 @@ class QuizGenerationService {
         criteria_used: this._sanitizeCriteria(quiz.metadata)
       }
     };
+  }
+
+  /**
+   * Safely parse options field - handles both JSON and plain text formats
+   */
+  _parseOptionsField(options) {
+    if (!options) return null;
+    
+    // If it's already an object/array, return as is
+    if (typeof options !== 'string') return options;
+    
+    // Try to parse as JSON first (for older questions)
+    try {
+      return JSON.parse(options);
+    } catch (e) {
+      // If JSON parsing fails, return as plain text string (new format)
+      return options;
+    }
   }
 
   /**

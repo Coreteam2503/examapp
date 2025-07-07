@@ -43,8 +43,15 @@ const QuizManager = ({ onQuizCompleted }) => {
       const scores = {};
       
       // Get user's attempts for all quizzes
-      const attemptsResponse = await apiService.quizAttempts.list({ limit: 100 });
-      const attempts = attemptsResponse.data.attempts || [];
+      // TODO: Quiz attempts endpoint doesn't exist yet, skip for now
+      console.log('⚠️ Quiz attempts functionality disabled - endpoint not implemented');
+      const attempts = [];
+      
+      // DEBUG: Log the response structure
+      // console.log('🔍 DEBUG - attemptsResponse:', attemptsResponse);
+      // console.log('🔍 DEBUG - attemptsResponse.data:', attemptsResponse?.data);
+      
+      // const attempts = attemptsResponse?.data?.attempts || attemptsResponse?.data?.list || attemptsResponse?.attempts || [];
       
       console.log('📊 Found', attempts.length, 'total attempts');
       
@@ -132,6 +139,21 @@ const QuizManager = ({ onQuizCompleted }) => {
           gameFormat: results.gameFormat
         });
         
+        // DEBUG: Log submission data before calling service
+        console.log('🔍 DEBUG - About to submit quiz attempt with data:', {
+          quizId: selectedQuiz.id,
+          answers: results.answers,
+          timeElapsed: results.timeElapsed,
+          selectedQuiz: selectedQuiz,
+          gameData: {
+            gameFormat: results.gameFormat,
+            gameResults: results.gameResults,
+            score: gameScore,
+            correctAnswers: correctAnswers,
+            totalQuestions: totalQuestions
+          }
+        });
+
         // Submit quiz attempt to backend with game-specific data
         const response = await quizService.submitQuizAttempt(
           selectedQuiz.id,

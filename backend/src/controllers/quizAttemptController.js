@@ -32,10 +32,12 @@ class QuizAttemptController {
         return res.status(404).json({ error: 'Quiz not found' });
       }
 
-      // Get quiz questions (handle game formats specially)
-      let questions = await knex('questions')
-        .where('quiz_id', quizId)
-        .orderBy('question_number');
+      // Get quiz questions using junction table
+      let questions = await knex('quiz_questions')
+        .join('questions', 'quiz_questions.question_id', 'questions.id')
+        .where('quiz_questions.quiz_id', quizId)
+        .select('questions.*', 'quiz_questions.question_number')
+        .orderBy('quiz_questions.question_number');
 
       console.log(`📊 Quiz submission debug:`, {
         questionsFound: questions.length,

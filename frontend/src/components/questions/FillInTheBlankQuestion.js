@@ -1,32 +1,65 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import './FillInTheBlankQuestion.css';
 
-// Parse the question text to find blanks (marked with ___BLANK_N___)
+// Parse the question text to find blanks (marked with ___BLANK_N___ or generic _____)
 const parseQuestionText = (text) => {
   const parts = [];
-  const blankRegex = /___BLANK_(\d+)___/g;
+  let blanks = [];
+  
+  // First try the numbered format ___BLANK_N___
+  const numberedBlankRegex = /___BLANK_(\d+)___/g;
   let lastIndex = 0;
   let match;
-  const blanks = [];
+  let blankCount = 0;
 
-  while ((match = blankRegex.exec(text)) !== null) {
-    // Add text before the blank
-    if (match.index > lastIndex) {
+  // Check if we have numbered blanks
+  const numberedMatches = text.match(numberedBlankRegex);
+  
+  if (numberedMatches && numberedMatches.length > 0) {
+    // Use numbered blank format
+    while ((match = numberedBlankRegex.exec(text)) !== null) {
+      // Add text before the blank
+      if (match.index > lastIndex) {
+        parts.push({
+          type: 'text',
+          content: text.slice(lastIndex, match.index)
+        });
+      }
+
+      // Add the blank
+      const blankNumber = parseInt(match[1]);
       parts.push({
-        type: 'text',
-        content: text.slice(lastIndex, match.index)
+        type: 'blank',
+        number: blankNumber
       });
+      blanks.push(blankNumber);
+
+      lastIndex = match.index + match[0].length;
     }
+  } else {
+    // Use generic blank format _____ or ______
+    const genericBlankRegex = /_{3,}/g;
+    blankCount = 1;
+    
+    while ((match = genericBlankRegex.exec(text)) !== null) {
+      // Add text before the blank
+      if (match.index > lastIndex) {
+        parts.push({
+          type: 'text',
+          content: text.slice(lastIndex, match.index)
+        });
+      }
 
-    // Add the blank
-    const blankNumber = parseInt(match[1]);
-    parts.push({
-      type: 'blank',
-      number: blankNumber
-    });
-    blanks.push(blankNumber);
+      // Add the blank with auto-incrementing number
+      parts.push({
+        type: 'blank',
+        number: blankCount
+      });
+      blanks.push(blankCount);
+      blankCount++;
 
-    lastIndex = match.index + match[0].length;
+      lastIndex = match.index + match[0].length;
+    }
   }
 
   // Add remaining text
@@ -37,6 +70,7 @@ const parseQuestionText = (text) => {
     });
   }
 
+  console.log('🔍 DEBUG - parseQuestionText result:', { parts, blanks, originalText: text });
   return { parts, blanks };
 };
 
@@ -44,11 +78,25 @@ const FillInTheBlankQuestion = ({ question, onAnswer, disabled = false, showCorr
   const [answers, setAnswers] = useState({});
   const [isAnswered, setIsAnswered] = useState(false);
 
+  // Debug logging for question data
+  console.log('🔍 DEBUG - FillInTheBlankQuestion rendered with:', {
+    question,
+    questionId: question?.id,
+    questionText: question?.text,
+    questionQuestion: question?.question,
+    questionFormattedText: question?.formatted_text,
+    questionQuestionText: question?.question_text,
+    questionBlanks: question?.blanks
+  });
+
   // Memoize the parsed question to avoid re-parsing on every render
   const { parts, blanks } = useMemo(() => {
     // Try different possible text fields (normalized format uses 'text' but fallback to 'question')
     const questionText = question.text || question.question_text || question.formatted_text || question.question || '';
-    return parseQuestionText(questionText);
+    console.log('🔍 DEBUG - Parsing question text:', questionText);
+    const result = parseQuestionText(questionText);
+    console.log('🔍 DEBUG - Parsed result:', result);
+    return result;
   }, [question.text, question.formatted_text, question.question_text, question.question]);
 
   // Initialize answers only when question ID changes
@@ -57,16 +105,19 @@ const FillInTheBlankQuestion = ({ question, onAnswer, disabled = false, showCorr
     blanks.forEach(blankNum => {
       initialAnswers[blankNum] = '';
     });
+    console.log('🔍 DEBUG - Initializing answers for question', question.id, ':', initialAnswers);
     setAnswers(initialAnswers);
     setIsAnswered(false);
   }, [question.id, blanks.join(',')]); // Use blanks.join(',') as dependency
 
   const handleInputChange = (blankNumber, value) => {
+    console.log(`🔍 DEBUG - Input change for blank ${blankNumber}:`, value);
     const newAnswers = {
       ...answers,
       [blankNumber]: value
     };
     setAnswers(newAnswers);
+    console.log('🔍 DEBUG - Updated answers:', newAnswers);
 
     // Don't auto-submit on every keystroke - wait for explicit submission
     // Only update if all blanks are filled to prevent premature submission
@@ -79,6 +130,7 @@ const FillInTheBlankQuestion = ({ question, onAnswer, disabled = false, showCorr
 
   const handleSubmit = () => {
     // Only submit when user explicitly submits
+    console.log('🔍 DEBUG - Submitting fill-in-blank answers:', answers);
     onAnswer(answers);
   };
 
@@ -176,6 +228,15 @@ const FillInTheBlankQuestion = ({ question, onAnswer, disabled = false, showCorr
                   disabled={disabled}
                   placeholder={`Blank ${part.number}`}
                   autoComplete="off"
+                  style={{
+                    minWidth: '100px',
+                    padding: '4px 8px',
+                    border: '2px solid #007bff',
+                    borderRadius: '4px',
+                    fontSize: '16px',
+                    backgroundColor: 'white',
+                    display: 'inline-block'
+                  }}
                 />
                 {getBlankFeedback(part.number)}
               </span>

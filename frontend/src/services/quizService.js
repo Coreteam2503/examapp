@@ -106,6 +106,15 @@ const quizService = {
    */
   submitQuizAttempt: async (quizId, answers, timeElapsed, quiz = null, gameData = null) => {
     try {
+      // DEBUG: Log all input parameters
+      console.log('🔍 DEBUG - submitQuizAttempt called with:', {
+        quizId,
+        answers,
+        timeElapsed,
+        quiz: quiz ? { id: quiz.id, title: quiz.title, questionsCount: quiz.questions?.length } : null,
+        gameData
+      });
+
       // Normalize answers before submission if quiz data is available
       let normalizedAnswers = answers;
       if (quiz && quiz.questions) {
@@ -136,6 +145,10 @@ const quizService = {
         
         console.log('Submitting game format quiz attempt:', submissionData);
       }
+      
+      // DEBUG: Log final submission data before API call
+      console.log('🔍 DEBUG - Final submissionData before API call:', submissionData);
+      console.log('🔍 DEBUG - About to make POST request to /quiz-attempts');
       
       const response = await apiClient.post('/quiz-attempts', submissionData);
       return response.data;

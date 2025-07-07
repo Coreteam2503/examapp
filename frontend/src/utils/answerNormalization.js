@@ -62,7 +62,13 @@ export const normalizeTrueFalseAnswer = (answer) => {
  * @returns {Object} - Normalized user answers
  */
 export const normalizeFillBlankAnswers = (userAnswers, correctAnswers = {}) => {
+  console.log('🔍 DEBUG - normalizeFillBlankAnswers called with:', {
+    userAnswers,
+    correctAnswers
+  });
+  
   if (!userAnswers || typeof userAnswers !== 'object') {
+    console.log('🔍 DEBUG - Early return: invalid userAnswers');
     return userAnswers;
   }
   
@@ -70,7 +76,24 @@ export const normalizeFillBlankAnswers = (userAnswers, correctAnswers = {}) => {
   
   Object.keys(userAnswers).forEach(blankKey => {
     const userAnswer = userAnswers[blankKey];
-    const correctAnswersList = correctAnswers[blankKey] || [];
+    // Handle case where correctAnswers is null
+    const correctAnswersList = (correctAnswers && correctAnswers[blankKey]) ? correctAnswers[blankKey] : [];
+    
+    console.log(`🔍 DEBUG - Processing blank ${blankKey}:`, {
+      userAnswer,
+      correctAnswersList,
+      userAnswerType: typeof userAnswer,
+      isNull: userAnswer === null,
+      isUndefined: userAnswer === undefined,
+      correctAnswersIsNull: correctAnswers === null
+    });
+    
+    // Handle null or undefined user answers
+    if (userAnswer === null || userAnswer === undefined) {
+      console.log(`🔍 DEBUG - User answer is null/undefined for blank ${blankKey}, setting empty string`);
+      normalized[blankKey] = ''; // Convert null/undefined to empty string
+      return;
+    }
     
     // If no correct answers defined (null case), any answer should be acceptable
     if (!correctAnswersList || correctAnswersList.length === 0) {
@@ -233,7 +256,13 @@ export const normalizeAnswer = (answer, questionType, questionData = {}) => {
  * @returns {Object} - Normalized answers object
  */
 export const normalizeQuizAnswers = (answers, questions = []) => {
+  console.log('🔍 DEBUG - normalizeQuizAnswers called with:', {
+    answers,
+    questions: questions?.map(q => ({ id: q.id, type: q.type, title: q.title?.substring(0, 50) }))
+  });
+  
   if (!answers || typeof answers !== 'object') {
+    console.log('🔍 DEBUG - Early return: invalid answers object');
     return answers;
   }
   
@@ -249,26 +278,39 @@ export const normalizeQuizAnswers = (answers, questions = []) => {
     const answerData = answers[questionId];
     const question = questionMap[questionId];
     
+    console.log(`🔍 DEBUG - Processing question ${questionId}:`, {
+      answerData,
+      question: question ? { id: question.id, type: question.type } : 'NOT_FOUND'
+    });
+    
     if (!question) {
       // If we don't have question data, keep original answer
+      console.log(`🔍 DEBUG - No question data found for ${questionId}, keeping original answer`);
       normalizedAnswers[questionId] = answerData;
       return;
     }
     
     if (answerData && typeof answerData === 'object' && answerData.answer !== undefined) {
       // Answer is wrapped in an object with additional data
+      console.log(`🔍 DEBUG - Normalizing wrapped answer for ${questionId}`);
+      const normalizedAnswer = normalizeAnswer(answerData.answer, question.type, question);
       normalizedAnswers[questionId] = {
         ...answerData,
-        answer: normalizeAnswer(answerData.answer, question.type, question)
+        answer: normalizedAnswer
       };
+      console.log(`🔍 DEBUG - Wrapped result for ${questionId}:`, normalizedAnswers[questionId]);
     } else {
       // Answer is the raw value
+      console.log(`🔍 DEBUG - Normalizing raw answer for ${questionId}`);
+      const normalizedAnswer = normalizeAnswer(answerData, question.type, question);
       normalizedAnswers[questionId] = {
-        answer: normalizeAnswer(answerData, question.type, question),
+        answer: normalizedAnswer,
         timeSpent: 0 // Default time spent
       };
+      console.log(`🔍 DEBUG - Raw result for ${questionId}:`, normalizedAnswers[questionId]);
     }
   });
   
+  console.log('🔍 DEBUG - Final normalized answers:', normalizedAnswers);
   return normalizedAnswers;
 };

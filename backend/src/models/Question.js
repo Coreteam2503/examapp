@@ -41,7 +41,7 @@ class Question {
     }
   }
 
-  // New: Advanced search with filters
+  // New: Advanced search with filters (simplified, no duplicate prevention for now)
   static async searchWithFilters(filters = {}, options = {}) {
     let query = db('questions').select('*');
     
@@ -74,6 +74,9 @@ class Question {
       query = query.where('weightage', filters.weightage);
     }
     
+    // Note: All questions are now available in the question bank
+    // Quiz associations are managed via the quiz_questions junction table
+    
     if (filters.search) {
       query = query.where(function() {
         this.where('question_text', 'like', `%${filters.search}%`)
@@ -96,7 +99,11 @@ class Question {
       }
     }
     
-    return query;
+    console.log('🔍 [Question Model] Executing simplified search');
+    const results = await query;
+    console.log(`✅ [Question Model] Found ${results.length} questions`);
+    
+    return results;
   }
 
   // New: Get statistics for question bank
@@ -163,9 +170,11 @@ class Question {
   }
 
   static async findByQuizId(quizId) {
-    return db('questions')
-      .where({ quiz_id: quizId })
-      .orderBy('order_index', 'asc');
+    return db('quiz_questions')
+      .join('questions', 'quiz_questions.question_id', 'questions.id')
+      .where('quiz_questions.quiz_id', quizId)
+      .select('questions.*', 'quiz_questions.question_number')
+      .orderBy('quiz_questions.question_number', 'asc');
   }
 
   static async update(id, questionData) {
@@ -177,14 +186,15 @@ class Question {
     return db('questions').where({ id }).del();
   }
 
-  static async deleteByQuizId(quizId) {
-    return db('questions').where({ quiz_id: quizId }).del();
+  static async deleteAssociationsByQuizId(quizId) {
+    // Delete quiz-question associations (not the questions themselves)
+    return db('quiz_questions').where({ quiz_id: quizId }).del();
   }
 
   static async countByQuizId(quizId) {
-    const result = await db('questions')
+    const result = await db('quiz_questions')
       .where({ quiz_id: quizId })
-      .count('id as count')
+      .count('question_id as count')
       .first();
     return result.count;
   }

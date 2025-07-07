@@ -870,6 +870,24 @@ Generate diverse, creative questions that test different aspects of understandin
   }
 
   /**
+   * Generate simple fallback when no questions are available
+   */
+  getFallbackGameData(gameFormat, difficulty = 'medium', options = {}) {
+    console.log(`🔄 [getFallbackGameData] No questions available for ${gameFormat}`);
+    
+    return {
+      title: `${gameFormat} Game - No Questions Available`,
+      questions: [],
+      metadata: {
+        is_fallback: true,
+        game_format: gameFormat,
+        message: 'No questions available. Please add questions to the question bank.',
+        generated_at: new Date().toISOString()
+      }
+    };
+  }
+
+  /**
    * Get complete game data with questions
    */
   async getCompleteGameData(quizId, userId = null) {
@@ -938,12 +956,12 @@ Generate diverse, creative questions that test different aspects of understandin
       game_options: quiz.game_options ? JSON.parse(quiz.game_options) : {},
       questions: processedQuestions.map(question => ({
         ...question,
-        word_data: question.word_data ? (typeof question.word_data === 'string' ? JSON.parse(question.word_data) : question.word_data) : null,
-        pattern_data: question.pattern_data ? (typeof question.pattern_data === 'string' ? JSON.parse(question.pattern_data) : question.pattern_data) : null,
-        ladder_steps: question.ladder_steps ? (typeof question.ladder_steps === 'string' ? JSON.parse(question.ladder_steps) : question.ladder_steps) : null,
-        visual_data: question.visual_data ? (typeof question.visual_data === 'string' ? JSON.parse(question.visual_data) : question.visual_data) : null,
-        options: question.options ? (typeof question.options === 'string' ? JSON.parse(question.options) : question.options) : null,
-        concepts: question.concepts ? (typeof question.concepts === 'string' ? JSON.parse(question.concepts) : question.concepts) : []
+        word_data: this._parseTextField(question.word_data),
+        pattern_data: this._parseTextField(question.pattern_data),
+        ladder_steps: this._parseTextField(question.ladder_steps),
+        visual_data: this._parseTextField(question.visual_data),
+        options: this._parseOptionsField(question.options),
+        concepts: this._parseConceptsField(question.concepts)
       }))
     };
   }
@@ -968,6 +986,57 @@ Generate diverse, creative questions that test different aspects of understandin
     } catch (error) {
       console.error('Error fetching game:', error);
       res.status(500).json({ error: 'Failed to fetch game' });
+    }
+  }
+
+  /**
+   * Safely parse options field - handles both JSON and plain text formats
+   */
+  _parseOptionsField(options) {
+    if (!options) return null;
+    
+    // If it's already an object/array, return as is
+    if (typeof options !== 'string') return options;
+    
+    // Try to parse as JSON first (for older questions)
+    try {
+      return JSON.parse(options);
+    } catch (e) {
+      // If JSON parsing fails, return as plain text string (new format)
+      return options;
+    }
+  }
+
+  /**
+   * Safely parse concepts field - should always be valid JSON array
+   */
+  _parseConceptsField(concepts) {
+    if (!concepts) return [];
+    
+    if (typeof concepts !== 'string') return concepts;
+    
+    try {
+      return JSON.parse(concepts);
+    } catch (e) {
+      // If parsing fails, return empty array
+      return [];
+    }
+  }
+
+  /**
+   * Safely parse text fields that might be comma-separated or JSON
+   */
+  _parseTextField(field) {
+    if (!field) return null;
+    
+    if (typeof field !== 'string') return field;
+    
+    // Try JSON parsing first
+    try {
+      return JSON.parse(field);
+    } catch (e) {
+      // If JSON parsing fails, treat as plain text
+      return field;
     }
   }
 }

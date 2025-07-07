@@ -11,6 +11,7 @@ import {
   getRandomQuestions,
   injectMockData 
 } from './mockQuestions';
+import { normalizeQuestions } from '../utils/questionNormalizer';
 
 // Development flag to enable mock data (set to true for testing)
 export const USE_MOCK_DATA = process.env.NODE_ENV === 'development';
@@ -22,15 +23,25 @@ export const USE_MOCK_DATA = process.env.NODE_ENV === 'development';
  * @returns {Object} - Game data (original or mock)
  */
 export const withMockData = (gameData, gameType = 'all') => {
-  // If we have real data and not forcing mock, use real data
-  if (!USE_MOCK_DATA && gameData && gameData.questions && gameData.questions.length > 0) {
-    console.log('📡 Using real game data:', gameData);
-    return gameData;
+  // If we have real data, normalize it and use it
+  if (gameData && gameData.questions && gameData.questions.length > 0) {
+    console.log('📡 Using real game data, normalizing questions...', gameData);
+    
+    // Normalize backend questions to universal format
+    const normalizedQuestions = normalizeQuestions(gameData.questions);
+    
+    const normalizedGameData = {
+      ...gameData,
+      questions: normalizedQuestions
+    };
+    
+    console.log('✅ Game data normalized:', normalizedGameData);
+    return normalizedGameData;
   }
   
-  // Use mock data for development/testing
+  // Fallback to mock data for development/testing
   const mockData = injectMockData(gameType);
-  console.log(`🎭 Using mock data for ${gameType}:`, mockData);
+  console.log(`🎭 No backend data available, using mock data for ${gameType}:`, mockData);
   return mockData;
 };
 

@@ -51,6 +51,14 @@ export const normalizeQuestion = (rawQuestion) => {
       break;
     case 'ordering':
       normalized.items = extractOrderingItems(rawQuestion);
+      // Add correct sequence for ordering questions
+      if (rawQuestion.correct_order && typeof rawQuestion.correct_order === 'string') {
+        normalized.correct_sequence = rawQuestion.correct_order.split(',').map(item => item.trim());
+      } else if (rawQuestion.correctOrder && typeof rawQuestion.correctOrder === 'string') {
+        normalized.correct_sequence = rawQuestion.correctOrder.split(',').map(item => item.trim());
+      } else if (rawQuestion.correct_sequence && Array.isArray(rawQuestion.correct_sequence)) {
+        normalized.correct_sequence = rawQuestion.correct_sequence;
+      }
       break;
   }
 
@@ -69,7 +77,7 @@ const detectQuestionType = (question) => {
   }
 
   // Detect based on data structure
-  if (question.options && Array.isArray(question.options)) {
+  if (question.options && (Array.isArray(question.options) || typeof question.options === 'string')) {
     return 'mcq';
   }
   
@@ -77,7 +85,7 @@ const detectQuestionType = (question) => {
     return 'matching';
   }
   
-  if (question.items && Array.isArray(question.items)) {
+  if (question.items && (Array.isArray(question.items) || typeof question.items === 'string')) {
     return 'ordering';
   }
   
@@ -132,6 +140,8 @@ const normalizeQuestionType = (type) => {
     'ordering': 'ordering',
     'order': 'ordering',
     'sequence': 'ordering',
+    'drag_drop_order': 'ordering',  // Backend uses this
+    'drag-drop-order': 'ordering',
   };
 
   return typeMap[type.toLowerCase()] || type.toLowerCase();
@@ -144,8 +154,8 @@ const normalizeQuestionType = (type) => {
  */
 const extractQuestionText = (question) => {
   return question.question ||
+         question.question_text ||  // Backend uses question_text
          question.text ||
-         question.question_text ||
          question.prompt ||
          question.title ||
          'Question text not available';
@@ -186,6 +196,11 @@ const extractCorrectAnswer = (question) => {
 const extractMCQOptions = (question) => {
   if (question.options && Array.isArray(question.options)) {
     return question.options;
+  }
+
+  // Handle backend string format: "A) Option1\nB) Option2\nC) Option3\nD) Option4"
+  if (question.options && typeof question.options === 'string') {
+    return question.options.split('\n').filter(opt => opt.trim());
   }
 
   // Try to extract from ladder_steps for code analysis
@@ -234,6 +249,11 @@ const extractMatchingPairs = (question) => {
 const extractOrderingItems = (question) => {
   if (question.items && Array.isArray(question.items)) {
     return question.items;
+  }
+
+  // Handle backend string format: "Load documents,Split text,Create embeddings,Store in ChromaDB"
+  if (question.items && typeof question.items === 'string') {
+    return question.items.split(',').map(item => item.trim());
   }
 
   if (question.sequence && Array.isArray(question.sequence)) {

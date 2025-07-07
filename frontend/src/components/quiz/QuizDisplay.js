@@ -424,7 +424,15 @@ const QuizDisplay = ({ quiz, onQuizComplete, onAnswerChange }) => {
               />
             ) : (
               // Multiple choice questions
-              currentQuestion.options?.map((option, index) => (
+              // DEBUG: Log the options structure
+              console.log('🔍 DEBUG - currentQuestion.options:', {
+                options: currentQuestion.options,
+                type: typeof currentQuestion.options,
+                isArray: Array.isArray(currentQuestion.options),
+                question: currentQuestion
+              }),
+              
+              Array.isArray(currentQuestion.options) ? currentQuestion.options.map((option, index) => (
                 <div
                   key={index}
                   className={`option ${answers[currentQuestion.id]?.answer === option ? 'selected' : ''}`}
@@ -437,7 +445,13 @@ const QuizDisplay = ({ quiz, onQuizComplete, onAnswerChange }) => {
                     {option.replace(/^[A-D]\)\s*/, '')}
                   </div>
                 </div>
-              ))
+              )) : (
+                // Fallback for when options is not an array
+                <div className="option-error">
+                  <p>Error: Question options are not properly formatted</p>
+                  <p>Options data: {JSON.stringify(currentQuestion.options)}</p>
+                </div>
+              )
             )}
           </div>
         </div>

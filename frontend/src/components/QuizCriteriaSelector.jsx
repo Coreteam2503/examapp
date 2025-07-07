@@ -99,13 +99,18 @@ const QuizCriteriaSelector = ({
             </span>
             <div className="button-actions">
               {clearable && value && !disabled && !loading && (
-                <button
-                  onClick={handleClear}
+                <span
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleClear(e);
+                  }}
                   className="clear-button"
-                  type="button"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && handleClear(e)}
                 >
                   ×
-                </button>
+                </span>
               )}
               <ChevronDownIcon 
                 className={`chevron-icon ${isOpen ? 'open' : ''}`}

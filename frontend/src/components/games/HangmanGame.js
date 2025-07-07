@@ -1,14 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { QuestionWrapper } from '../questions';
-import { getComprehensiveTestData } from '../../data/mockDataHelper';
+import { withMockData } from '../../data/mockDataHelper';
 import './HangmanGame.css';
 
 const HangmanGame = ({ gameData, onGameComplete, onAnswerChange }) => {
-  // Use comprehensive test data for development testing (cached to prevent re-generation)
+  // Use real gameData from backend when available, fallback to test data
   const effectiveGameData = useMemo(() => {
-    return process.env.NODE_ENV === 'development' 
-      ? getComprehensiveTestData() 
-      : (gameData || getComprehensiveTestData());
+    return withMockData(gameData, 'hangman');
   }, [gameData]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [wrongAnswers, setWrongAnswers] = useState(0);

@@ -304,9 +304,7 @@ const QuizGeneratorForm = () => {
             {/* Subject Selector */}
             <QuizCriteriaSelector
               label="Subject"
-              options={options.subjects.filter(s => 
-                !criteria.domain || s.label.includes(criteria.domain)
-              )}
+              options={options.subjects}
               value={criteria.subject}
               onChange={(value) => handleCriteriaChange('subject', value)}
               placeholder="Select subject..."

@@ -398,16 +398,21 @@ class QuizController {
       await knex('questions').insert(questions);
       console.log(`✅ All questions saved successfully`);
       
-      // VERIFICATION: Check if questions were actually saved with correct data
-      console.log(`🔍 Verifying saved questions...`);
-      const savedQuestions = await knex('questions').where('quiz_id', quizId).select('*');
+      // VERIFICATION: Check if quiz-question associations were actually saved
+      console.log(`🔍 Verifying saved quiz-question associations...`);
+      const savedAssociations = await knex('quiz_questions')
+        .join('questions', 'quiz_questions.question_id', 'questions.id')
+        .where('quiz_questions.quiz_id', quizId)
+        .select('questions.*', 'quiz_questions.question_number')
+        .orderBy('quiz_questions.question_number');
+        
       console.log(`📊 Verification results:`, {
         expectedCount: questions.length,
-        actualCount: savedQuestions.length,
-        sampleQuestion: savedQuestions[0] ? {
-          id: savedQuestions[0].id,
-          type: savedQuestions[0].type,
-          question_text: savedQuestions[0].question_text?.substring(0, 50) + '...',
+        actualCount: savedAssociations.length,
+        sampleQuestion: savedAssociations[0] ? {
+          id: savedAssociations[0].id,
+          type: savedAssociations[0].type,
+          question_text: savedAssociations[0].question_text?.substring(0, 50) + '...',
           hasCorrectAnswer: !!savedQuestions[0].correct_answer,
           hasOptions: !!savedQuestions[0].options,
           hasExplanation: !!savedQuestions[0].explanation
@@ -564,8 +569,8 @@ class QuizController {
         // Delete attempts
         await trx('attempts').where('quiz_id', id).del();
 
-        // Delete questions
-        await trx('questions').where('quiz_id', id).del();
+        // Delete quiz-question associations (don't delete the questions themselves)
+        await trx('quiz_questions').where('quiz_id', id).del();
 
         // Delete quiz
         await trx('quizzes').where('id', id).del();
@@ -602,10 +607,12 @@ class QuizController {
       return null;
     }
 
-    // Get questions for this quiz
-    const questions = await knex('questions')
-      .where('quiz_id', quizId)
-      .orderBy('question_number');
+    // Get questions for this quiz using junction table
+    const questions = await knex('quiz_questions')
+      .join('questions', 'quiz_questions.question_id', 'questions.id')
+      .where('quiz_questions.quiz_id', quizId)
+      .select('questions.*', 'quiz_questions.question_number')
+      .orderBy('quiz_questions.question_number');
 
     console.log(`📋 [getCompleteQuizData] Quiz ${quizId} - Format: ${quiz.game_format || 'traditional'}, Questions count: ${questions.length}`);
     
@@ -636,17 +643,17 @@ class QuizController {
       game_options: quiz.game_options ? JSON.parse(quiz.game_options) : {},
       questions: questions.map(question => ({
         ...question,
-        options: question.options ? JSON.parse(question.options) : null,
-        concepts: JSON.parse(question.concepts || '[]'),
-        correctAnswers: question.correct_answers_data ? JSON.parse(question.correct_answers_data) : null,
-        pairs: question.pairs ? JSON.parse(question.pairs) : null,
-        items: question.items ? JSON.parse(question.items) : null,
-        correctOrder: question.correct_order ? JSON.parse(question.correct_order) : null,
+        options: question.options || null,
+        concepts: question.concepts ? (question.concepts.startsWith('[') ? JSON.parse(question.concepts) : []) : [],
+        correctAnswers: question.correct_answers_data || null,
+        pairs: question.pairs || null,
+        items: question.items || null,
+        correctOrder: question.correct_order || null,
         text: question.formatted_text || question.question_text,
         // Parse game-specific data safely
-        word_data: question.word_data ? (typeof question.word_data === 'string' ? JSON.parse(question.word_data) : question.word_data) : null,
-        pattern_data: question.pattern_data ? (typeof question.pattern_data === 'string' ? JSON.parse(question.pattern_data) : question.pattern_data) : null,
-        ladder_steps: question.ladder_steps ? (typeof question.ladder_steps === 'string' ? JSON.parse(question.ladder_steps) : question.ladder_steps) : null,
+        word_data: question.word_data || null,
+        pattern_data: question.pattern_data || null,
+        ladder_steps: question.ladder_steps || null,
         // Ensure consistent boolean handling for true/false questions
         correct_answer: question.type === 'true_false' && typeof question.correct_answer === 'string' 
           ? question.correct_answer === 'True' || question.correct_answer === 'true' || question.correct_answer === 'True'
@@ -703,6 +710,78 @@ class QuizController {
     };
     
     return typeMap[type] || type || 'multiple_choice';
+  }
+
+  /**
+   * Safely parse options field - handles both JSON and plain text formats
+   */
+  _parseOptionsField(options) {
+    if (!options) return null;
+    
+    // If it's already an object/array, return as is
+    if (typeof options !== 'string') return options;
+    
+    // Try to parse as JSON first (for older questions)
+    try {
+      return JSON.parse(options);
+    } catch (e) {
+      // If JSON parsing fails, return as plain text string (new format)
+      return options;
+    }
+  }
+
+  /**
+   * Safely parse concepts field - should always be valid JSON array
+   */
+  _parseConceptsField(concepts) {
+    if (!concepts) return [];
+    
+    if (typeof concepts !== 'string') return concepts;
+    
+    try {
+      return JSON.parse(concepts);
+    } catch (e) {
+      // If parsing fails, return empty array
+      return [];
+    }
+  }
+
+  /**
+   * Safely parse JSON fields that might contain actual JSON
+   */
+  _parseJsonField(field) {
+    if (!field) return null;
+    
+    if (typeof field !== 'string') return field;
+    
+    try {
+      return JSON.parse(field);
+    } catch (e) {
+      // If parsing fails, return null
+      return null;
+    }
+  }
+
+  /**
+   * Safely parse text fields that might be comma-separated or JSON
+   */
+  _parseTextField(field) {
+    if (!field) return null;
+    
+    if (typeof field !== 'string') return field;
+    
+    console.log(`🔧 [_parseTextField] Processing field: ${field.substring(0, 30)}...`);
+    
+    // Try JSON parsing first
+    try {
+      const result = JSON.parse(field);
+      console.log(`✅ [_parseTextField] Successfully parsed as JSON`);
+      return result;
+    } catch (e) {
+      console.log(`📝 [_parseTextField] JSON parsing failed, returning as plain text`);
+      // If JSON parsing fails, treat as plain text
+      return field;
+    }
   }
 }
 
