@@ -547,12 +547,12 @@ const QuizManager = ({ onQuizCompleted }) => {
         <div className="empty-state">
           <div className="empty-icon">📝</div>
           <h3>No quizzes yet</h3>
-          <p>Upload some files and generate quizzes to get started!</p>
+          <p>Generate your first quiz to get started!</p>
           <button 
-            onClick={() => window.location.href = '/uploads'} 
+            onClick={() => window.dispatchEvent(new CustomEvent('navigateToGenerate'))} 
             className="upload-btn"
           >
-            Upload Files
+            Generate Quiz
           </button>
         </div>
       ) : (

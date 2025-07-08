@@ -4,14 +4,6 @@ import './QuickActions.css';
 const QuickActions = ({ setActiveTab, user }) => {
   const quickActions = [
     {
-      icon: '📁',
-      title: 'Upload New File',
-      description: 'Add files to generate quizzes',
-      action: () => setActiveTab('upload'),
-      color: '#3498db',
-      enabled: true
-    },
-    {
       icon: '🧠',
       title: 'Take Random Quiz',
       description: 'Test your knowledge',
@@ -20,19 +12,19 @@ const QuickActions = ({ setActiveTab, user }) => {
       enabled: true
     },
     {
+      icon: '🎯',
+      title: 'Generate Quiz',
+      description: 'Create custom quiz',
+      action: () => setActiveTab('generate'),
+      color: '#3498db',
+      enabled: true
+    },
+    {
       icon: '📊',
       title: 'View Progress',
       description: 'Check your analytics',
       action: () => setActiveTab('analytics'),
       color: '#f39c12',
-      enabled: true
-    },
-    {
-      icon: '📋',
-      title: 'My Files',
-      description: 'Manage uploaded files',
-      action: () => setActiveTab('files'),
-      color: '#9b59b6',
       enabled: true
     }
   ];

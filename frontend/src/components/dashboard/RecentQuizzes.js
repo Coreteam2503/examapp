@@ -91,7 +91,7 @@ const RecentQuizzes = ({ onTakeQuiz, refreshTrigger }) => {
         <div className="empty-state">
           <span className="empty-icon">📝</span>
           <h4>No quizzes yet</h4>
-          <p>Upload a file and generate your first quiz!</p>
+          <p>Generate your first quiz to get started!</p>
           <button className="cta-btn" onClick={() => onTakeQuiz && onTakeQuiz()}>
             Get Started
           </button>

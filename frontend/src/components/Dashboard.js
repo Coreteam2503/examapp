@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth, useAuthDispatch, authActions } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import FileUpload from './FileUpload';
-import FileManager from './FileManager';
 import QuizManager from './quiz/QuizManager';
-import QuizGeneratorForm from './QuizGeneratorForm';
+import QuizGeneratorForm from './QuizGeneratorForm.jsx';
 import './Dashboard.css';
 
 // Import new dashboard components
@@ -17,7 +15,7 @@ const Dashboard = () => {
   const { user, isAuthenticated, loading } = useAuth();
   const dispatch = useAuthDispatch();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('quizzes'); // Changed default from 'overview' to 'quizzes'
+  const [activeTab, setActiveTab] = useState('quizzes'); // Default to quizzes tab
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dashboardRefreshTrigger, setDashboardRefreshTrigger] = useState(0);
 
@@ -37,27 +35,24 @@ const Dashboard = () => {
       setMobileMenuOpen(false);
     };
 
+    const handleNavigateToGenerate = () => {
+      console.log('Received navigateToGenerate event, switching to generate tab');
+      setActiveTab('generate');
+      setMobileMenuOpen(false);
+    };
+
     window.addEventListener('navigateToQuizzes', handleNavigateToQuizzes);
+    window.addEventListener('navigateToGenerate', handleNavigateToGenerate);
     
     return () => {
       window.removeEventListener('navigateToQuizzes', handleNavigateToQuizzes);
+      window.removeEventListener('navigateToGenerate', handleNavigateToGenerate);
     };
   }, []);
 
   const handleLogout = () => {
     authActions.logout(dispatch)();
     navigate('/login');
-  };
-
-  const handleUploadSuccess = (uploadedFiles) => {
-    // Refresh file manager if it's active
-    if (activeTab === 'files') {
-      // FileManager will handle the refresh
-      setActiveTab('files');
-    } else {
-      // Switch to files tab to show uploaded files
-      setActiveTab('files');
-    }
   };
 
   const handleTakeQuiz = (quizId = null) => {
@@ -145,18 +140,6 @@ const Dashboard = () => {
       <nav className={`dashboard-nav ${mobileMenuOpen ? 'mobile-open' : ''}`}>
         <div className="nav-content">
           <button 
-            className={`nav-btn ${activeTab === 'upload' ? 'active' : ''}`}
-            onClick={() => { setActiveTab('upload'); setMobileMenuOpen(false); }}
-          >
-            Upload Files
-          </button>
-          <button 
-            className={`nav-btn ${activeTab === 'files' ? 'active' : ''}`}
-            onClick={() => { setActiveTab('files'); setMobileMenuOpen(false); }}
-          >
-            My Files
-          </button>
-          <button 
             className={`nav-btn ${activeTab === 'quizzes' ? 'active' : ''}`}
             onClick={() => { setActiveTab('quizzes'); setMobileMenuOpen(false); }}
           >
@@ -173,26 +156,6 @@ const Dashboard = () => {
 
       <main className="dashboard-main">
         <div className="dashboard-content">
-          {activeTab === 'upload' && (
-            <div className="tab-content">
-              <div className="tab-header">
-                <h2>Upload Files</h2>
-                <p>Upload your code files, documents, or text files to generate quizzes.</p>
-              </div>
-              <FileUpload onUploadSuccess={handleUploadSuccess} />
-            </div>
-          )}
-
-          {activeTab === 'files' && (
-            <div className="tab-content">
-              <div className="tab-header">
-                <h2>File Manager</h2>
-                <p>View, manage, and generate quizzes from your uploaded files.</p>
-              </div>
-              <FileManager />
-            </div>
-          )}
-
           {activeTab === 'quizzes' && (
             <div className="tab-content">
               <div className="tab-header">
