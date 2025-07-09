@@ -4,7 +4,7 @@
   "description": "Backend for agentic mesh quiz application",
   "main": "src/server.js",
   "scripts": {
-    "start": "node src/server.js",
+    "start": "NODE_ENV=production node src/server.js",
     "start:production": "NODE_ENV=production node src/server.js",
     "dev": "nodemon src/server.js",
     "test": "jest",

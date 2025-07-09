@@ -24,11 +24,9 @@ error() { echo -e "${RED}[ERROR]${NC} $1"; }
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$SCRIPT_DIR"
 
-# Parse arguments
-COPY_DB="false"
-if [[ "$1" == "--first-deploy" ]]; then
-  COPY_DB="true"
-  log "First deployment - will copy database"
+# Parse arguments - keeping for future use if needed
+if [[ "$1" == "--verbose" ]]; then
+  log "Verbose mode enabled"
 fi
 
 log "Starting deployment to $REMOTE_USER@$REMOTE_HOST"
@@ -70,21 +68,7 @@ rsync -avz --delete \
   "$PROJECT_ROOT/frontend/build/" \
   "$REMOTE_USER@$REMOTE_HOST:$REMOTE_DIR/frontend/"
 
-# Copy database on first deploy
-if [[ "$COPY_DB" == "true" ]]; then
-  log "Copying database (first deploy)..."
-  if [[ -f "$PROJECT_ROOT/backend/data/quiz_app.db" ]]; then
-    ssh -i "$SSH_KEY" "$REMOTE_USER@$REMOTE_HOST" "mkdir -p $REMOTE_DIR/backend/data"
-    scp -i "$SSH_KEY" \
-      "$PROJECT_ROOT/backend/data/quiz_app.db" \
-      "$REMOTE_USER@$REMOTE_HOST:$REMOTE_DIR/backend/data/"
-    success "Database copied"
-  else
-    log "No local database found, will initialize on remote"
-  fi
-fi
-
-# Install dependencies, initialize DB, and start backend
+# Install dependencies and start backend
 log "Installing dependencies and starting backend..."
 ssh -i "$SSH_KEY" "$REMOTE_USER@$REMOTE_HOST" "
   cd $REMOTE_DIR/backend
@@ -94,12 +78,6 @@ ssh -i "$SSH_KEY" "$REMOTE_USER@$REMOTE_HOST" "
 
   # Install backend dependencies
   npm install --production
-
-  # Initialize database with a timeout to avoid hanging
-  if [[ -f init-db.js ]]; then
-    echo 'Running database initialization (with timeout)...'
-    timeout 15s node init-db.js || echo 'init-db.js finished or forcibly stopped'
-  fi
 
   # Start backend server in background
   nohup node src/server.js > ../logs/backend.log 2>&1 &
