@@ -1,14 +1,17 @@
 const { db } = require('../config/database');
+const { prepareQuestionForPostgres } = require('../utils/questionUtils');
 
 class Question {
   static async create(questionData) {
-    const result = await db('questions').insert(questionData).returning('id');
+    const preparedData = prepareQuestionForPostgres(questionData);
+    const result = await db('questions').insert(preparedData).returning('id');
     const id = Array.isArray(result) ? (result[0]?.id || result[0]) : result?.id || result;
     return this.findById(id);
   }
 
   static async createMultiple(questionsData) {
-    return db('questions').insert(questionsData);
+    const preparedData = questionsData.map(question => prepareQuestionForPostgres(question));
+    return db('questions').insert(preparedData);
   }
 
   // New: Bulk create with duplicate detection
@@ -44,7 +47,9 @@ class Question {
             reason: 'duplicate_in_batch'
           });
         } else {
-          uniqueQuestions.push(question);
+          // Process question data for PostgreSQL before adding to unique questions
+          const processedQuestion = prepareQuestionForPostgres(question);
+          uniqueQuestions.push(processedQuestion);
           seenInBatch.add(questionText);
         }
       });
@@ -57,7 +62,15 @@ class Question {
       
       if (uniqueQuestions.length > 0) {
         console.log(`🔄 [Question Model] Inserting ${uniqueQuestions.length} unique questions`);
-        insertedIds = await db('questions').insert(uniqueQuestions);
+        const insertResult = await db('questions').insert(uniqueQuestions).returning('id');
+        
+        // Handle PostgreSQL vs SQLite response format
+        insertedIds = insertResult.map(result => {
+          return Array.isArray(result) ? (result[0]?.id || result[0]) : result?.id || result;
+        });
+        
+        console.log(`📊 [Question Model] Insert result:`, insertResult);
+        console.log(`📊 [Question Model] Extracted IDs:`, insertedIds);
         
         // Get the created questions
         if (insertedIds.length > 0) {

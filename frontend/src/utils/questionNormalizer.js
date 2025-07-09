@@ -195,6 +195,11 @@ const extractCorrectAnswer = (question) => {
  */
 const extractMCQOptions = (question) => {
   if (question.options && Array.isArray(question.options)) {
+    // Handle array of objects format: [{key: "A", value: "Option text"}]
+    if (question.options.length > 0 && question.options[0] && typeof question.options[0] === 'object' && question.options[0].key && question.options[0].value) {
+      return question.options.map(opt => `${opt.key}) ${opt.value}`);
+    }
+    // Handle array of strings format: ["A) Option text", "B) Option text"]
     return question.options;
   }
 
@@ -229,6 +234,14 @@ const extractMCQOptions = (question) => {
  */
 const extractMatchingPairs = (question) => {
   if (question.pairs && Array.isArray(question.pairs)) {
+    // Handle array of objects with key/value format: [{key: "item", value: "description"}]
+    if (question.pairs.length > 0 && question.pairs[0] && typeof question.pairs[0] === 'object' && question.pairs[0].key && question.pairs[0].value) {
+      return question.pairs.map(pair => ({
+        left: pair.key,
+        right: pair.value
+      }));
+    }
+    // Handle array of objects with left/right format: [{left: "item", right: "description"}]
     return question.pairs;
   }
 

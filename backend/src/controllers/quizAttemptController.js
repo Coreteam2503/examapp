@@ -136,7 +136,7 @@ class QuizAttemptController {
       }
 
       // Create attempt record
-      const [attemptId] = await knex('attempts').insert({
+      const attemptResult = await knex('attempts').insert({
         user_id: userId,
         quiz_id: quizId,
         started_at: new Date(Date.now() - (timeElapsed * 1000)),
@@ -147,7 +147,10 @@ class QuizAttemptController {
         correct_answers: scoreData.correctAnswers,
         score_percentage: scoreData.scorePercentage,
         created_at: new Date()
-      });
+      }).returning('id');
+
+      // Handle PostgreSQL vs SQLite response format
+      const attemptId = Array.isArray(attemptResult) ? (attemptResult[0]?.id || attemptResult[0]) : attemptResult?.id || attemptResult;
       
       // HANGMAN DEBUG: Verify database save
       if (gameFormat === 'hangman' || (quiz.game_format === 'hangman')) {
