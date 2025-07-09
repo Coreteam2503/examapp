@@ -38,7 +38,7 @@ class QuizGenerationService {
     }
     
     // If not found, create it
-    const [uploadId] = await db('uploads').insert({
+    const result = await db('uploads').insert({
       user_id: 1,
       filename: 'SYSTEM_DYNAMIC_QUIZ',
       original_name: 'Dynamic Quiz Generation System',
@@ -51,7 +51,9 @@ class QuizGenerationService {
         purpose: 'Dynamic quiz generation from question bank'
       }),
       status: 'completed'
-    });
+    }).returning('id');
+    
+    const uploadId = Array.isArray(result) ? (result[0]?.id || result[0]) : result?.id || result;
     
     return uploadId;
   }
@@ -450,7 +452,7 @@ class QuizGenerationService {
     }
     
     // Create system upload if it doesn't exist
-    const [uploadId] = await db('uploads').insert({
+    const result = await db('uploads').insert({
       user_id: 1, // System user
       filename: 'dynamic-quiz-system.txt',
       original_name: 'Dynamic Quiz System',
@@ -462,7 +464,9 @@ class QuizGenerationService {
       status: 'completed',
       upload_date: Date.now(),
       processed_date: Date.now()
-    });
+    }).returning('id');
+    
+    const uploadId = Array.isArray(result) ? (result[0]?.id || result[0]) : result?.id || result;
     
     return uploadId;
   }

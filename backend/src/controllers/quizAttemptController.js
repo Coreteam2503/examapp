@@ -1,5 +1,6 @@
 const { db: knex } = require('../config/database');
 const PointsService = require('../services/points/PointsService');
+const { safeJsonParse } = require('../utils/jsonUtils');
 
 class QuizAttemptController {
   /**
@@ -829,11 +830,12 @@ class QuizAttemptController {
 
     try {
       // If correct answer is a JSON array, check against all possibilities
-      if (correctAnswer.startsWith('[') || correctAnswer.startsWith('{')) {
-        const correctAnswers = JSON.parse(correctAnswer);
-        if (Array.isArray(correctAnswers)) {
-          return this.isAnswerInList(userAnswer, correctAnswers);
-        }
+      const parsedCorrectAnswer = safeJsonParse(correctAnswer, correctAnswer);
+      if (Array.isArray(parsedCorrectAnswer)) {
+        return this.isAnswerInList(userAnswer, parsedCorrectAnswer);
+      } else if (typeof parsedCorrectAnswer === 'object' && parsedCorrectAnswer !== null) {
+        // Handle object case if needed
+        return this.isAnswerInList(userAnswer, [parsedCorrectAnswer]);
       }
     } catch (error) {
       // Not JSON, treat as single string

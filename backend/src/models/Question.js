@@ -2,7 +2,8 @@ const { db } = require('../config/database');
 
 class Question {
   static async create(questionData) {
-    const [id] = await db('questions').insert(questionData);
+    const result = await db('questions').insert(questionData).returning('id');
+    const id = Array.isArray(result) ? (result[0]?.id || result[0]) : result?.id || result;
     return this.findById(id);
   }
 

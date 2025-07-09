@@ -2,7 +2,8 @@ const { db } = require('../../config/database');
 
 class Role {
   static async create(roleData) {
-    const [id] = await db('roles').insert(roleData);
+    const result = await db('roles').insert(roleData).returning('id');
+    const id = Array.isArray(result) ? (result[0]?.id || result[0]) : result?.id || result;
     return this.findById(id);
   }
 

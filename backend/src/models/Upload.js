@@ -2,7 +2,8 @@ const { db } = require('../config/database');
 
 class Upload {
   static async create(uploadData) {
-    const [id] = await db('uploads').insert(uploadData);
+    const result = await db('uploads').insert(uploadData).returning('id');
+    const id = Array.isArray(result) ? (result[0]?.id || result[0]) : result?.id || result;
     return this.findById(id);
   }
 

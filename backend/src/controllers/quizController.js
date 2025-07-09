@@ -3,6 +3,7 @@ const { QuizGenerationService, QuizGenerationError } = require('../services/quiz
 const { db: knex } = require('../config/database');
 const fs = require('fs').promises;
 const path = require('path');
+const { safeJsonParse, safeCommaParse } = require('../utils/jsonUtils');
 
 class QuizController {
   constructor() {
@@ -476,7 +477,7 @@ class QuizController {
       res.json({
         quizzes: quizzes.map(quiz => ({
           ...quiz,
-          metadata: quiz.metadata ? JSON.parse(quiz.metadata) : {},
+          metadata: safeJsonParse(quiz.metadata, {}),
           // Ensure game_format is included and properly formatted
           game_format: quiz.game_format || 'traditional',
           is_game: quiz.game_format && quiz.game_format !== 'traditional'
@@ -639,16 +640,17 @@ class QuizController {
 
     return {
       ...quiz,
-      metadata: quiz.metadata ? JSON.parse(quiz.metadata) : {},
-      game_options: quiz.game_options ? JSON.parse(quiz.game_options) : {},
+      metadata: safeJsonParse(quiz.metadata, {}),
+      game_options: safeJsonParse(quiz.game_options, {}),
       questions: questions.map(question => ({
         ...question,
         options: question.options || null,
-        concepts: question.concepts ? (question.concepts.startsWith('[') ? JSON.parse(question.concepts) : []) : [],
+        concepts: safeJsonParse(question.concepts, []),
         correctAnswers: question.correct_answers_data || null,
-        pairs: question.pairs || null,
-        items: question.items || null,
-        correctOrder: question.correct_order || null,
+        pairs: safeJsonParse(question.pairs, null),
+        items: safeCommaParse(question.items, null),
+        correct_order: question.correct_order || null, // Keep original as string
+        correctOrder: safeCommaParse(question.correct_order, null), // Parse to array
         text: question.formatted_text || question.question_text,
         // Parse game-specific data safely
         word_data: question.word_data || null,

@@ -25,13 +25,28 @@ exports.up = function(knex) {
     .createTable('questions', table => {
       table.increments('id').primary();
       table.integer('quiz_id').notNullable();
-      table.enum('type', ['multiple_choice', 'fill_blank', 'true_false', 'matching']).defaultTo('multiple_choice');
-      table.text('content').notNullable();
+      table.integer('question_number');
+      table.enum('type', [
+        'multiple_choice', 
+        'fill_blank', 
+        'true_false', 
+        'matching',
+        'hangman',
+        'knowledge_tower',
+        'word_ladder',
+        'memory_grid'
+      ], { enumName: 'questions_type' }).defaultTo('multiple_choice');
+      table.text('question_text').notNullable();
+      table.text('code_snippet');
       table.json('options'); // For multiple choice, matching pairs, etc.
       table.text('correct_answer').notNullable();
       table.text('explanation');
+      table.string('difficulty');
+      table.json('concepts').defaultTo('[]');
       table.integer('points').defaultTo(1);
       table.integer('order_index').defaultTo(0);
+      table.timestamp('created_at').defaultTo(knex.fn.now());
+      table.timestamp('updated_at').defaultTo(knex.fn.now());
       
       // Foreign key
       table.foreign('quiz_id').references('id').inTable('quizzes').onDelete('CASCADE');

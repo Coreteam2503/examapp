@@ -2,7 +2,8 @@ const { db } = require('../../config/database');
 
 class Permission {
   static async create(permissionData) {
-    const [id] = await db('permissions').insert(permissionData);
+    const result = await db('permissions').insert(permissionData).returning('id');
+    const id = Array.isArray(result) ? (result[0]?.id || result[0]) : result?.id || result;
     return this.findById(id);
   }
 

@@ -2,7 +2,8 @@ const { db } = require('../config/database');
 
 class QuestionAnswer {
   static async create(answerData) {
-    const [id] = await db('question_answers').insert(answerData);
+    const result = await db('question_answers').insert(answerData).returning('id');
+    const id = Array.isArray(result) ? (result[0]?.id || result[0]) : result?.id || result;
     return this.findById(id);
   }
 
@@ -57,11 +58,12 @@ class QuestionAnswer {
         .update(answerData);
       return existing.id;
     } else {
-      const [id] = await db('question_answers').insert({
+      const result = await db('question_answers').insert({
         attempt_id: attemptId,
         question_id: questionId,
         ...answerData
-      });
+      }).returning('id');
+      const id = Array.isArray(result) ? (result[0]?.id || result[0]) : result?.id || result;
       return id;
     }
   }

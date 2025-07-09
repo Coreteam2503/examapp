@@ -11,11 +11,13 @@ class RolePermission {
       return existing;
     }
     
-    const [id] = await db('role_permissions').insert({
+    const result = await db('role_permissions').insert({
       role_id: roleId,
       permission_id: permissionId,
       created_at: new Date()
-    });
+    }).returning('id');
+    
+    const id = Array.isArray(result) ? (result[0]?.id || result[0]) : result?.id || result;
     
     return db('role_permissions').where({ id }).first();
   }
