@@ -58,6 +58,17 @@ rsync -avz --delete --exclude='node_modules' --exclude='data' \
   "$PROJECT_ROOT/backend/" \
   "$REMOTE_USER@$REMOTE_HOST:$REMOTE_DIR/backend/"
 
+# Copy .env file to ensure remote server uses correct configuration
+log "Copying environment configuration..."
+if [[ -f "$PROJECT_ROOT/backend/.env" ]]; then
+  scp -i "$SSH_KEY" \
+    "$PROJECT_ROOT/backend/.env" \
+    "$REMOTE_USER@$REMOTE_HOST:$REMOTE_DIR/backend/"
+  success "Environment file copied"
+else
+  log "No .env file found locally"
+fi
+
 # Build and copy frontend using production env
 log "Building and copying frontend..."
 cd "$PROJECT_ROOT/frontend"
@@ -79,19 +90,41 @@ ssh -i "$SSH_KEY" "$REMOTE_USER@$REMOTE_HOST" "
   # Install backend dependencies
   npm install --production
 
-  # Start backend server in background
-  nohup node src/server.js > ../logs/backend.log 2>&1 &
+  # Verify environment configuration
+  echo 'Checking environment configuration...'
+  if [[ -f .env ]]; then
+    echo '✅ .env file found'
+    grep -q 'DB_HOST' .env && echo '✅ PostgreSQL configuration detected' || echo '❌ No DB_HOST found'
+  else
+    echo '❌ No .env file found - server may use defaults'
+  fi
+
+  # Remove any old start scripts that might be wrong
+  rm -f ../scripts/start.sh
+
+  # Start backend server with explicit command
+  echo 'Starting backend server with: npm start'
+  nohup npm start > ../logs/backend.log 2>&1 &
   echo \$! > ../backend.pid
-  echo 'Backend server started'
+  echo 'Backend server started with PID:' \$(cat ../backend.pid)
 
   # Give it a moment to start
-  sleep 3
+  sleep 5
 
-  # Verify backend is running
+  # Check if process is running
+  if kill -0 \$(cat ../backend.pid) 2>/dev/null; then
+    echo '✅ Backend process is running'
+  else
+    echo '❌ Backend process not found'
+  fi
+
+  # Verify backend is responding
   if curl -f http://localhost:8000/api/health >/dev/null 2>&1; then
     echo '✅ Backend health check: OK'
   else
-    echo '❌ Backend may not be running properly, check logs'
+    echo '❌ Backend health check failed - check logs'
+    echo 'Last 10 lines of log:'
+    tail -10 ../logs/backend.log
   fi
 "
 
