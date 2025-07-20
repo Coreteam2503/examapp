@@ -439,35 +439,80 @@ class QuizController {
   }
 
   /**
-   * Get all quizzes for current user
+   * Get all quizzes for current user with batch-aware filtering
    * GET /api/quizzes
    */
   async getUserQuizzes(req, res) {
     try {
       const userId = req.user.userId;
+      const userRole = req.user.role;
       const { page = 1, limit = 10 } = req.query;
       const offset = (page - 1) * limit;
 
-      const quizzes = await knex('quizzes')
+      let quizzesQuery = knex('quizzes')
         .select([
           'quizzes.*',
           'uploads.filename',
           'uploads.file_type'
         ])
-        .leftJoin('uploads', 'quizzes.upload_id', 'uploads.id')
-        .where('quizzes.user_id', userId)
-        .orderBy('quizzes.created_at', 'desc')
+        .leftJoin('uploads', 'quizzes.upload_id', 'uploads.id');
+
+      let countQuery = knex('quizzes');
+
+      // Apply filtering based on user role
+      if (userRole === 'admin') {
+        // Admins can see all quizzes
+        quizzesQuery = quizzesQuery.orderBy('quizzes.created_at', 'desc');
+        // countQuery remains unchanged for admins
+      } else {
+        // Students can only see quizzes from their accessible batches
+        const User = require('../models/User');
+        const userBatches = await User.getActiveBatches(userId);
+        const userBatchIds = userBatches.map(batch => batch.id);
+        
+        if (userBatchIds.length > 0) {
+          // Filter quizzes that have questions in user's batches
+          quizzesQuery = quizzesQuery
+            .whereExists(function() {
+              this.select('*')
+                .from('quiz_questions')
+                .join('question_batches', 'quiz_questions.question_id', 'question_batches.question_id')
+                .whereRaw('quiz_questions.quiz_id = quizzes.id')
+                .whereIn('question_batches.batch_id', userBatchIds);
+            })
+            .orderBy('quizzes.created_at', 'desc');
+            
+          countQuery = countQuery
+            .whereExists(function() {
+              this.select('*')
+                .from('quiz_questions')
+                .join('question_batches', 'quiz_questions.question_id', 'question_batches.question_id')
+                .whereRaw('quiz_questions.quiz_id = quizzes.id')
+                .whereIn('question_batches.batch_id', userBatchIds);
+            });
+        } else {
+          // User has no active batches, return empty result
+          return res.json({
+            quizzes: [],
+            pagination: {
+              page: parseInt(page),
+              limit: parseInt(limit),
+              total: "0",
+              totalPages: 0
+            }
+          });
+        }
+      }
+
+      const quizzes = await quizzesQuery
         .limit(limit)
         .offset(offset);
 
       // Get total count for pagination
-      const totalCount = await knex('quizzes')
-        .where('user_id', userId)
-        .count('id as count')
-        .first();
+      const totalCount = await countQuery.count('id as count').first();
 
-      // Log for debugging game formats
-      console.log('📋 Fetched quizzes for user', userId, ':', quizzes.map(q => ({
+      // Log for debugging
+      console.log(`📋 Fetched quizzes for ${userRole} user ${userId}:`, quizzes.map(q => ({
         id: q.id, 
         title: q.title, 
         game_format: q.game_format,
@@ -785,6 +830,32 @@ class QuizController {
       return field;
     }
   }
+
+  /**
+   * Get user's available batches for quiz generation
+   * GET /api/quizzes/user-batches
+   */
+  async getUserBatches(req, res) {
+    try {
+      const userId = req.user.userId;
+      const User = require('../models/User');
+      
+      const userBatches = await User.getActiveBatches(userId);
+      
+      res.json({
+        success: true,
+        data: userBatches,
+        count: userBatches.length
+      });
+    } catch (error) {
+      console.error('❌ [QuizController] Failed to get user batches:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get user batches',
+        error: error.message
+      });
+    }
+  }
 }
 
 const quizController = new QuizController();
@@ -796,5 +867,6 @@ module.exports = {
   getGenerationOptions: (req, res) => quizController.getGenerationOptions(req, res),
   getUserQuizzes: (req, res) => quizController.getUserQuizzes(req, res),
   getQuizById: (req, res) => quizController.getQuizById(req, res),
-  deleteQuiz: (req, res) => quizController.deleteQuiz(req, res)
+  deleteQuiz: (req, res) => quizController.deleteQuiz(req, res),
+  getUserBatches: (req, res) => quizController.getUserBatches(req, res)
 };

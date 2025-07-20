@@ -265,6 +265,135 @@ class QuestionController {
       });
     }
   }
+
+  /**
+   * Get questions by creator (batch-aware)
+   * GET /api/questions/by-creator/:creatorId
+   */
+  async getQuestionsByCreator(req, res) {
+    try {
+      const { creatorId } = req.params;
+      const questions = await Question.findByCreator(creatorId);
+      
+      res.json({
+        success: true,
+        data: questions,
+        count: questions.length
+      });
+    } catch (error) {
+      console.error('Error fetching questions by creator:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch questions by creator',
+        error: error.message
+      });
+    }
+  }
+
+  /**
+   * Get questions by batches (batch-aware)
+   * POST /api/questions/by-batches
+   */
+  async getQuestionsByBatches(req, res) {
+    try {
+      const { batchIds } = req.body;
+      
+      if (!Array.isArray(batchIds)) {
+        return res.status(400).json({
+          success: false,
+          message: 'batchIds must be an array'
+        });
+      }
+      
+      const questions = await Question.findByBatches(batchIds);
+      
+      res.json({
+        success: true,
+        data: questions,
+        count: questions.length
+      });
+    } catch (error) {
+      console.error('Error fetching questions by batches:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch questions by batches',
+        error: error.message
+      });
+    }
+  }
+
+  /**
+   * Get batches for a question
+   * GET /api/questions/:id/batches
+   */
+  async getQuestionBatches(req, res) {
+    try {
+      const { id } = req.params;
+      const batches = await Question.getBatchesForQuestion(id);
+      
+      res.json({
+        success: true,
+        data: batches,
+        count: batches.length
+      });
+    } catch (error) {
+      console.error('Error fetching question batches:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch question batches',
+        error: error.message
+      });
+    }
+  }
+
+  /**
+   * Enhanced search with batch filtering
+   * POST /api/questions/search
+   */
+  async searchQuestions(req, res) {
+    try {
+      const filters = req.body.filters || {};
+      const options = req.body.options || {};
+      
+      // If user is not admin, restrict to their batches
+      if (req.user && req.user.role !== 'admin') {
+        const User = require('../models/User');
+        const userBatches = await User.getActiveBatches(req.user.id);
+        const userBatchIds = userBatches.map(batch => batch.id);
+        
+        if (userBatchIds.length > 0) {
+          filters.batchIds = filters.batchIds 
+            ? filters.batchIds.filter(id => userBatchIds.includes(id))
+            : userBatchIds;
+        } else {
+          // User has no active batches, return empty result
+          return res.json({
+            success: true,
+            data: [],
+            count: 0,
+            message: 'No active batches assigned to user'
+          });
+        }
+      }
+      
+      const questions = await Question.searchWithFilters(filters, options);
+      
+      res.json({
+        success: true,
+        data: questions,
+        count: questions.length,
+        filters: filters,
+        options: options
+      });
+    } catch (error) {
+      console.error('Error searching questions:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to search questions',
+        error: error.message
+      });
+    }
+  }
 }
 
 module.exports = QuestionController;

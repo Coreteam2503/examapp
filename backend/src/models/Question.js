@@ -4,6 +4,10 @@ const { prepareQuestionForPostgres } = require('../utils/questionUtils');
 class Question {
   static async create(questionData) {
     const preparedData = prepareQuestionForPostgres(questionData);
+    // Ensure created_by is set (default to admin if not provided)
+    if (!preparedData.created_by) {
+      preparedData.created_by = 1; // Default to admin user
+    }
     const result = await db('questions').insert(preparedData).returning('id');
     const id = Array.isArray(result) ? (result[0]?.id || result[0]) : result?.id || result;
     return this.findById(id);
@@ -49,6 +53,10 @@ class Question {
         } else {
           // Process question data for PostgreSQL before adding to unique questions
           const processedQuestion = prepareQuestionForPostgres(question);
+          // Ensure created_by is set (default to admin if not provided)
+          if (!processedQuestion.created_by) {
+            processedQuestion.created_by = 1;
+          }
           uniqueQuestions.push(processedQuestion);
           seenInBatch.add(questionText);
         }
@@ -104,71 +112,6 @@ class Question {
       console.error('❌ [Question Model] Bulk create error:', error);
       throw error;
     }
-  }
-
-  // New: Advanced search with filters (simplified, no duplicate prevention for now)
-  static async searchWithFilters(filters = {}, options = {}) {
-    let query = db('questions').select('*');
-    
-    // Apply filters
-    if (filters.domain) {
-      query = query.where('domain', filters.domain);
-    }
-    
-    if (filters.subject) {
-      query = query.where('subject', filters.subject);
-    }
-    
-    if (filters.source) {
-      query = query.where('source', filters.source);
-    }
-    
-    if (filters.difficulty_level) {
-      query = query.where('difficulty_level', filters.difficulty_level);
-    }
-    
-    if (filters.difficulty) {
-      query = query.where('difficulty', filters.difficulty);
-    }
-    
-    if (filters.type) {
-      query = query.where('type', filters.type);
-    }
-    
-    if (filters.weightage) {
-      query = query.where('weightage', filters.weightage);
-    }
-    
-    // Note: All questions are now available in the question bank
-    // Quiz associations are managed via the quiz_questions junction table
-    
-    if (filters.search) {
-      query = query.where(function() {
-        this.where('question_text', 'like', `%${filters.search}%`)
-            .orWhere('explanation', 'like', `%${filters.search}%`)
-            .orWhere('hint', 'like', `%${filters.search}%`);
-      });
-    }
-    
-    // Apply sorting
-    const sortBy = options.sortBy || 'created_at';
-    const sortOrder = options.sortOrder || 'desc';
-    query = query.orderBy(sortBy, sortOrder);
-    
-    // Apply pagination
-    if (options.limit) {
-      query = query.limit(parseInt(options.limit));
-      
-      if (options.offset) {
-        query = query.offset(parseInt(options.offset));
-      }
-    }
-    
-    console.log('🔍 [Question Model] Executing simplified search');
-    const results = await query;
-    console.log(`✅ [Question Model] Found ${results.length} questions`);
-    
-    return results;
   }
 
   // New: Get statistics for question bank
@@ -262,6 +205,109 @@ class Question {
       .count('question_id as count')
       .first();
     return result.count;
+  }
+
+  // Batch-related methods
+  static async findByCreator(userId) {
+    return db('questions').where('created_by', userId).orderBy('created_at', 'desc');
+  }
+
+  static async findByBatches(batchIds) {
+    if (!Array.isArray(batchIds) || batchIds.length === 0) {
+      return [];
+    }
+    
+    return db('questions')
+      .join('question_batches', 'questions.id', 'question_batches.question_id')
+      .whereIn('question_batches.batch_id', batchIds)
+      .select('questions.*', 'question_batches.batch_id')
+      .orderBy('questions.created_at', 'desc');
+  }
+
+  static async getBatchesForQuestion(questionId) {
+    return db('question_batches')
+      .join('batches', 'question_batches.batch_id', 'batches.id')
+      .where('question_batches.question_id', questionId)
+      .select('batches.*');
+  }
+
+  // Enhanced search with batch filtering
+  static async searchWithFilters(filters = {}, options = {}) {
+    let query;
+    
+    // Add batch filtering if specified - use subquery approach to avoid DISTINCT issues with JSON
+    if (filters.batchIds && filters.batchIds.length > 0) {
+      query = db('questions')
+        .select('questions.*')
+        .whereIn('questions.id', function() {
+          this.select('question_batches.question_id')
+              .from('question_batches')
+              .whereIn('question_batches.batch_id', filters.batchIds);
+        });
+    } else {
+      query = db('questions').select('questions.*');
+    }
+    
+    // Apply existing filters
+    if (filters.domain) {
+      query = query.where('questions.domain', filters.domain);
+    }
+    
+    if (filters.subject) {
+      query = query.where('questions.subject', filters.subject);
+    }
+    
+    if (filters.source) {
+      query = query.where('questions.source', filters.source);
+    }
+    
+    if (filters.difficulty_level) {
+      query = query.where('questions.difficulty_level', filters.difficulty_level);
+    }
+    
+    if (filters.difficulty) {
+      query = query.where('questions.difficulty', filters.difficulty);
+    }
+    
+    if (filters.type) {
+      query = query.where('questions.type', filters.type);
+    }
+    
+    if (filters.weightage) {
+      query = query.where('questions.weightage', filters.weightage);
+    }
+
+    if (filters.created_by) {
+      query = query.where('questions.created_by', filters.created_by);
+    }
+    
+    if (filters.search) {
+      query = query.where(function() {
+        this.where('questions.question_text', 'like', `%${filters.search}%`)
+            .orWhere('questions.explanation', 'like', `%${filters.search}%`)
+            .orWhere('questions.hint', 'like', `%${filters.search}%`);
+      });
+    }
+    
+    // Apply sorting
+    const sortBy = options.sortBy || 'created_at';
+    const sortOrder = options.sortOrder || 'desc';
+    query = query.orderBy(`questions.${sortBy}`, sortOrder);
+    
+    // Apply pagination
+    if (options.limit) {
+      query = query.limit(parseInt(options.limit));
+      
+      if (options.offset) {
+        query = query.offset(parseInt(options.offset));
+      }
+    }
+    
+    console.log('🔍 [Question Model] Executing batch-aware search');
+    const results = await query;
+    console.log(`✅ [Question Model] Found ${results.length} questions`);
+    
+    return results;
   }
 }
 

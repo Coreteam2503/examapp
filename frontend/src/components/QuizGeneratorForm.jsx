@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import QuizCriteriaSelector from './QuizCriteriaSelector';
 import { quizGenerationService } from '../services/quizGenerationService';
+import BatchService from '../services/batchService';
 import { 
   PlayIcon, 
   AdjustmentsHorizontalIcon,
@@ -20,7 +21,8 @@ const QuizGeneratorForm = () => {
     source: '',
     difficulty_level: 'Medium',
     game_format: 'hangman', // Default to hangman since traditional is removed
-    num_questions: 10
+    num_questions: 10,
+    batchIds: [] // Add batch filtering
   });
 
   // Options state
@@ -29,7 +31,8 @@ const QuizGeneratorForm = () => {
     subjects: [],
     sources: [],
     types: [],
-    gameFormats: []
+    gameFormats: [],
+    userBatches: [] // Add user batches
   });
 
   // UI state
@@ -97,18 +100,22 @@ const QuizGeneratorForm = () => {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [criteria.domain, criteria.subject, criteria.source, criteria.difficulty_level]);
+  }, [criteria.domain, criteria.subject, criteria.source, criteria.difficulty_level, criteria.batchIds]);
 
   // Load available options from API
   const loadGenerationOptions = async () => {
     try {
       setLoading(prev => ({ ...prev, options: true }));
       
-      const result = await quizGenerationService.getGenerationOptions();
+      const [optionsResult, userBatchesResult] = await Promise.all([
+        quizGenerationService.getGenerationOptions(),
+        BatchService.getUserBatchesForQuiz()
+      ]);
       
-      if (result.success) {
-        const data = result.data.data;
-        setOptions({
+      if (optionsResult.success) {
+        const data = optionsResult.data.data;
+        setOptions(prev => ({
+          ...prev,
           domains: data.domains.map(d => ({ 
             value: d.domain, 
             label: d.domain, 
@@ -129,10 +136,20 @@ const QuizGeneratorForm = () => {
             label: t.type.replace('_', ' '), 
             count: t.count 
           })),
-          gameFormats: gameFormats
-        });
-      } else {
-        setErrors({ general: result.message });
+          gameFormats: gameFormats,
+          userBatches: []
+        }));
+      }
+      
+      if (userBatchesResult.success) {
+        setOptions(prev => ({
+          ...prev,
+          userBatches: userBatchesResult.data.map(batch => ({
+            value: batch.id,
+            label: batch.name,
+            description: `${batch.subject} - ${batch.domain}`
+          }))
+        }));
       }
     } catch (error) {
       console.error('Error loading generation options:', error);
@@ -152,6 +169,7 @@ const QuizGeneratorForm = () => {
       if (criteria.subject) filters.subject = criteria.subject;
       if (criteria.source) filters.source = criteria.source;
       if (criteria.difficulty_level) filters.difficulty_level = criteria.difficulty_level;
+      if (criteria.batchIds && criteria.batchIds.length > 0) filters.batchIds = criteria.batchIds;
       
       const result = await quizGenerationService.getAvailableQuestionCount(filters);
       
@@ -330,6 +348,41 @@ const QuizGeneratorForm = () => {
               showCount={true}
               error={errors.source}
             />
+
+            {/* Batch Selector */}
+            {options.userBatches.length > 0 && (
+              <div className="batch-selector">
+                <label className="form-label">
+                  Filter by Batches (Optional)
+                  <span className="label-hint">
+                    Select specific batches to generate quiz from, or leave empty for all accessible questions
+                  </span>
+                </label>
+                <div className="batch-options">
+                  {options.userBatches.map(batch => (
+                    <label key={batch.value} className="batch-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={criteria.batchIds.includes(batch.value)}
+                        onChange={(e) => {
+                          const newBatchIds = e.target.checked 
+                            ? [...criteria.batchIds, batch.value]
+                            : criteria.batchIds.filter(id => id !== batch.value);
+                          handleCriteriaChange('batchIds', newBatchIds);
+                        }}
+                      />
+                      <span className="batch-name">{batch.label}</span>
+                      <span className="batch-description">{batch.description}</span>
+                    </label>
+                  ))}
+                </div>
+                {criteria.batchIds.length > 0 && (
+                  <div className="selected-batches">
+                    Selected: {criteria.batchIds.length} batch{criteria.batchIds.length !== 1 ? 'es' : ''}
+                  </div>
+                )}
+              </div>
+            )}
             
             {/* Difficulty Level */}
             <QuizCriteriaSelector

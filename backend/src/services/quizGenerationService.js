@@ -1,5 +1,6 @@
 const Quiz = require('../models/Quiz');
 const Question = require('../models/Question');
+const User = require('../models/User');
 const { db } = require('../config/database');
 const Joi = require('joi');
 
@@ -21,7 +22,9 @@ class QuizGenerationService {
       ).default('hangman'), // Default to hangman instead of traditional
       num_questions: Joi.number().integer().min(1).max(50).default(10),
       randomSeed: Joi.number().optional(),
-      excludeQuestionIds: Joi.array().items(Joi.number().integer()).default([])
+      excludeQuestionIds: Joi.array().items(Joi.number().integer()).default([]),
+      userId: Joi.number().integer().optional(), // For batch-based filtering
+      batchIds: Joi.array().items(Joi.number().integer()).optional() // Explicit batch filtering
     });
   }
 
@@ -85,8 +88,20 @@ class QuizGenerationService {
     // Validate criteria
     const validatedCriteria = this.validateCriteria(criteria);
     
+    // Handle batch-based filtering for user
+    let batchIds = validatedCriteria.batchIds;
+    if (!batchIds && userId) {
+      const userBatches = await User.getActiveBatches(userId);
+      batchIds = userBatches.map(batch => batch.id);
+      console.log(`🎯 [QuizGenerationService] User ${userId} has access to batches:`, batchIds);
+    }
+    
     // Build filter object for question search
     const filters = this._buildFilters(validatedCriteria);
+    if (batchIds && batchIds.length > 0) {
+      filters.batchIds = batchIds;
+      console.log('🎯 [QuizGenerationService] Applying batch filtering:', batchIds);
+    }
     console.log('🔍 [QuizGenerationService] Built filters:', filters);
     
     // Find matching questions
@@ -224,6 +239,7 @@ class QuizGenerationService {
     if (criteria.difficulty_level) filters.difficulty_level = criteria.difficulty_level;
     if (criteria.difficulty) filters.difficulty = criteria.difficulty;
     if (criteria.type) filters.type = criteria.type;
+    if (criteria.batchIds) filters.batchIds = criteria.batchIds;
     
     return filters;
   }

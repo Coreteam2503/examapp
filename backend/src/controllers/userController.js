@@ -133,10 +133,159 @@ class UserController {
       return { currentStreak: 0, longestStreak: 0 };
     }
   }
+
+  // Batch-related methods
+  async getUserBatches(req, res) {
+    try {
+      const userId = req.params.userId || req.user.id;
+      
+      // Only allow users to view their own batches or admins to view any
+      if (req.user.role !== 'admin' && req.user.id !== parseInt(userId)) {
+        return res.status(403).json({
+          success: false,
+          message: 'Not authorized to view these batches'
+        });
+      }
+      
+      const User = require('../models/User');
+      const batches = await User.getBatches(userId, { isActive: true });
+      
+      res.json({
+        success: true,
+        data: batches,
+        count: batches.length
+      });
+    } catch (error) {
+      console.error('Error fetching user batches:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch user batches',
+        error: error.message
+      });
+    }
+  }
+
+  async updateUserBatches(req, res) {
+    try {
+      const { userId } = req.params;
+      const { batchIds, action = 'assign' } = req.body;
+      
+      // Only admins can update user batch assignments
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          message: 'Admin access required'
+        });
+      }
+      
+      if (!Array.isArray(batchIds) || batchIds.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Batch IDs array is required'
+        });
+      }
+      
+      const Batch = require('../models/Batch');
+      const results = [];
+      
+      for (const batchId of batchIds) {
+        try {
+          if (action === 'assign') {
+            const result = await Batch.assignUser(batchId, userId);
+            results.push({ batchId, action: 'assign', success: result });
+          } else if (action === 'remove') {
+            await Batch.removeUser(batchId, userId);
+            results.push({ batchId, action: 'remove', success: true });
+          }
+        } catch (error) {
+          results.push({ batchId, action, success: false, error: error.message });
+        }
+      }
+      
+      const successCount = results.filter(r => r.success).length;
+      
+      res.json({
+        success: true,
+        message: `${successCount} of ${batchIds.length} batch assignments ${action}ed successfully`,
+        data: results
+      });
+    } catch (error) {
+      console.error('Error updating user batches:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update user batches',
+        error: error.message
+      });
+    }
+  }
+
+  async registerWithBatch(req, res) {
+    try {
+      const { email, password, firstName, lastName, batchId } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email and password are required'
+        });
+      }
+      
+      // Import auth controller for registration logic
+      const authController = require('./authController');
+      
+      // Create user first
+      const registrationData = {
+        email,
+        password,
+        firstName,
+        lastName,
+        role: 'student'
+      };
+      
+      // Mock the response object to capture registration result
+      let registrationResult;
+      const mockRes = {
+        status: () => mockRes,
+        json: (data) => { registrationResult = data; return mockRes; }
+      };
+      
+      await authController.register({ body: registrationData }, mockRes);
+      
+      if (!registrationResult?.success) {
+        return res.status(400).json(registrationResult);
+      }
+      
+      // If batch ID provided and registration successful, assign to batch
+      if (batchId && registrationResult.data?.user?.id) {
+        const Batch = require('../models/Batch');
+        try {
+          await Batch.assignUser(batchId, registrationResult.data.user.id);
+          registrationResult.message += ' and assigned to batch';
+          registrationResult.data.batchAssigned = true;
+        } catch (batchError) {
+          console.error('Error assigning user to batch after registration:', batchError);
+          registrationResult.data.batchAssigned = false;
+          registrationResult.message += ' but batch assignment failed';
+        }
+      }
+      
+      res.status(201).json(registrationResult);
+    } catch (error) {
+      console.error('Error in registration with batch:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Registration failed',
+        error: error.message
+      });
+    }
+  }
 }
 
 const userController = new UserController();
 
 module.exports = {
-  getUserProgress: (req, res) => userController.getUserProgress(req, res)
+  getUserProgress: (req, res) => userController.getUserProgress(req, res),
+  getUserBatches: (req, res) => userController.getUserBatches(req, res),
+  updateUserBatches: (req, res) => userController.updateUserBatches(req, res),
+  registerWithBatch: (req, res) => userController.registerWithBatch(req, res)
 };

@@ -64,6 +64,10 @@ try {
   app.use('/api/analytics', require('./routes/analytics')); // Analytics route
   app.use('/api/admin', require('./routes/admin')); // Admin route
   
+  console.log('Loading batch routes...');
+  app.use('/api/batches', require('./routes/batches')); // Batch management routes
+  console.log('Batch routes loaded successfully');
+  
   console.log('Loading simplified roles route...');
   app.use('/api/roles', require('./routes/roles-simple')); // Role management (simplified)
   console.log('Simplified roles route loaded successfully');

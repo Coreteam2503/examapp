@@ -34,10 +34,46 @@ router.get('/search', authenticateToken, search);
 router.get('/statistics', authenticateToken, getStatistics);
 
 /**
+ * GET /api/questions/by-creator/:creatorId
+ * Get questions by creator (batch-aware)
+ */
+router.get('/by-creator/:creatorId', authenticateToken, (req, res) => {
+  const controller = new QuestionController();
+  controller.getQuestionsByCreator(req, res);
+});
+
+/**
+ * POST /api/questions/by-batches
+ * Get questions by batches (batch-aware)
+ */
+router.post('/by-batches', authenticateToken, (req, res) => {
+  const controller = new QuestionController();
+  controller.getQuestionsByBatches(req, res);
+});
+
+/**
+ * POST /api/questions/search
+ * Enhanced search with batch filtering
+ */
+router.post('/search', authenticateToken, (req, res) => {
+  const controller = new QuestionController();
+  controller.searchQuestions(req, res);
+});
+
+/**
  * GET /api/questions/:id
  * Get question by ID
  */
 router.get('/:id', authenticateToken, getById);
+
+/**
+ * GET /api/questions/:id/batches
+ * Get batches for a question
+ */
+router.get('/:id/batches', authenticateToken, (req, res) => {
+  const controller = new QuestionController();
+  controller.getQuestionBatches(req, res);
+});
 
 /**
  * PUT /api/questions/:id

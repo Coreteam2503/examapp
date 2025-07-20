@@ -7,6 +7,9 @@ const { quizGenerationLimiter } = require('../middleware/rateLimiting');
 // Get available options for quiz generation - MUST BE BEFORE /:id route
 router.get('/generation-options', authenticateToken, QuizController.getGenerationOptions);
 
+// Get user's available batches for quiz generation - MUST BE BEFORE /:id route
+router.get('/user-batches', authenticateToken, QuizController.getUserBatches);
+
 // Generate basic quiz from uploaded content - WITH RATE LIMITING
 router.post('/generate', authenticateToken, quizGenerationLimiter, QuizController.generateQuiz);
 
