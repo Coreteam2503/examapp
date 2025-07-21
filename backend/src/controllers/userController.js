@@ -137,10 +137,18 @@ class UserController {
   // Batch-related methods
   async getUserBatches(req, res) {
     try {
-      const userId = req.params.userId || req.user.id;
+      const userId = req.params.userId || req.user.userId;
+      
+      console.log('getUserBatches - Requested userId:', userId);
+      console.log('getUserBatches - Current user:', req.user);
+      
+      // Convert to integers for comparison
+      const requestedUserId = parseInt(userId);
+      const currentUserId = parseInt(req.user.userId || req.user.id);
       
       // Only allow users to view their own batches or admins to view any
-      if (req.user.role !== 'admin' && req.user.id !== parseInt(userId)) {
+      if (req.user.role !== 'admin' && currentUserId !== requestedUserId) {
+        console.log('Authorization failed - currentUserId:', currentUserId, 'requestedUserId:', requestedUserId, 'role:', req.user.role);
         return res.status(403).json({
           success: false,
           message: 'Not authorized to view these batches'
@@ -148,7 +156,7 @@ class UserController {
       }
       
       const User = require('../models/User');
-      const batches = await User.getBatches(userId, { isActive: true });
+      const batches = await User.getBatches(requestedUserId, { isActive: true });
       
       res.json({
         success: true,

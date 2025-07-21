@@ -1,0 +1,21 @@
+#!/bin/bash
+
+echo "✅ ADMIN AUTHORIZATION FIX APPLIED"
+echo "=================================="
+
+echo "🔧 Issues Fixed:"
+echo "1. Fixed authorizeRole middleware to handle nested arrays"
+echo "2. Updated batch routes to pass 'admin' instead of ['admin']"
+echo "3. Updated user routes to pass 'admin' instead of ['admin']"
+echo ""
+echo "🧪 Expected Results:"
+echo "- Authorization logs should now show: requiredRoles: ['admin']"
+echo "- Instead of: requiredRoles: [['admin']]"
+echo "- Admin functions should work correctly"
+echo ""
+echo "📝 To test:"
+echo "1. Try creating a batch in the admin interface"
+echo "2. Try assigning users to batches"
+echo "3. Check backend console - should see '✅ Authorization successful'"
+echo ""
+echo "🎯 The 403 Forbidden errors should now be resolved!"

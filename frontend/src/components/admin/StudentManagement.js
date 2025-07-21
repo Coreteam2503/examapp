@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiService, handleApiError } from '../../services/apiService';
+import { useBatch } from '../../contexts/BatchContext';
+import BatchSelector from '../common/BatchSelector';
 import './StudentManagement.css';
 
 const StudentManagement = () => {
@@ -11,9 +13,14 @@ const StudentManagement = () => {
   const [pagination, setPagination] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [showBatchAssignModal, setShowBatchAssignModal] = useState(false);
+  
+  // Batch context
+  const { batches, fetchBatches, updateUserBatches } = useBatch();
 
   useEffect(() => {
     fetchStudents();
+    fetchBatches();
   }, [currentPage, searchTerm]);
 
   const fetchStudents = async () => {
@@ -72,6 +79,21 @@ const StudentManagement = () => {
     } catch (err) {
       const errorInfo = handleApiError(err);
       alert(`Failed to fetch student details: ${errorInfo.message}`);
+    }
+  };
+
+  const handleBatchAssignment = async (studentId, selectedBatches) => {
+    try {
+      const batchIds = selectedBatches.map(batch => batch.id);
+      await updateUserBatches(studentId, batchIds, 'assign');
+      
+      // Refresh student data
+      await fetchStudents();
+      setShowBatchAssignModal(false);
+      setSelectedStudent(null);
+    } catch (error) {
+      console.error('Error assigning batches:', error);
+      alert(`Failed to assign batches: ${error.message}`);
     }
   };
 
@@ -207,6 +229,16 @@ const StudentManagement = () => {
                           👁️
                         </button>
                         <button 
+                          onClick={() => {
+                            setSelectedStudent(student);
+                            setShowBatchAssignModal(true);
+                          }}
+                          className="batch-btn"
+                          title="Assign to Batches"
+                        >
+                          📚
+                        </button>
+                        <button 
                           onClick={() => handleStatusToggle(student.id, student.is_active)}
                           className={`toggle-btn ${student.is_active ? 'deactivate' : 'activate'}`}
                           title={student.is_active ? 'Deactivate' : 'Activate'}
@@ -317,6 +349,46 @@ const StudentManagement = () => {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Batch Assignment Modal */}
+      {showBatchAssignModal && selectedStudent && (
+        <div className="modal-overlay" onClick={() => setShowBatchAssignModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Assign Batches to {selectedStudent.email}</h2>
+              <button 
+                onClick={() => setShowBatchAssignModal(false)} 
+                className="close-btn"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="batch-assignment-form">
+                <p>Select batches to assign this student to:</p>
+                <BatchSelector
+                  batches={batches}
+                  selectedBatches={[]}
+                  onChange={(selectedBatches) => handleBatchAssignment(selectedStudent.id, selectedBatches)}
+                  mode="multi"
+                  placeholder="Select batches for this student..."
+                  searchable={true}
+                  clearable={true}
+                  showBatchCounts={true}
+                />
+                <div className="assignment-actions">
+                  <button 
+                    onClick={() => setShowBatchAssignModal(false)}
+                    className="cancel-btn"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

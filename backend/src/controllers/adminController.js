@@ -11,7 +11,22 @@ class AdminController {
       const { page = 1, limit = 10, search = '', role = 'student' } = req.query;
       const offset = (page - 1) * limit;
 
-      // Build base query for students
+      // Build base query for counting
+      let countQuery = db('users').where('users.role', role);
+
+      // Apply search filter to count query if provided
+      if (search) {
+        countQuery = countQuery.where(function() {
+          this.whereILike('users.email', `%${search}%`)
+            .orWhereILike('users.first_name', `%${search}%`)
+            .orWhereILike('users.last_name', `%${search}%`);
+        });
+      }
+
+      // Get total count for pagination
+      const [{ count: totalStudents }] = await countQuery.count('* as count');
+
+      // Build separate query for selecting students
       let studentsQuery = db('users')
         .select([
           'users.id',
@@ -25,7 +40,7 @@ class AdminController {
         ])
         .where('users.role', role);
 
-      // Apply search filter if provided
+      // Apply search filter to students query if provided
       if (search) {
         studentsQuery = studentsQuery.where(function() {
           this.whereILike('users.email', `%${search}%`)
@@ -33,10 +48,6 @@ class AdminController {
             .orWhereILike('users.last_name', `%${search}%`);
         });
       }
-
-      // Get total count for pagination
-      const totalCountQuery = studentsQuery.clone();
-      const [{ count: totalStudents }] = await totalCountQuery.count('* as count');
 
       // Get paginated students
       const students = await studentsQuery
@@ -307,11 +318,14 @@ class AdminController {
           'users.id',
           'users.email',
           'users.first_name',
-          'users.last_name',
+          'users.last_name'
+        ])
+        .select([
           db.raw('AVG(attempts.score_percentage) as avg_score'),
           db.raw('COUNT(attempts.id) as attempt_count')
         ])
         .groupBy('users.id', 'users.email', 'users.first_name', 'users.last_name')
+        .having(db.raw('COUNT(attempts.id) > 0')) // Only include users with attempts
         .orderBy('avg_score', 'desc')
         .limit(5);
 

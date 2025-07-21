@@ -10,12 +10,14 @@ import ProgressTracker from './dashboard/ProgressTracker';
 import RecentQuizzes from './dashboard/RecentQuizzes';
 import PerformanceStats from './dashboard/PerformanceStats';
 import QuickActions from './dashboard/QuickActions';
+import StudentBatchDisplay from './dashboard/StudentBatchDisplay';
+import StudentDashboard from './dashboard/StudentDashboard';
 
 const Dashboard = () => {
   const { user, isAuthenticated, loading } = useAuth();
   const dispatch = useAuthDispatch();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('quizzes'); // Default to quizzes tab
+  const [activeTab, setActiveTab] = useState('dashboard'); // Default to enhanced dashboard tab
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dashboardRefreshTrigger, setDashboardRefreshTrigger] = useState(0);
 
@@ -139,23 +141,45 @@ const Dashboard = () => {
 
       <nav className={`dashboard-nav ${mobileMenuOpen ? 'mobile-open' : ''}`}>
         <div className="nav-content">
+          {user?.role === 'student' && (
+            <button 
+              className={`nav-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('dashboard'); setMobileMenuOpen(false); }}
+            >
+              Dashboard
+            </button>
+          )}
           <button 
             className={`nav-btn ${activeTab === 'quizzes' ? 'active' : ''}`}
             onClick={() => { setActiveTab('quizzes'); setMobileMenuOpen(false); }}
           >
             Your Quizzes
           </button>
-          <button 
-            className={`nav-btn ${activeTab === 'generate' ? 'active' : ''}`}
-            onClick={() => { setActiveTab('generate'); setMobileMenuOpen(false); }}
-          >
-            Generate Quiz
-          </button>
+          {user?.role === 'admin' && (
+            <button 
+              className={`nav-btn ${activeTab === 'generate' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('generate'); setMobileMenuOpen(false); }}
+            >
+              Generate Quiz
+            </button>
+          )}
+          {user?.role === 'student' && (
+            <button 
+              className={`nav-btn ${activeTab === 'batches' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('batches'); setMobileMenuOpen(false); }}
+            >
+              My Batches
+            </button>
+          )}
         </div>
       </nav>
 
       <main className="dashboard-main">
         <div className="dashboard-content">
+          {activeTab === 'dashboard' && user?.role === 'student' && (
+            <StudentDashboard />
+          )}
+
           {activeTab === 'quizzes' && (
             <div className="tab-content">
               <div className="tab-header">
@@ -166,13 +190,23 @@ const Dashboard = () => {
             </div>
           )}
 
-          {activeTab === 'generate' && (
+          {activeTab === 'generate' && user?.role === 'admin' && (
             <div className="tab-content">
               <div className="tab-header">
                 <h2>Generate Custom Quiz</h2>
                 <p>Create a personalized quiz from the question bank with your preferred criteria.</p>
               </div>
               <QuizGeneratorForm />
+            </div>
+          )}
+
+          {activeTab === 'batches' && user?.role === 'student' && (
+            <div className="tab-content">
+              <div className="tab-header">
+                <h2>My Learning Batches</h2>
+                <p>View and manage your assigned learning batches and track your progress.</p>
+              </div>
+              <StudentBatchDisplay />
             </div>
           )}
         </div>

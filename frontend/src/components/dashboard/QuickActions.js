@@ -1,8 +1,25 @@
 import React from 'react';
 import './QuickActions.css';
 
-const QuickActions = ({ setActiveTab, user }) => {
+const QuickActions = ({ 
+  setActiveTab, 
+  user, 
+  selectedBatches = [], 
+  onTakeQuiz = () => {} 
+}) => {
+  const batchSpecificActions = selectedBatches.length > 0 ? [
+    {
+      icon: '📚',
+      title: `Quiz from ${selectedBatches.length === 1 ? selectedBatches[0].name : `${selectedBatches.length} Batches`}`,
+      description: 'Take batch-specific quiz',
+      action: () => onTakeQuiz(selectedBatches.length === 1 ? selectedBatches[0].id : null),
+      color: '#8b5cf6',
+      enabled: true
+    }
+  ] : [];
+
   const quickActions = [
+    ...batchSpecificActions,
     {
       icon: '🧠',
       title: 'Take Random Quiz',

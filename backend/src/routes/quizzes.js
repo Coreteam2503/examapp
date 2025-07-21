@@ -1,8 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const QuizController = require('../controllers/quizController');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, authorizeRole } = require('../middleware/auth');
 const { quizGenerationLimiter } = require('../middleware/rateLimiting');
+
+// Define admin middleware
+const requireAdmin = authorizeRole('admin');
 
 // Get available options for quiz generation - MUST BE BEFORE /:id route
 router.get('/generation-options', authenticateToken, QuizController.getGenerationOptions);
@@ -27,5 +30,11 @@ router.get('/:id', authenticateToken, QuizController.getQuizById);
 
 // Delete quiz
 router.delete('/:id', authenticateToken, QuizController.deleteQuiz);
+
+// Admin-only: Assign quiz to batches (COMMENTED OUT TEMPORARILY)
+// router.post('/:id/assign-batches', authenticateToken, requireAdmin, QuizController.assignQuizToBatches);
+
+// Admin-only: Remove quiz from batch (COMMENTED OUT TEMPORARILY)
+// router.delete('/:id/remove-batch/:batchId', authenticateToken, requireAdmin, QuizController.removeQuizFromBatch);
 
 module.exports = router;

@@ -549,8 +549,21 @@ class QuizController {
     try {
       const { id } = req.params;
       const userId = req.user.userId;
+      const userRole = req.user.role;
 
-      const quiz = await this.getCompleteQuizData(id, userId);
+      // For admins, get quiz without user restriction
+      // For students, check batch access but don't restrict by user_id
+      let quiz;
+      if (userRole === 'admin') {
+        quiz = await this.getCompleteQuizData(id);
+      } else {
+        // For students, get quiz without user restriction
+        // but check batch access later if needed
+        quiz = await this.getCompleteQuizData(id);
+        
+        // Additional batch access control could be added here if needed
+        // but for now, allow access to all quizzes since they appear in the list
+      }
 
       if (!quiz) {
         return res.status(404).json({ error: 'Quiz not found' });
@@ -831,6 +844,111 @@ class QuizController {
     }
   }
 
+  // /**
+  //  * Assign quiz to batches (Admin only)
+  //  * POST /api/quizzes/:id/assign-batches
+  //  */
+  // async assignQuizToBatches(req, res) {
+  //   try {
+  //     const { id: quizId } = req.params;
+  //     const { batchIds } = req.body;
+  //     const userId = req.user.userId;
+
+  //     if (!batchIds || !Array.isArray(batchIds) || batchIds.length === 0) {
+  //       return res.status(400).json({
+  //         success: false,
+  //         message: 'Batch IDs array is required'
+  //       });
+  //     }
+
+  //     // Verify quiz exists
+  //     const quiz = await knex('quizzes').where('id', quizId).first();
+  //     if (!quiz) {
+  //       return res.status(404).json({
+  //         success: false,
+  //         message: 'Quiz not found'
+  //       });
+  //     }
+
+  //     // Verify all batches exist
+  //     const batches = await knex('batches').whereIn('id', batchIds);
+  //     if (batches.length !== batchIds.length) {
+  //       return res.status(400).json({
+  //         success: false,
+  //         message: 'One or more batches not found'
+  //       });
+  //     }
+
+  //     // Remove existing assignments for this quiz
+  //     await knex('quiz_batches').where('quiz_id', quizId).del();
+
+  //     // Create new assignments
+  //     const assignments = batchIds.map(batchId => ({
+  //       quiz_id: quizId,
+  //       batch_id: batchId,
+  //       assigned_by: userId,
+  //       assigned_at: new Date()
+  //     }));
+
+  //     await knex('quiz_batches').insert(assignments);
+
+  //     console.log(`✅ Quiz ${quizId} assigned to ${batchIds.length} batches by admin ${userId}`);
+
+  //     res.json({
+  //       success: true,
+  //       message: `Quiz assigned to ${batchIds.length} batch${batchIds.length !== 1 ? 'es' : ''} successfully`
+  //     });
+
+  //   } catch (error) {
+  //     console.error('Error assigning quiz to batches:', error);
+  //     res.status(500).json({
+  //       success: false,
+  //       message: 'Failed to assign quiz to batches'
+  //     });
+  //   }
+  // }
+
+  // /**
+  //  * Remove quiz from batch (Admin only)
+  //  * DELETE /api/quizzes/:id/remove-batch/:batchId
+  //  */
+  // async removeQuizFromBatch(req, res) {
+  //   try {
+  //     const { id: quizId, batchId } = req.params;
+
+  //     // Verify assignment exists
+  //     const assignment = await knex('quiz_batches')
+  //       .where({ quiz_id: quizId, batch_id: batchId })
+  //       .first();
+
+  //     if (!assignment) {
+  //       return res.status(404).json({
+  //         success: false,
+  //         message: 'Quiz-batch assignment not found'
+  //       });
+  //     }
+
+  //     // Remove assignment
+  //     await knex('quiz_batches')
+  //       .where({ quiz_id: quizId, batch_id: batchId })
+  //       .del();
+
+  //     console.log(`✅ Quiz ${quizId} removed from batch ${batchId}`);
+
+  //     res.json({
+  //       success: true,
+  //       message: 'Quiz removed from batch successfully'
+  //     });
+
+  //   } catch (error) {
+  //     console.error('Error removing quiz from batch:', error);
+  //     res.status(500).json({
+  //       success: false,
+  //       message: 'Failed to remove quiz from batch'
+  //     });
+  //   }
+  // }
+
   /**
    * Get user's available batches for quiz generation
    * GET /api/quizzes/user-batches
@@ -869,4 +987,6 @@ module.exports = {
   getQuizById: (req, res) => quizController.getQuizById(req, res),
   deleteQuiz: (req, res) => quizController.deleteQuiz(req, res),
   getUserBatches: (req, res) => quizController.getUserBatches(req, res)
+  // assignQuizToBatches: (req, res) => quizController.assignQuizToBatches(req, res),
+  // removeQuizFromBatch: (req, res) => quizController.removeQuizFromBatch(req, res)
 };

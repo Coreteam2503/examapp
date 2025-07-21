@@ -5,6 +5,7 @@ import AdminSidebar from './AdminSidebar';
 import AdminHeader from './AdminHeader';
 import AdminOverview from './AdminOverview';
 import StudentManagement from './StudentManagement';
+import BatchManagement from './BatchManagement';
 import SystemAnalytics from './SystemAnalytics';
 import QuizManagement from './QuizManagement';
 import QuestionBankManagement from './QuestionBankManagement';
@@ -42,10 +43,16 @@ const AdminDashboard = () => {
         return <AdminOverview />;
       case 'students':
         return <StudentManagement />;
+      case 'batches':
+        return <BatchManagement />;
       case 'analytics':
         return <SystemAnalytics />;
       case 'quizzes':
-        return <QuizManagement />;
+        return <div className="admin-section">
+          <h2>Quiz Management</h2>
+          <p>Quiz management is temporarily disabled for maintenance.</p>
+        </div>;
+        // return <QuizManagement />;
       case 'questions':
         return <QuestionBankManagement />;
       case 'roles':

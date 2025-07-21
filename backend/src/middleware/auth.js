@@ -65,20 +65,37 @@ const authenticateToken = async (req, res, next) => {
 
 const authorizeRole = (...roles) => {
   return (req, res, next) => {
+    // Flatten the roles array in case it's passed as an array
+    const flatRoles = roles.flat();
+    
+    console.log('🔒 Authorization check:', {
+      requiredRoles: flatRoles,
+      userRole: req.user?.role,
+      userId: req.user?.userId,
+      userEmail: req.user?.email
+    });
+
     if (!req.user) {
+      console.log('❌ Authorization failed: No user in request');
       return res.status(401).json({
         success: false,
         message: 'Authentication required'
       });
     }
 
-    if (!roles.includes(req.user.role)) {
+    if (!flatRoles.includes(req.user.role)) {
+      console.log('❌ Authorization failed: User role not in required roles');
       return res.status(403).json({
         success: false,
-        message: 'Insufficient permissions'
+        message: 'Insufficient permissions',
+        debug: {
+          userRole: req.user.role,
+          requiredRoles: flatRoles
+        }
       });
     }
 
+    console.log('✅ Authorization successful');
     next();
   };
 };

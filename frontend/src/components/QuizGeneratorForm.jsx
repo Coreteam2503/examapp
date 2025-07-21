@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import QuizCriteriaSelector from './QuizCriteriaSelector';
+import BatchSelector from './common/BatchSelector';
 import { quizGenerationService } from '../services/quizGenerationService';
 import BatchService from '../services/batchService';
 import { 
@@ -351,34 +352,28 @@ const QuizGeneratorForm = () => {
 
             {/* Batch Selector */}
             {options.userBatches.length > 0 && (
-              <div className="batch-selector">
-                <label className="form-label">
-                  Filter by Batches (Optional)
-                  <span className="label-hint">
-                    Select specific batches to generate quiz from, or leave empty for all accessible questions
-                  </span>
-                </label>
-                <div className="batch-options">
-                  {options.userBatches.map(batch => (
-                    <label key={batch.value} className="batch-checkbox">
-                      <input
-                        type="checkbox"
-                        checked={criteria.batchIds.includes(batch.value)}
-                        onChange={(e) => {
-                          const newBatchIds = e.target.checked 
-                            ? [...criteria.batchIds, batch.value]
-                            : criteria.batchIds.filter(id => id !== batch.value);
-                          handleCriteriaChange('batchIds', newBatchIds);
-                        }}
-                      />
-                      <span className="batch-name">{batch.label}</span>
-                      <span className="batch-description">{batch.description}</span>
-                    </label>
-                  ))}
-                </div>
+              <div className="form-field">
+                <BatchSelector
+                  batches={options.userBatches}
+                  selectedBatches={options.userBatches.filter(batch => 
+                    criteria.batchIds.includes(batch.value || batch.id)
+                  )}
+                  onChange={(selectedBatches) => {
+                    const batchIds = selectedBatches.map(batch => batch.value || batch.id);
+                    handleCriteriaChange('batchIds', batchIds);
+                  }}
+                  mode="multi"
+                  placeholder="Select batches to filter questions (optional)..."
+                  searchable={true}
+                  clearable={true}
+                  showBatchCounts={true}
+                  className="quiz-batch-selector"
+                  emptyMessage="No batches available"
+                />
                 {criteria.batchIds.length > 0 && (
-                  <div className="selected-batches">
-                    Selected: {criteria.batchIds.length} batch{criteria.batchIds.length !== 1 ? 'es' : ''}
+                  <div className="batch-filter-info">
+                    <InformationCircleIcon className="info-icon" />
+                    <span>Quiz will only include questions from {criteria.batchIds.length} selected batch{criteria.batchIds.length !== 1 ? 'es' : ''}</span>
                   </div>
                 )}
               </div>

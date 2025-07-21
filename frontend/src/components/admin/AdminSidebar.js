@@ -16,6 +16,12 @@ const AdminSidebar = ({ activeSection, setActiveSection, collapsed, setCollapsed
       description: 'Manage student accounts and activity'
     },
     {
+      id: 'batches',
+      label: 'Batch Management',
+      icon: '📚',
+      description: 'Create and manage learning batches'
+    },
+    {
       id: 'analytics',
       label: 'Analytics',
       icon: '📈',

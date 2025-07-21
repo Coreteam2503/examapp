@@ -3,6 +3,15 @@ const router = express.Router();
 const UserController = require('../controllers/userController');
 const { authenticateToken, authorizeRole } = require('../middleware/auth');
 
+// Debug endpoint to check current user
+router.get('/me', authenticateToken, (req, res) => {
+  res.json({
+    success: true,
+    user: req.user,
+    message: 'Current user data'
+  });
+});
+
 // Get user progress data
 router.get('/progress', authenticateToken, UserController.getUserProgress);
 
@@ -10,7 +19,7 @@ router.get('/progress', authenticateToken, UserController.getUserProgress);
 router.get('/:userId/batches', authenticateToken, UserController.getUserBatches);
 
 // Update user batch assignments (admin only)
-router.put('/:userId/batches', authenticateToken, authorizeRole(['admin']), UserController.updateUserBatches);
+router.put('/:userId/batches', authenticateToken, authorizeRole('admin'), UserController.updateUserBatches);
 
 // Register new user with batch assignment
 router.post('/register-with-batch', UserController.registerWithBatch);

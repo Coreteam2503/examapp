@@ -1,4 +1,4 @@
-import { apiService } from './apiService';
+import api from './apiService';
 
 class BatchService {
   // Get all batches
@@ -28,7 +28,7 @@ class BatchService {
       const queryString = params.toString();
       const url = queryString ? `/batches?${queryString}` : '/batches';
       
-      const response = await apiService.get(url);
+      const response = await api.get(url);
       return response.data;
     } catch (error) {
       console.error('Error fetching batches:', error);
@@ -39,7 +39,7 @@ class BatchService {
   // Get specific batch by ID
   static async getBatch(batchId) {
     try {
-      const response = await apiService.get(`/batches/${batchId}`);
+      const response = await api.get(`/batches/${batchId}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching batch:', error);
@@ -50,7 +50,7 @@ class BatchService {
   // Create new batch
   static async createBatch(batchData) {
     try {
-      const response = await apiService.post('/batches', batchData);
+      const response = await api.post('/batches', batchData);
       return response.data;
     } catch (error) {
       console.error('Error creating batch:', error);
@@ -61,7 +61,7 @@ class BatchService {
   // Update batch
   static async updateBatch(batchId, batchData) {
     try {
-      const response = await apiService.put(`/batches/${batchId}`, batchData);
+      const response = await api.put(`/batches/${batchId}`, batchData);
       return response.data;
     } catch (error) {
       console.error('Error updating batch:', error);
@@ -72,7 +72,7 @@ class BatchService {
   // Delete batch
   static async deleteBatch(batchId) {
     try {
-      const response = await apiService.delete(`/batches/${batchId}`);
+      const response = await api.delete(`/batches/${batchId}`);
       return response.data;
     } catch (error) {
       console.error('Error deleting batch:', error);
@@ -91,7 +91,7 @@ class BatchService {
       const queryString = params.toString();
       const url = queryString ? `/batches/${batchId}/users?${queryString}` : `/batches/${batchId}/users`;
       
-      const response = await apiService.get(url);
+      const response = await api.get(url);
       return response.data;
     } catch (error) {
       console.error('Error fetching batch users:', error);
@@ -113,7 +113,7 @@ class BatchService {
       const queryString = params.toString();
       const url = queryString ? `/batches/${batchId}/questions?${queryString}` : `/batches/${batchId}/questions`;
       
-      const response = await apiService.get(url);
+      const response = await api.get(url);
       return response.data;
     } catch (error) {
       console.error('Error fetching batch questions:', error);
@@ -124,7 +124,7 @@ class BatchService {
   // Assign user to batch
   static async assignUser(batchId, userId) {
     try {
-      const response = await apiService.post(`/batches/${batchId}/users`, { userId });
+      const response = await api.post(`/batches/${batchId}/users`, { userId });
       return response.data;
     } catch (error) {
       console.error('Error assigning user to batch:', error);
@@ -132,32 +132,10 @@ class BatchService {
     }
   }
 
-  // Assign question to batch
-  static async assignQuestion(batchId, questionId) {
-    try {
-      const response = await apiService.post(`/batches/${batchId}/questions`, { questionId });
-      return response.data;
-    } catch (error) {
-      console.error('Error assigning question to batch:', error);
-      throw new Error(error.response?.data?.message || 'Failed to assign question to batch');
-    }
-  }
-
-  // Bulk assign questions to batch
-  static async bulkAssignQuestions(batchId, questionIds) {
-    try {
-      const response = await apiService.post(`/batches/${batchId}/questions/bulk`, { questionIds });
-      return response.data;
-    } catch (error) {
-      console.error('Error bulk assigning questions:', error);
-      throw new Error(error.response?.data?.message || 'Failed to bulk assign questions');
-    }
-  }
-
   // Remove user from batch
   static async removeUser(batchId, userId) {
     try {
-      const response = await apiService.delete(`/batches/${batchId}/users/${userId}`);
+      const response = await api.delete(`/batches/${batchId}/users/${userId}`);
       return response.data;
     } catch (error) {
       console.error('Error removing user from batch:', error);
@@ -165,21 +143,10 @@ class BatchService {
     }
   }
 
-  // Remove question from batch
-  static async removeQuestion(batchId, questionId) {
-    try {
-      const response = await apiService.delete(`/batches/${batchId}/questions/${questionId}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error removing question from batch:', error);
-      throw new Error(error.response?.data?.message || 'Failed to remove question from batch');
-    }
-  }
-
   // Get batch statistics
   static async getBatchStatistics(batchId) {
     try {
-      const response = await apiService.get(`/batches/${batchId}/statistics`);
+      const response = await api.get(`/batches/${batchId}/statistics`);
       return response.data;
     } catch (error) {
       console.error('Error fetching batch statistics:', error);
@@ -190,7 +157,7 @@ class BatchService {
   // User batch management
   static async getUserBatches(userId) {
     try {
-      const response = await apiService.get(`/users/${userId}/batches`);
+      const response = await api.get(`/users/${userId}/batches`);
       return response.data;
     } catch (error) {
       console.error('Error fetching user batches:', error);
@@ -201,7 +168,7 @@ class BatchService {
   // Update user batch assignments (admin only)
   static async updateUserBatches(userId, batchIds, action = 'assign') {
     try {
-      const response = await apiService.put(`/users/${userId}/batches`, { batchIds, action });
+      const response = await api.put(`/users/${userId}/batches`, { batchIds, action });
       return response.data;
     } catch (error) {
       console.error('Error updating user batches:', error);
@@ -212,7 +179,7 @@ class BatchService {
   // Register user with batch
   static async registerWithBatch(userData) {
     try {
-      const response = await apiService.post('/users/register-with-batch', userData);
+      const response = await api.post('/users/register-with-batch', userData);
       return response.data;
     } catch (error) {
       console.error('Error registering with batch:', error);
@@ -223,7 +190,7 @@ class BatchService {
   // Get user's available batches for quiz generation
   static async getUserBatchesForQuiz() {
     try {
-      const response = await apiService.get('/quizzes/user-batches');
+      const response = await api.get('/quizzes/user-batches');
       return response.data;
     } catch (error) {
       console.error('Error fetching user batches for quiz:', error);

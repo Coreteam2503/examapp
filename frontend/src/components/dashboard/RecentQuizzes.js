@@ -2,19 +2,33 @@ import React, { useState, useEffect } from 'react';
 import { apiService } from '../../services/apiService';
 import './RecentQuizzes.css';
 
-const RecentQuizzes = ({ onTakeQuiz, refreshTrigger }) => {
+const RecentQuizzes = ({ 
+  onTakeQuiz, 
+  refreshTrigger, 
+  selectedBatches = [], 
+  showBatchInfo = false 
+}) => {
   const [recentQuizzes, setRecentQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchRecentQuizzes();
-  }, [refreshTrigger]); // Add refreshTrigger as dependency
+  }, [refreshTrigger, selectedBatches]); // Add selectedBatches as dependency
 
   const fetchRecentQuizzes = async () => {
     try {
       setLoading(true);
       console.log('Fetching recent quiz attempts...');
-      const response = await apiService.quizAttempts.getRecent({ limit: 5 });
+      
+      // Add batch filtering to API call
+      const batchParams = selectedBatches.length > 0 
+        ? `&batchIds=${selectedBatches.map(b => b.id).join(',')}`
+        : '';
+      
+      const response = await apiService.quizAttempts.getRecent({ 
+        limit: 5,
+        batchIds: selectedBatches.length > 0 ? selectedBatches.map(b => b.id) : undefined
+      });
       const data = response.data;
       
       console.log('Recent quiz attempts response:', data);

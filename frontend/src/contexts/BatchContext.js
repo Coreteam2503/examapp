@@ -222,44 +222,6 @@ export function BatchProvider({ children }) {
     }
   };
 
-  // Assign question to batch
-  const assignQuestionToBatch = async (batchId, questionId) => {
-    try {
-      setLoading(true);
-      clearError();
-      
-      await BatchService.assignQuestion(batchId, questionId);
-      
-      // Refresh current batch if it's the one being updated
-      if (state.currentBatch?.id === batchId) {
-        await fetchBatch(batchId);
-      }
-    } catch (error) {
-      setError(error.message);
-      throw error;
-    }
-  };
-
-  // Bulk assign questions to batch
-  const bulkAssignQuestions = async (batchId, questionIds) => {
-    try {
-      setLoading(true);
-      clearError();
-      
-      const result = await BatchService.bulkAssignQuestions(batchId, questionIds);
-      
-      // Refresh current batch if it's the one being updated
-      if (state.currentBatch?.id === batchId) {
-        await fetchBatch(batchId);
-      }
-      
-      return result;
-    } catch (error) {
-      setError(error.message);
-      throw error;
-    }
-  };
-
   // Remove user from batch
   const removeUserFromBatch = async (batchId, userId) => {
     try {
@@ -270,24 +232,6 @@ export function BatchProvider({ children }) {
       
       // Refresh batches to get updated user counts
       await fetchBatches();
-    } catch (error) {
-      setError(error.message);
-      throw error;
-    }
-  };
-
-  // Remove question from batch
-  const removeQuestionFromBatch = async (batchId, questionId) => {
-    try {
-      setLoading(true);
-      clearError();
-      
-      await BatchService.removeQuestion(batchId, questionId);
-      
-      // Refresh current batch if it's the one being updated
-      if (state.currentBatch?.id === batchId) {
-        await fetchBatch(batchId);
-      }
     } catch (error) {
       setError(error.message);
       throw error;
@@ -348,10 +292,7 @@ export function BatchProvider({ children }) {
     updateBatch,
     deleteBatch,
     assignUserToBatch,
-    assignQuestionToBatch,
-    bulkAssignQuestions,
     removeUserFromBatch,
-    removeQuestionFromBatch,
     updateUserBatches,
     getBatchStatistics,
     setFilters,

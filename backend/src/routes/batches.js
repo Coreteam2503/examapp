@@ -7,7 +7,7 @@ const { authenticateToken, authorizeRole } = require('../middleware/auth');
 router.use(authenticateToken);
 
 // Define admin middleware
-const requireAdmin = authorizeRole(['admin']);
+const requireAdmin = authorizeRole('admin');
 
 // GET /api/batches - Get all batches
 router.get('/', BatchController.getBatches);

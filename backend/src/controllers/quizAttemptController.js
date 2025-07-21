@@ -26,7 +26,7 @@ class QuizAttemptController {
 
       // Get quiz information
       const quiz = await knex('quizzes')
-        .where({ id: quizId, user_id: userId })
+        .where({ id: quizId })
         .first();
 
       if (!quiz) {

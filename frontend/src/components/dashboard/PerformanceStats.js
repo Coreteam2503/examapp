@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './PerformanceStats.css';
 
-const PerformanceStats = () => {
+const PerformanceStats = ({ selectedBatches = [], refreshTrigger = null }) => {
   const [stats, setStats] = useState({
     weeklyActivity: [],
     subjectBreakdown: [],
@@ -13,11 +13,16 @@ const PerformanceStats = () => {
 
   useEffect(() => {
     fetchPerformanceStats();
-  }, [selectedTimeframe]);
+  }, [selectedTimeframe, selectedBatches, refreshTrigger]);
 
   const fetchPerformanceStats = async () => {
     try {
-      const response = await fetch(`/api/analytics/performance?timeframe=${selectedTimeframe}`, {
+      // Add batch filtering to API call
+      const batchParams = selectedBatches.length > 0 
+        ? `&batchIds=${selectedBatches.map(b => b.id).join(',')}`
+        : '';
+      
+      const response = await fetch(`/api/analytics/performance?timeframe=${selectedTimeframe}${batchParams}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }

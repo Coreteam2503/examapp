@@ -97,6 +97,35 @@ export const apiService = {
     getResults: (attemptId) => api.get(`/quiz-attempts/${attemptId}/detailed`)
   },
 
+  // Quiz attempts endpoints
+  quizAttempts: {
+    getRecent: (params) => api.get('/quiz-attempts/recent', { params }),
+    getById: (id) => api.get(`/quiz-attempts/${id}`),
+    getByUserId: (userId, params) => api.get(`/quiz-attempts/user/${userId}`, { params }),
+    create: (data) => api.post('/quiz-attempts', data),
+    update: (id, data) => api.put(`/quiz-attempts/${id}`, data),
+    delete: (id) => api.delete(`/quiz-attempts/${id}`),
+    getDetailed: (id) => api.get(`/quiz-attempts/${id}/detailed`)
+  },
+
+  // Batch endpoints
+  batches: {
+    getAll: (params) => api.get('/batches', { params }),
+    getById: (id) => api.get(`/batches/${id}`),
+    create: (data) => api.post('/batches', data),
+    update: (id, data) => api.put(`/batches/${id}`, data),
+    delete: (id) => api.delete(`/batches/${id}`),
+    getUsers: (id, params) => api.get(`/batches/${id}/users`, { params }),
+    getQuestions: (id, params) => api.get(`/batches/${id}/questions`, { params }),
+    addUser: (id, data) => api.post(`/batches/${id}/users`, data),
+    removeUser: (id, userId) => api.delete(`/batches/${id}/users/${userId}`),
+    addQuestion: (id, data) => api.post(`/batches/${id}/questions`, data),
+    removeQuestion: (id, questionId) => api.delete(`/batches/${id}/questions/${questionId}`),
+    bulkAddQuestions: (id, data) => api.post(`/batches/${id}/questions/bulk`, data),
+    getStatistics: (id) => api.get(`/batches/${id}/statistics`),
+    getUserBatches: (userId) => api.get(`/users/${userId}/batches`)
+  },
+
   // Enhanced Question Bank endpoints
   questions: {
     bulkCreate: (data) => api.post('/questions/bulk', data),

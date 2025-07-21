@@ -132,16 +132,16 @@ class AnalyticsController {
         .select([
           'quizzes.title',
           'quizzes.id as quiz_id',
-          knex.raw('COUNT(attempts.id) as quizCount'),
-          knex.raw('AVG(attempts.score_percentage) as averageScore'),
-          knex.raw('MAX(attempts.completed_at) as latestAttempt')
+          knex.raw('COUNT(attempts.id) as "quizCount"'),
+          knex.raw('AVG(attempts.score_percentage) as "averageScore"'),
+          knex.raw('MAX(attempts.completed_at) as "latestAttempt"')
         ])
         .leftJoin('quizzes', 'attempts.quiz_id', 'quizzes.id')
         .where('attempts.user_id', userId)
         .where('attempts.completed_at', '>=', dateRange.startDate)
         .where('attempts.completed_at', '<=', dateRange.endDate)
         .groupBy('quizzes.id', 'quizzes.title')
-        .orderBy('quizCount', 'desc');
+        .orderBy(knex.raw('"quizCount"'), 'desc');
 
       // Categorize quizzes into subjects based on title keywords
       const subjectMap = new Map();
