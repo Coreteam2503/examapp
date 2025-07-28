@@ -30,6 +30,12 @@ router.get('/:id/users', BatchController.getBatchUsers);
 // GET /api/batches/:id/questions - Get questions in batch
 router.get('/:id/questions', BatchController.getBatchQuestions);
 
+// GET /api/batches/:id/quizzes - Get quizzes available to batch
+router.get('/:id/quizzes', BatchController.getBatchQuizzes);
+
+// PUT /api/batches/:id/criteria - Update batch criteria (admin only)
+router.put('/:id/criteria', requireAdmin, BatchController.updateBatchCriteria);
+
 // POST /api/batches/:id/users - Assign user to batch (admin only)
 router.post('/:id/users', requireAdmin, BatchController.assignUser);
 

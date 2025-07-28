@@ -31,10 +31,10 @@ router.get('/:id', authenticateToken, QuizController.getQuizById);
 // Delete quiz
 router.delete('/:id', authenticateToken, QuizController.deleteQuiz);
 
-// Admin-only: Assign quiz to batches (COMMENTED OUT TEMPORARILY)
-// router.post('/:id/assign-batches', authenticateToken, requireAdmin, QuizController.assignQuizToBatches);
+// Admin-only: Assign quiz to batches
+router.post('/:id/assign-batches', authenticateToken, requireAdmin, QuizController.assignQuizToBatches);
 
-// Admin-only: Remove quiz from batch (COMMENTED OUT TEMPORARILY)
-// router.delete('/:id/remove-batch/:batchId', authenticateToken, requireAdmin, QuizController.removeQuizFromBatch);
+// Admin-only: Remove quiz from batch
+router.delete('/:id/remove-batch/:batchId', authenticateToken, requireAdmin, QuizController.removeQuizFromBatch);
 
 module.exports = router;

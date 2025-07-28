@@ -152,6 +152,176 @@ class Batch {
       .update({ is_active: true });
   }
 
+  // Get quizzes available to a batch based on criteria
+  static async getBatchQuizzes(batchId, options = {}) {
+    const batch = await this.findById(batchId);
+    if (!batch || !batch.quiz_criteria) {
+      // If no criteria set, return manually assigned quizzes only
+      return db('quiz_batches')
+        .join('quizzes', 'quiz_batches.quiz_id', 'quizzes.id')
+        .where('quiz_batches.batch_id', batchId)
+        .select('quizzes.*', 'quiz_batches.assigned_at');
+    }
+
+    const criteria = typeof batch.quiz_criteria === 'string' 
+      ? JSON.parse(batch.quiz_criteria) 
+      : batch.quiz_criteria;
+
+    // Build query to find quizzes whose questions match criteria
+    let query = db('quizzes')
+      .join('quiz_questions', 'quizzes.id', 'quiz_questions.quiz_id')
+      .join('questions', 'quiz_questions.question_id', 'questions.id')
+      .where('quizzes.is_active', true);
+
+    // Apply criteria filters
+    if (criteria.sources && criteria.sources.length > 0) {
+      query = query.whereIn('questions.source', criteria.sources);
+    }
+
+    if (criteria.difficulty_levels && criteria.difficulty_levels.length > 0) {
+      query = query.whereIn('questions.difficulty_level', criteria.difficulty_levels);
+    }
+
+    if (criteria.domains && criteria.domains.length > 0) {
+      query = query.whereIn('questions.domain', criteria.domains);
+    }
+
+    if (criteria.subjects && criteria.subjects.length > 0) {
+      query = query.whereIn('questions.subject', criteria.subjects);
+    }
+
+    // Group by quiz and ensure minimum question count if specified
+    query = query.groupBy('quizzes.id', 'quizzes.title', 'quizzes.description', 'quizzes.difficulty', 'quizzes.time_limit', 'quizzes.created_at', 'quizzes.updated_at');
+
+    if (criteria.min_questions) {
+      query = query.having(db.raw('count(questions.id) >= ?', [criteria.min_questions]));
+    }
+
+    const quizzes = await query.select('quizzes.*', db.raw('count(questions.id) as question_count'));
+
+    return quizzes.map(quiz => ({
+      ...quiz,
+      source: 'criteria_match' // Indicate this came from criteria matching
+    }));
+  }
+
+  // Update batch criteria and trigger auto-assignment
+  static async updateBatchCriteria(batchId, criteria) {
+    await db('batches').where('id', batchId).update({
+      quiz_criteria: JSON.stringify(criteria),
+      updated_at: new Date()
+    });
+    
+    return this.findById(batchId);
+  }
+
+  // Auto-assign quiz to batches based on matching criteria
+  static async autoAssignQuizToBatches(quizId) {
+    try {
+      console.log(`🔄 Auto-assigning quiz ${quizId} to matching batches...`);
+      
+      // Get quiz questions to determine criteria
+      const quizQuestions = await db('quiz_questions')
+        .join('questions', 'quiz_questions.question_id', 'questions.id')
+        .where('quiz_questions.quiz_id', quizId)
+        .select('questions.source', 'questions.difficulty_level', 'questions.domain', 'questions.subject');
+
+      if (quizQuestions.length === 0) {
+        console.log(`⚠️ Quiz ${quizId} has no questions, skipping auto-assignment`);
+        return [];
+      }
+
+      // Extract unique values from quiz questions
+      const quizSources = [...new Set(quizQuestions.map(q => q.source))];
+      const quizDifficulties = [...new Set(quizQuestions.map(q => q.difficulty_level))];
+      const quizDomains = [...new Set(quizQuestions.map(q => q.domain))];
+      const quizSubjects = [...new Set(quizQuestions.map(q => q.subject))];
+
+      console.log(`📊 Quiz criteria: sources=${quizSources.length}, difficulties=${quizDifficulties.length}`);
+
+      // Find batches with matching criteria
+      const batches = await db('batches')
+        .whereNotNull('quiz_criteria')
+        .where('is_active', true);
+
+      const matchingBatches = [];
+
+      for (const batch of batches) {
+        const criteria = typeof batch.quiz_criteria === 'string' 
+          ? JSON.parse(batch.quiz_criteria) 
+          : batch.quiz_criteria;
+
+        let matches = true;
+
+        // Check if quiz sources match batch criteria
+        if (criteria.sources && criteria.sources.length > 0) {
+          const hasMatchingSource = quizSources.some(source => 
+            criteria.sources.includes(source)
+          );
+          if (!hasMatchingSource) matches = false;
+        }
+
+        // Check if quiz difficulties match batch criteria
+        if (criteria.difficulty_levels && criteria.difficulty_levels.length > 0) {
+          const hasMatchingDifficulty = quizDifficulties.some(diff => 
+            criteria.difficulty_levels.includes(diff)
+          );
+          if (!hasMatchingDifficulty) matches = false;
+        }
+
+        // Check domains and subjects similarly
+        if (criteria.domains && criteria.domains.length > 0) {
+          const hasMatchingDomain = quizDomains.some(domain => 
+            criteria.domains.includes(domain)
+          );
+          if (!hasMatchingDomain) matches = false;
+        }
+
+        if (criteria.subjects && criteria.subjects.length > 0) {
+          const hasMatchingSubject = quizSubjects.some(subject => 
+            criteria.subjects.includes(subject)
+          );
+          if (!hasMatchingSubject) matches = false;
+        }
+
+        if (matches) {
+          matchingBatches.push(batch);
+        }
+      }
+
+      console.log(`✅ Found ${matchingBatches.length} matching batches for quiz ${quizId}`);
+
+      // Auto-assign to matching batches
+      const assignments = [];
+      for (const batch of matchingBatches) {
+        try {
+          // Check if already assigned
+          const existing = await db('quiz_batches')
+            .where({ quiz_id: quizId, batch_id: batch.id })
+            .first();
+
+          if (!existing) {
+            await db('quiz_batches').insert({
+              quiz_id: quizId,
+              batch_id: batch.id,
+              assigned_by: 1, // System assignment
+              assigned_at: new Date()
+            });
+            assignments.push({ batchId: batch.id, batchName: batch.name });
+            console.log(`✅ Assigned quiz ${quizId} to batch ${batch.id} (${batch.name})`);
+          }
+        } catch (error) {
+          console.error(`❌ Error assigning quiz ${quizId} to batch ${batch.id}:`, error);
+        }
+      }
+
+      return assignments;
+    } catch (error) {
+      console.error('❌ Error in auto-assignment:', error);
+      return [];
+    }
+  }
+
   // Get batch statistics
   static async getStatistics(batchId) {
     const [

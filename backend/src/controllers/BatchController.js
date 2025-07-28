@@ -233,6 +233,66 @@ class BatchController {
     }
   }
 
+  // Get quizzes available to a batch
+  static async getBatchQuizzes(req, res) {
+    try {
+      const { id } = req.params;
+      
+      const quizzes = await Batch.getBatchQuizzes(id);
+      
+      res.json({
+        success: true,
+        data: quizzes,
+        count: quizzes.length
+      });
+    } catch (error) {
+      console.error('Error fetching batch quizzes:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch batch quizzes',
+        error: error.message
+      });
+    }
+  }
+
+  // Update batch criteria
+  static async updateBatchCriteria(req, res) {
+    try {
+      const { id } = req.params;
+      const { criteria } = req.body;
+      
+      if (!criteria) {
+        return res.status(400).json({
+          success: false,
+          message: 'Criteria object is required'
+        });
+      }
+      
+      const batch = await Batch.findById(id);
+      if (!batch) {
+        return res.status(404).json({
+          success: false,
+          message: 'Batch not found'
+        });
+      }
+      
+      const updatedBatch = await Batch.updateBatchCriteria(id, criteria);
+      
+      res.json({
+        success: true,
+        message: 'Batch criteria updated successfully',
+        data: updatedBatch
+      });
+    } catch (error) {
+      console.error('Error updating batch criteria:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update batch criteria',
+        error: error.message
+      });
+    }
+  }
+
   // Assign user to batch
   static async assignUser(req, res) {
     try {

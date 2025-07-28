@@ -4,7 +4,19 @@ class Quiz {
   static async create(quizData) {
     const result = await db('quizzes').insert(quizData).returning('id');
     const id = Array.isArray(result) ? (result[0]?.id || result[0]) : result?.id || result;
-    return this.findById(id);
+    const quiz = await this.findById(id);
+    
+    // Trigger auto-assignment to matching batches
+    setTimeout(async () => {
+      try {
+        const Batch = require('./Batch');
+        await Batch.autoAssignQuizToBatches(id);
+      } catch (error) {
+        console.error('Error in auto-assignment after quiz creation:', error);
+      }
+    }, 1000); // Small delay to ensure quiz_questions are inserted
+    
+    return quiz;
   }
 
   static async findById(id) {
