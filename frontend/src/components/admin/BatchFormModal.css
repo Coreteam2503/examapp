@@ -1,0 +1,220 @@
+/* BatchFormModal.css */
+
+.batch-form-modal {
+  width: 100%;
+  max-width: 700px;
+  max-height: 90vh;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.close-btn:hover {
+  background: #f3f4f6;
+}
+
+.close-icon {
+  width: 20px;
+  height: 20px;
+  color: #6b7280;
+}
+
+.batch-form {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.form-content {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: #374151;
+  font-size: 14px;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.checkbox-group {
+  margin-top: 20px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.checkbox-label:hover {
+  background: #f9fafb;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.checkbox-label span {
+  font-size: 14px;
+  color: #374151;
+}
+
+.form-section {
+  margin-top: 24px;
+  padding: 20px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #f9fafb;
+}
+
+.form-section h4 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.section-description {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.inline-criteria {
+  background: white;
+  border: 1px solid #d1d5db;
+  padding: 16px;
+  border-radius: 6px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.cancel-btn {
+  background: white;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-btn:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.submit-btn {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.submit-btn:hover {
+  background: #2563eb;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .batch-form-modal {
+    max-width: 100%;
+    margin: 10px;
+    max-height: 95vh;
+  }
+  
+  .modal-header,
+  .form-content,
+  .form-actions {
+    padding: 16px;
+  }
+  
+  .form-section {
+    padding: 16px;
+  }
+  
+  .inline-criteria {
+    padding: 12px;
+  }
+  
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+}

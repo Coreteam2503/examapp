@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useBatch } from '../../contexts/BatchContext';
-import BatchSelector from '../common/BatchSelector';
+import { useBatchCriteria } from '../../hooks/useBatchCriteria';
+import BatchCard from './BatchCard';
+import BatchFormModal from './BatchFormModal';
+import BatchCriteriaModal from './BatchCriteriaModal';
 import { 
   PlusIcon, 
-  PencilIcon, 
-  TrashIcon, 
-  UserGroupIcon,
-  AcademicCapIcon,
   MagnifyingGlassIcon 
 } from '@heroicons/react/24/outline';
 import './BatchManagement.css';
@@ -19,19 +18,17 @@ const BatchManagement = () => {
     fetchBatches, 
     createBatch, 
     updateBatch, 
-    deleteBatch,
-    assignUserToBatch,
-    removeUserFromBatch,
-    bulkAssignQuestions,
-    getBatchStatistics
+    deleteBatch
   } = useBatch();
+
+  const { criteriaOptions } = useBatchCriteria();
 
   // Component state
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBatch, setSelectedBatch] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showUserAssignModal, setShowUserAssignModal] = useState(false);
+  const [showCriteriaModal, setShowCriteriaModal] = useState(false);
   
   // Form state
   const [batchForm, setBatchForm] = useState({
@@ -42,30 +39,9 @@ const BatchManagement = () => {
     is_active: true
   });
 
-  // Stats and users data
-  const [batchStats, setBatchStats] = useState({});
-  const [availableUsers, setAvailableUsers] = useState([]);
-
   useEffect(() => {
     fetchBatches();
-    fetchAvailableUsers();
   }, []);
-
-  const fetchAvailableUsers = async () => {
-    try {
-      const response = await fetch('/api/admin/students', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
-      });
-      const data = await response.json();
-      if (data.success) {
-        setAvailableUsers(data.data.students);
-      }
-    } catch (error) {
-      console.error('Error fetching users:', error);
-    }
-  };
 
   const filteredBatches = batches.filter(batch =>
     batch.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -73,12 +49,23 @@ const BatchManagement = () => {
     batch.domain?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const resetForm = () => {
+    setBatchForm({ 
+      name: '', 
+      description: '', 
+      subject: '', 
+      domain: '', 
+      is_active: true 
+    });
+    setSelectedBatch(null);
+  };
+
   const handleCreateBatch = async (e) => {
     e.preventDefault();
     try {
       await createBatch(batchForm);
       setShowCreateModal(false);
-      setBatchForm({ name: '', description: '', subject: '', domain: '', is_active: true });
+      resetForm();
     } catch (error) {
       console.error('Error creating batch:', error);
     }
@@ -89,8 +76,7 @@ const BatchManagement = () => {
     try {
       await updateBatch(selectedBatch.id, batchForm);
       setShowEditModal(false);
-      setSelectedBatch(null);
-      setBatchForm({ name: '', description: '', subject: '', domain: '', is_active: true });
+      resetForm();
     } catch (error) {
       console.error('Error updating batch:', error);
     }
@@ -106,6 +92,11 @@ const BatchManagement = () => {
     }
   };
 
+  const openCreateModal = () => {
+    resetForm();
+    setShowCreateModal(true);
+  };
+
   const openEditModal = (batch) => {
     setSelectedBatch(batch);
     setBatchForm({
@@ -118,74 +109,20 @@ const BatchManagement = () => {
     setShowEditModal(true);
   };
 
-  const loadBatchStats = async (batchId) => {
-    try {
-      const stats = await getBatchStatistics(batchId);
-      setBatchStats(prev => ({ ...prev, [batchId]: stats }));
-    } catch (error) {
-      console.error('Error loading batch stats:', error);
-    }
+  const openCriteriaModal = (batch) => {
+    setSelectedBatch(batch);
+    setShowCriteriaModal(true);
   };
 
-  const renderBatchCard = (batch) => (
-    <div key={batch.id} className="batch-card">
-      <div className="batch-card-header">
-        <div className="batch-info">
-          <h3>{batch.name}</h3>
-          <div className="batch-meta">
-            {batch.subject && <span className="batch-subject">{batch.subject}</span>}
-            {batch.domain && <span className="batch-domain">{batch.domain}</span>}
-          </div>
-          {batch.description && (
-            <p className="batch-description">{batch.description}</p>
-          )}
-        </div>
-        <div className="batch-status">
-          <span className={`status-badge ${batch.is_active ? 'active' : 'inactive'}`}>
-            {batch.is_active ? 'Active' : 'Inactive'}
-          </span>
-        </div>
-      </div>
+  const handleAssignUsers = (batch) => {
+    // TODO: Implement user assignment modal
+    console.log('Assign users to batch:', batch.id);
+  };
 
-      <div className="batch-stats">
-        <div className="stat-item">
-          <UserGroupIcon className="stat-icon" />
-          <span className="stat-value">{batch.user_count || 0}</span>
-          <span className="stat-label">Students</span>
-        </div>
-      </div>
-
-      <div className="batch-actions">
-        <button 
-          className="action-btn edit"
-          onClick={() => openEditModal(batch)}
-          title="Edit Batch"
-        >
-          <PencilIcon className="action-icon" />
-          Edit
-        </button>
-        <button 
-          className="action-btn assign"
-          onClick={() => {
-            setSelectedBatch(batch);
-            setShowUserAssignModal(true);
-          }}
-          title="Assign Users"
-        >
-          <UserGroupIcon className="action-icon" />
-          Users
-        </button>
-        <button 
-          className="action-btn delete"
-          onClick={() => handleDeleteBatch(batch.id)}
-          title="Delete Batch"
-        >
-          <TrashIcon className="action-icon" />
-          Delete
-        </button>
-      </div>
-    </div>
-  );
+  const handleCriteriaSave = (criteria) => {
+    // Refresh batches to show updated criteria
+    fetchBatches();
+  };
 
   if (loading) {
     return (
@@ -199,7 +136,7 @@ const BatchManagement = () => {
     <div className="batch-management">
       <div className="section-header">
         <h1>Batch Management</h1>
-        <p>Create and manage learning batches, assign students and questions</p>
+        <p>Create and manage learning batches, assign students and set quiz criteria</p>
       </div>
 
       {/* Controls */}
@@ -216,7 +153,7 @@ const BatchManagement = () => {
             />
           </div>
           <button 
-            onClick={() => setShowCreateModal(true)}
+            onClick={openCreateModal}
             className="create-btn"
           >
             <PlusIcon className="btn-icon" />
@@ -246,152 +183,53 @@ const BatchManagement = () => {
               }
             </p>
             <button 
-              onClick={() => setShowCreateModal(true)}
+              onClick={openCreateModal}
               className="create-first-btn"
             >
               Create First Batch
             </button>
           </div>
         ) : (
-          filteredBatches.map(renderBatchCard)
+          filteredBatches.map(batch => (
+            <BatchCard
+              key={batch.id}
+              batch={batch}
+              criteriaOptions={criteriaOptions}
+              onEdit={openEditModal}
+              onSetCriteria={openCriteriaModal}
+              onAssignUsers={handleAssignUsers}
+              onDelete={handleDeleteBatch}
+            />
+          ))
         )}
       </div>
 
-      {/* Create Batch Modal */}
-      {showCreateModal && (
-        <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Create New Batch</h2>
-              <button onClick={() => setShowCreateModal(false)} className="close-btn">✕</button>
-            </div>
-            <form onSubmit={handleCreateBatch} className="batch-form">
-              <div className="form-group">
-                <label>Batch Name *</label>
-                <input
-                  type="text"
-                  value={batchForm.name}
-                  onChange={(e) => setBatchForm({...batchForm, name: e.target.value})}
-                  required
-                  placeholder="e.g., JavaScript Fundamentals Batch 1"
-                />
-              </div>
-              <div className="form-group">
-                <label>Subject</label>
-                <input
-                  type="text"
-                  value={batchForm.subject}
-                  onChange={(e) => setBatchForm({...batchForm, subject: e.target.value})}
-                  placeholder="e.g., JavaScript, Python, Mathematics"
-                />
-              </div>
-              <div className="form-group">
-                <label>Domain</label>
-                <input
-                  type="text"
-                  value={batchForm.domain}
-                  onChange={(e) => setBatchForm({...batchForm, domain: e.target.value})}
-                  placeholder="e.g., Programming, Science, Engineering"
-                />
-              </div>
-              <div className="form-group">
-                <label>Description</label>
-                <textarea
-                  value={batchForm.description}
-                  onChange={(e) => setBatchForm({...batchForm, description: e.target.value})}
-                  placeholder="Brief description of this batch..."
-                  rows="3"
-                />
-              </div>
-              <div className="form-group checkbox-group">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={batchForm.is_active}
-                    onChange={(e) => setBatchForm({...batchForm, is_active: e.target.checked})}
-                  />
-                  <span>Active (students can access this batch)</span>
-                </label>
-              </div>
-              <div className="form-actions">
-                <button type="button" onClick={() => setShowCreateModal(false)} className="cancel-btn">
-                  Cancel
-                </button>
-                <button type="submit" className="submit-btn">
-                  Create Batch
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Modals */}
+      <BatchFormModal
+        isOpen={showCreateModal}
+        mode="create"
+        batchForm={batchForm}
+        onClose={() => setShowCreateModal(false)}
+        onSubmit={handleCreateBatch}
+        onChange={setBatchForm}
+      />
 
-      {/* Edit Batch Modal */}
-      {showEditModal && (
-        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Edit Batch</h2>
-              <button onClick={() => setShowEditModal(false)} className="close-btn">✕</button>
-            </div>
-            <form onSubmit={handleEditBatch} className="batch-form">
-              <div className="form-group">
-                <label>Batch Name *</label>
-                <input
-                  type="text"
-                  value={batchForm.name}
-                  onChange={(e) => setBatchForm({...batchForm, name: e.target.value})}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Subject</label>
-                <input
-                  type="text"
-                  value={batchForm.subject}
-                  onChange={(e) => setBatchForm({...batchForm, subject: e.target.value})}
-                />
-              </div>
-              <div className="form-group">
-                <label>Domain</label>
-                <input
-                  type="text"
-                  value={batchForm.domain}
-                  onChange={(e) => setBatchForm({...batchForm, domain: e.target.value})}
-                />
-              </div>
-              <div className="form-group">
-                <label>Description</label>
-                <textarea
-                  value={batchForm.description}
-                  onChange={(e) => setBatchForm({...batchForm, description: e.target.value})}
-                  rows="3"
-                />
-              </div>
-              <div className="form-group checkbox-group">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={batchForm.is_active}
-                    onChange={(e) => setBatchForm({...batchForm, is_active: e.target.checked})}
-                  />
-                  <span>Active (students can access this batch)</span>
-                </label>
-              </div>
-              <div className="form-actions">
-                <button type="button" onClick={() => setShowEditModal(false)} className="cancel-btn">
-                  Cancel
-                </button>
-                <button type="submit" className="submit-btn">
-                  Update Batch
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <BatchFormModal
+        isOpen={showEditModal}
+        mode="edit"
+        batch={selectedBatch}
+        batchForm={batchForm}
+        onClose={() => setShowEditModal(false)}
+        onSubmit={handleEditBatch}
+        onChange={setBatchForm}
+      />
 
-      {/* Additional modals for user and question assignment would go here */}
+      <BatchCriteriaModal
+        isOpen={showCriteriaModal}
+        batch={selectedBatch}
+        onClose={() => setShowCriteriaModal(false)}
+        onSave={handleCriteriaSave}
+      />
     </div>
   );
 };

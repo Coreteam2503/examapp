@@ -156,7 +156,7 @@ class UserController {
       }
       
       const User = require('../models/User');
-      const batches = await User.getBatches(requestedUserId, { isActive: true });
+      const batches = await User.getBatches(requestedUserId, { isActive: true, batchIsActive: true });
       
       res.json({
         success: true,

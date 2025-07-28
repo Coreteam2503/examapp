@@ -399,6 +399,36 @@ class QuizController {
       await knex('questions').insert(questions);
       console.log(`✅ All questions saved successfully`);
       
+      // Get the inserted question IDs
+      const insertedQuestions = await knex('questions')
+        .where('quiz_id', quizId)  // This assumes questions have quiz_id field
+        .select('id')
+        .orderBy('id');
+      
+      // If questions don't have quiz_id field, get them by latest inserted
+      let questionIds;
+      if (insertedQuestions.length === 0) {
+        // Get the latest questions equal to the count we just inserted
+        const latestQuestions = await knex('questions')
+          .select('id')
+          .orderBy('id', 'desc')
+          .limit(questions.length);
+        questionIds = latestQuestions.reverse().map(q => q.id);
+      } else {
+        questionIds = insertedQuestions.map(q => q.id);
+      }
+      
+      // Create quiz-question associations
+      const quizQuestionAssociations = questionIds.map((questionId, index) => ({
+        quiz_id: quizId,
+        question_id: questionId,
+        question_number: index + 1,
+        created_at: new Date()
+      }));
+      
+      await knex('quiz_questions').insert(quizQuestionAssociations);
+      console.log(`✅ Quiz-question associations created for ${questionIds.length} questions`);
+      
       // VERIFICATION: Check if quiz-question associations were actually saved
       console.log(`🔍 Verifying saved quiz-question associations...`);
       const savedAssociations = await knex('quiz_questions')
@@ -414,9 +444,9 @@ class QuizController {
           id: savedAssociations[0].id,
           type: savedAssociations[0].type,
           question_text: savedAssociations[0].question_text?.substring(0, 50) + '...',
-          hasCorrectAnswer: !!savedQuestions[0].correct_answer,
-          hasOptions: !!savedQuestions[0].options,
-          hasExplanation: !!savedQuestions[0].explanation
+          hasCorrectAnswer: !!savedAssociations[0].correct_answer,
+          hasOptions: !!savedAssociations[0].options,
+          hasExplanation: !!savedAssociations[0].explanation
         } : 'No questions found'
       });
 
@@ -986,7 +1016,7 @@ module.exports = {
   getUserQuizzes: (req, res) => quizController.getUserQuizzes(req, res),
   getQuizById: (req, res) => quizController.getQuizById(req, res),
   deleteQuiz: (req, res) => quizController.deleteQuiz(req, res),
-  getUserBatches: (req, res) => quizController.getUserBatches(req, res)
-  // assignQuizToBatches: (req, res) => quizController.assignQuizToBatches(req, res),
-  // removeQuizFromBatch: (req, res) => quizController.removeQuizFromBatch(req, res)
+  getUserBatches: (req, res) => quizController.getUserBatches(req, res),
+  assignQuizToBatches: (req, res) => quizController.assignQuizToBatches(req, res),
+  removeQuizFromBatch: (req, res) => quizController.removeQuizFromBatch(req, res)
 };

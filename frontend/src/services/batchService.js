@@ -197,6 +197,63 @@ class BatchService {
       throw new Error(error.response?.data?.message || 'Failed to fetch user batches for quiz');
     }
   }
+
+  // ===== BATCH CRITERIA FUNCTIONALITY =====
+
+  // Get criteria options for dropdowns
+  static async getCriteriaOptions() {
+    try {
+      const response = await api.get('/batches/criteria-options');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching criteria options:', error);
+      throw new Error(error.response?.data?.message || 'Failed to fetch criteria options');
+    }
+  }
+
+  // Validate batch criteria
+  static async validateCriteria(criteria) {
+    try {
+      const response = await api.post('/batches/validate-criteria', { criteria });
+      return response.data;
+    } catch (error) {
+      console.error('Error validating criteria:', error);
+      throw new Error(error.response?.data?.message || 'Failed to validate criteria');
+    }
+  }
+
+  // Preview questions matching criteria
+  static async previewQuestions(criteria, limit = 10) {
+    try {
+      const response = await api.post('/batches/preview-questions', { criteria, limit });
+      return response.data;
+    } catch (error) {
+      console.error('Error previewing questions:', error);
+      throw new Error(error.response?.data?.message || 'Failed to preview questions');
+    }
+  }
+
+  // Update batch criteria
+  static async updateBatchCriteria(batchId, criteria) {
+    try {
+      const response = await api.put(`/batches/${batchId}/criteria`, { criteria });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating batch criteria:', error);
+      throw new Error(error.response?.data?.message || 'Failed to update batch criteria');
+    }
+  }
+
+  // Get quizzes available to batch
+  static async getBatchQuizzes(batchId) {
+    try {
+      const response = await api.get(`/batches/${batchId}/quizzes`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching batch quizzes:', error);
+      throw new Error(error.response?.data?.message || 'Failed to fetch batch quizzes');
+    }
+  }
 }
 
 export default BatchService;

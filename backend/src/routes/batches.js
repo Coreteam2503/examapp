@@ -9,6 +9,15 @@ router.use(authenticateToken);
 // Define admin middleware
 const requireAdmin = authorizeRole('admin');
 
+// GET /api/batches/criteria-options - Get available criteria options for dropdowns
+router.get('/criteria-options', BatchController.getCriteriaOptions);
+
+// POST /api/batches/validate-criteria - Validate batch criteria
+router.post('/validate-criteria', BatchController.validateCriteria);  
+
+// POST /api/batches/preview-questions - Preview questions matching criteria
+router.post('/preview-questions', BatchController.previewCriteriaQuestions);
+
 // GET /api/batches - Get all batches
 router.get('/', BatchController.getBatches);
 
