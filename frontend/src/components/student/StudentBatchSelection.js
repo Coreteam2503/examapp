@@ -157,21 +157,6 @@ const StudentBatchSelection = () => {
               )}
 
               <div className="detail-section">
-                <h3>Quick Actions</h3>
-                <div className="action-buttons">
-                  <button className="btn btn-primary">
-                    📝 Take Quiz from this Batch
-                  </button>
-                  <button className="btn btn-secondary">
-                    📊 View Progress
-                  </button>
-                  <button className="btn btn-secondary">
-                    📚 Browse Questions
-                  </button>
-                </div>
-              </div>
-
-              <div className="detail-section">
                 <h3>Enrollment Details</h3>
                 <div className="enrollment-info">
                   <div className="enrollment-item">

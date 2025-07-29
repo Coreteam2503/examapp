@@ -100,15 +100,6 @@ const StudentBatchDisplay = () => {
                       <p>{batch.description}</p>
                     </div>
                   )}
-
-                  <div className="batch-actions">
-                    <button className="action-btn primary">
-                      📝 Take Quiz
-                    </button>
-                    <button className="action-btn secondary">
-                      📊 View Progress
-                    </button>
-                  </div>
                 </div>
               )}
             </div>

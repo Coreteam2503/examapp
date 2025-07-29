@@ -111,14 +111,6 @@ const StudentDashboard = () => {
     setSelectedBatches(batches);
   };
 
-  const handleTakeQuiz = (batchId = null) => {
-    // Navigate to quiz generation with optional batch pre-selection
-    const event = new CustomEvent('navigateToGenerate', { 
-      detail: { preSelectedBatch: batchId } 
-    });
-    window.dispatchEvent(event);
-  };
-
   const getFilteredBatchesDisplay = () => {
     if (selectedBatches.length === 0) {
       return 'All Batches';
@@ -170,12 +162,6 @@ const StudentDashboard = () => {
                     </span>
                   </div>
                 </div>
-                <button 
-                  className="batch-action-btn"
-                  onClick={() => handleTakeQuiz(batch.id)}
-                >
-                  Take Quiz from {batch.name}
-                </button>
               </div>
             );
           })}
@@ -291,7 +277,6 @@ const StudentDashboard = () => {
           {/* Quick Actions with batch context */}
           <QuickActions 
             selectedBatches={selectedBatches}
-            onTakeQuiz={handleTakeQuiz}
           />
         </div>
         
@@ -299,7 +284,6 @@ const StudentDashboard = () => {
           {/* Enhanced Recent Quizzes with batch filtering */}
           <RecentQuizzes 
             selectedBatches={selectedBatches}
-            onTakeQuiz={handleTakeQuiz}
             refreshTrigger={selectedBatches}
             showBatchInfo={true}
           />

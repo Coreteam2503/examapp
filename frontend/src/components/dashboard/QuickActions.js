@@ -4,22 +4,9 @@ import './QuickActions.css';
 const QuickActions = ({ 
   setActiveTab, 
   user, 
-  selectedBatches = [], 
-  onTakeQuiz = () => {} 
+  selectedBatches = []
 }) => {
-  const batchSpecificActions = selectedBatches.length > 0 ? [
-    {
-      icon: '📚',
-      title: `Quiz from ${selectedBatches.length === 1 ? selectedBatches[0].name : `${selectedBatches.length} Batches`}`,
-      description: 'Take batch-specific quiz',
-      action: () => onTakeQuiz(selectedBatches.length === 1 ? selectedBatches[0].id : null),
-      color: '#8b5cf6',
-      enabled: true
-    }
-  ] : [];
-
   const quickActions = [
-    ...batchSpecificActions,
     {
       icon: '🧠',
       title: 'Take Random Quiz',
@@ -34,14 +21,6 @@ const QuickActions = ({
       description: 'Create custom quiz',
       action: () => setActiveTab('generate'),
       color: '#3498db',
-      enabled: true
-    },
-    {
-      icon: '📊',
-      title: 'View Progress',
-      description: 'Check your analytics',
-      action: () => setActiveTab('analytics'),
-      color: '#f39c12',
       enabled: true
     }
   ];

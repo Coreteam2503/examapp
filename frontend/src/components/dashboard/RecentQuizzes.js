@@ -3,7 +3,6 @@ import { apiService } from '../../services/apiService';
 import './RecentQuizzes.css';
 
 const RecentQuizzes = ({ 
-  onTakeQuiz, 
   refreshTrigger, 
   selectedBatches = [], 
   showBatchInfo = false 
@@ -77,12 +76,6 @@ const RecentQuizzes = ({
     });
   };
 
-  const handleRetakeQuiz = (quizId) => {
-    if (onTakeQuiz) {
-      onTakeQuiz(quizId);
-    }
-  };
-
   if (loading) {
     return (
       <div className="recent-quizzes loading">
@@ -96,9 +89,6 @@ const RecentQuizzes = ({
     <div className="recent-quizzes">
       <div className="section-header">
         <h3>Recent Quizzes</h3>
-        <button className="view-all-btn" onClick={() => onTakeQuiz && onTakeQuiz()}>
-          View All
-        </button>
       </div>
       
       {recentQuizzes.length === 0 ? (
@@ -165,13 +155,6 @@ const RecentQuizzes = ({
               </div>
               
               <div className="quiz-actions">
-                <button 
-                  className="action-btn retake"
-                  onClick={() => handleRetakeQuiz(quiz.id)}
-                  title="Retake Quiz"
-                >
-                  ↻
-                </button>
                 <button 
                   className="action-btn review"
                   title="Review Answers"

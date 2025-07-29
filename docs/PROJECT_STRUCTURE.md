@@ -1,4 +1,4 @@
-# ExamApp Project Structure Documentation - Updated
+# ExamApp Project Structure Documentation - Updated & Accurate
 
 ## Project Overview
 
@@ -9,10 +9,10 @@ ExamApp is a comprehensive AI-powered educational platform that enables students
 ### Backend
 - **Runtime**: Node.js
 - **Framework**: Express.js
-- **Database**: SQLite with Knex.js ORM
+- **Database**: **PostgreSQL** with Knex.js ORM *(Changed from SQLite)*
 - **Authentication**: JWT with bcryptjs
 - **File Upload**: Multer
-- **AI Integration**: OpenAI API (GPT models)
+- **AI Integration**: Anthropic Claude AI *(Primary)*, OpenAI API (optional)
 - **Security**: Helmet, CORS, Rate Limiting
 - **Validation**: Joi
 
@@ -20,100 +20,107 @@ ExamApp is a comprehensive AI-powered educational platform that enables students
 - **Framework**: React 19.1.0 with TypeScript
 - **Routing**: React Router DOM v7.6.1
 - **Styling**: Tailwind CSS v4.1.8
-- **UI Components**: Headless UI, Heroicons
+- **UI Components**: Headless UI v2.2.4, Heroicons v2.2.0
 - **HTTP Client**: Axios
+- **Code Editor**: CodeMirror with JSON and One Dark theme
 - **Testing**: Jest, React Testing Library
-
-### Development Tools
-- **Task Management**: TaskMaster AI (61.67% complete - 37/60 tasks done)
-- **Version Control**: Git
-- **Package Management**: npm
-- **Development Server**: Create React App
-- **Backend Development**: Nodemon
-- **Debugging**: Roo AI specialized debugger
 
 ## Directory Structure
 
 ```
 examApp/
 ├── .roo/                          # Roo AI debugger configuration
-│   └── (configuration files)
-├── .cursor/                       # Cursor IDE settings
+├── .taskmaster/                   # TaskMaster AI configuration and tasks
 ├── backend/                       # Node.js backend application
 │   ├── src/
-│   │   ├── config/               # Database and app configuration
+│   │   ├── config/               # Database and app configuration (PostgreSQL)
 │   │   ├── controllers/          # API route handlers
+│   │   │   ├── BatchController.js      # Batch management with criteria
+│   │   │   ├── quizController.js       # Quiz generation and management
+│   │   │   ├── questionController.js   # Question bank management
+│   │   │   └── userController.js       # User management
 │   │   ├── middleware/           # Custom middleware (auth, validation)
-│   │   ├── migrations/           # Database migration files
+│   │   ├── migrations/           # Database migration files (21+ migrations)
 │   │   ├── models/              # Data models and database schemas
+│   │   │   ├── Batch.js              # Batch management with quiz criteria
+│   │   │   ├── Quiz.js               # Quiz operations
+│   │   │   ├── Question.js           # Question bank operations
+│   │   │   └── User.js               # User operations
 │   │   ├── routes/              # API route definitions
-│   │   ├── scripts/             # Utility scripts
+│   │   │   ├── batches.js            # Batch and criteria management routes
+│   │   │   ├── quizzes.js            # Quiz routes
+│   │   │   └── users.js              # User routes
 │   │   ├── services/            # Business logic services
+│   │   │   └── quizGenerationService.js # Dynamic quiz generation
 │   │   ├── utils/               # Helper functions
 │   │   └── server.js            # Main server entry point
-│   ├── data/                    # Database files
+│   ├── data/                    # Database files (if using SQLite locally)
 │   ├── uploads/                 # Uploaded files storage
-│   ├── backups/                 # Database backups
 │   ├── services/                # Additional backend services
 │   ├── init-db.js              # Database initialization script
-│   ├── knexfile.js             # Knex database configuration
-│   ├── restart_trigger.js       # Server restart trigger utility
-│   └── package.json             # Backend dependencies
+│   ├── knexfile.js             # Knex database configuration (PostgreSQL)
+│   ├── .env                    # Environment variables (PostgreSQL config)
+│   └── package.json            # Backend dependencies
 ├── frontend/                    # React frontend application
 │   ├── src/
 │   │   ├── components/          # React components
 │   │   │   ├── admin/           # Admin dashboard components
+│   │   │   │   ├── BatchManagement.js      # Main batch management
+│   │   │   │   ├── BatchCard.js            # Individual batch display
+│   │   │   │   ├── BatchCriteriaForm.js    # Criteria selection form
+│   │   │   │   ├── BatchFormModal.js       # Create/edit batch modal
+│   │   │   │   └── BatchCriteriaModal.js   # Criteria editing modal
 │   │   │   ├── auth/            # Authentication components
+│   │   │   ├── common/          # Shared components
 │   │   │   ├── dashboard/       # Student dashboard components
-│   │   │   └── quiz/            # Quiz-related components
-│   │   ├── contexts/            # React contexts (auth, etc.)
+│   │   │   │   ├── StudentDashboard.jsx    # Main student dashboard
+│   │   │   │   ├── StudentBatchDisplay.js  # Batch info display
+│   │   │   │   ├── QuickActions.js         # Dashboard quick actions
+│   │   │   │   └── RecentQuizzes.js        # Recent quiz history
+│   │   │   ├── student/         # Student-specific components
+│   │   │   │   └── StudentBatchSelection.js # Batch selection interface
+│   │   │   ├── games/           # Game-based quiz components
+│   │   │   ├── quiz/            # Quiz-related components
+│   │   │   └── (other component directories)
+│   │   ├── contexts/            # React contexts
+│   │   │   ├── AuthContext.js         # Authentication context
+│   │   │   └── BatchContext.js        # Batch management context
+│   │   ├── hooks/               # Custom React hooks
+│   │   │   └── useBatchCriteria.js    # Batch criteria management hook
 │   │   ├── services/            # API service functions
+│   │   │   ├── apiService.js          # Base API service
+│   │   │   └── batchService.js        # Batch-specific API calls
 │   │   ├── utils/               # Frontend utility functions
-│   │   ├── App.tsx              # Main App component
-│   │   ├── App.js               # JavaScript version of App component
-│   │   └── index.tsx            # Application entry point
+│   │   ├── App.js              # Main App component (JavaScript)
+│   │   ├── App.tsx             # Main App component (TypeScript)
+│   │   └── index.tsx           # Application entry point
 │   ├── public/                  # Static assets
 │   ├── build/                   # Production build output
-│   ├── debug-localstorage.js    # LocalStorage debugging utility
-│   ├── tsconfig.json            # TypeScript configuration
-│   └── package.json             # Frontend dependencies
+│   ├── .env                    # Frontend environment variables
+│   ├── .env.production         # Production environment variables
+│   ├── tsconfig.json           # TypeScript configuration
+│   └── package.json            # Frontend dependencies
 ├── deployment_scripts/          # Production deployment utilities
 │   ├── ps/                      # PowerShell scripts for Windows
-│   │   ├── deps_manager.ps1     # Dependency management
-│   │   ├── health_checker.ps1   # Health monitoring
-│   │   ├── port_manager.ps1     # Port management
-│   │   ├── process_manager.ps1  # Process management
-│   │   ├── restart.ps1          # Service restart
-│   │   ├── restart.bat          # Batch restart script
-│   │   ├── service_starter.ps1  # Service startup
-│   │   ├── service_starter.bat  # Batch service starter
-│   │   ├── status.ps1           # Status checking
-│   │   ├── status.sh            # Unix status script
-│   │   └── stop.ps1             # Service stop
-│   ├── sh/                      # Shell scripts for Unix/Linux
-│   │   ├── deps_manager.sh      # Dependency management
-│   │   ├── health_checker.sh    # Health monitoring
-│   │   ├── port_manager.sh      # Port management
-│   │   ├── process_manager.sh   # Process management
-│   │   ├── restart.sh           # Service restart
-│   │   ├── service_starter.sh   # Service startup
-│   │   └── stop.sh              # Service stop
-│   ├── README.md                # Deployment documentation
-│   └── README_Windows.md        # Windows-specific deployment docs
+│   └── sh/                      # Shell scripts for Unix/Linux
 ├── scripts/                     # General utility scripts
-├── tasks/                       # TaskMaster AI task files
-├── logs/                        # Application logs
-├── gitcommandsforreference/     # Git command reference files
-├── .taskmasterconfig           # TaskMaster AI configuration
-├── .roomodes                   # Roo debugger modes configuration
-├── .windsurfrules              # Windsurf IDE rules
+├── docs/                        # Project documentation
+│   └── PROJECT_STRUCTURE.md    # This documentation file
+├── tests/                       # Test files
+├── e2e-tests/                   # End-to-end tests
 ├── .env.example                # Environment variables template
 ├── .gitignore                  # Git ignore rules
-├── PROJECT_STRUCTURE.md        # This documentation file
+├── .roomodes                   # Roo debugger modes configuration
 └── deploy.sh                   # Main deployment script
 ```
 
-## Database Schema
+## Database Schema & Key Features
+
+### Database Configuration
+- **Primary Database**: PostgreSQL (configured in backend/.env)
+- **Connection Details**: Remote PostgreSQL server at 13.234.76.120:5432
+- **Database Name**: mydb
+- **ORM**: Knex.js with 21+ migration files
 
 ### Core Tables
 1. **users** - User authentication and profile data
@@ -122,15 +129,26 @@ examApp/
 4. **questions** - Individual quiz questions with multiple types
 5. **quiz_attempts** - User quiz session tracking
 6. **answers** - User responses to quiz questions
+7. **batches** - Learning batch management *(New)*
+8. **user_batches** - User-batch relationships *(New)*
+9. **quiz_batches** - Quiz-batch relationships *(New)*
+10. **question_batches** - Question-batch relationships *(New)*
 
-### Migration Files
-- `001_create_users_table.js` - Basic user management
-- `002_create_uploads_table.js` - File upload tracking
-- `003_create_quiz_tables.js` - Core quiz functionality
-- `004_fix_quiz_schema.js` - Schema improvements
-- `005_enhance_questions_table.js` - Enhanced question types
+### New Batch Management System
+- **Batch Criteria**: JSON-based quiz assignment criteria
+- **Auto-Assignment**: Quizzes automatically assigned to matching batches
+- **Criteria Validation**: Real-time validation of batch criteria
+- **Question Preview**: Preview questions matching criteria before saving
 
 ## Key Features Implemented
+
+### Batch Management System *(New Major Feature)*
+- **Dynamic Criteria Selection**: Dropdowns populated from actual database data
+- **Real-time Validation**: Immediate feedback on criteria validity
+- **Question Preview**: See matching questions before saving criteria
+- **Auto-Assignment**: Quizzes automatically assigned to matching batches
+- **Admin Interface**: Complete batch management with criteria setting
+- **Student Interface**: Clean batch information display (no quiz actions)
 
 ### Authentication & Authorization
 - User registration and login
@@ -150,63 +168,21 @@ examApp/
   - Fill-in-the-Blank
   - True/False
   - Matching Pairs
+  - Drag & Drop Ordering
 - AI-powered quiz generation from uploaded code
-- Interactive quiz interface with Duolingo-inspired UI
+- Dynamic quiz generation from question bank
+- Interactive quiz interface
 - Real-time scoring and results
 - Mobile-responsive design
 
-### Admin Dashboard
-- Student management interface
-- Analytics and performance tracking
-- Report generation and export capabilities
-- Usage statistics and trends
-
-### Student Dashboard
-- Personal progress tracking
-- Quiz history and results
-- Performance metrics
-- Recent activity overview
-
-## Development Tools Integration
-
-### TaskMaster AI
-- Project task management and tracking
-- 60 total tasks identified across project lifecycle
-- 37 completed tasks (61.67% completion rate)
-- Automated progress tracking and dependency management
-
-### Deployment Scripts
-- **Windows Support**: PowerShell scripts in `deployment_scripts/ps/`
-- **Unix/Linux Support**: Shell scripts in `deployment_scripts/sh/`
-- **Features**: Process management, health monitoring, port management
-- **Utilities**: Dependency management, service restart capabilities
-
-## Current Development Status
-
-### Completed (37/60 tasks - 61.67%)
-- ✅ Project setup and environment configuration
-- ✅ Database setup with SQLite and Knex.js
-- ✅ Complete authentication system
-- ✅ File upload functionality with security
-- ✅ LLM integration for quiz generation
-- ✅ All quiz question types implementation
-- ✅ Student and admin dashboards
-- ✅ Analytics and reporting system
-- ✅ Mobile-responsive design
-- ✅ Security middleware and rate limiting
-- ✅ Deployment script infrastructure
-
-### In Progress/Pending (23/60 tasks)
-- 🔄 Input validation and sanitization (in progress)
-- ⏳ Advanced role management
-- ⏳ Gamification features (points, badges, leaderboards)
-- ⏳ Multi-language file processing
-- ⏳ Performance optimizations
-- ⏳ Error handling improvements
-- ⏳ Production monitoring setup
-- ⏳ Analytics API completion
-
 ## API Endpoints
+
+### Batch Management *(New)*
+- `GET /api/batches/criteria-options` - Get dropdown options for criteria
+- `POST /api/batches/validate-criteria` - Validate batch criteria
+- `POST /api/batches/preview-questions` - Preview questions matching criteria  
+- `PUT /api/batches/:id/criteria` - Update batch criteria
+- `GET /api/batches/:id/quizzes` - Get quizzes available to batch
 
 ### Authentication
 - `POST /api/auth/register` - User registration
@@ -218,98 +194,91 @@ examApp/
 - `GET /api/uploads` - List user uploads
 
 ### Quiz System
-- `POST /api/quiz/generate` - Generate quiz from upload
-- `GET /api/quiz/:id` - Get quiz details
-- `POST /api/quiz/:id/attempt` - Submit quiz attempt
-- `GET /api/quiz/results/:id` - Get quiz results
+- `POST /api/quizzes/generate` - Generate quiz from upload
+- `POST /api/quizzes/generate-dynamic` - Generate quiz from question bank
+- `GET /api/quizzes/:id` - Get quiz details
+- `POST /api/quizzes/:id/assign-batches` - Assign quiz to batches (admin)
+- `DELETE /api/quizzes/:id/remove-batch/:batchId` - Remove quiz from batch
 
-### Admin
-- `GET /api/admin/students` - Get all students
-- `GET /api/admin/analytics` - Get system analytics
-- `GET /api/admin/reports` - Generate reports
-
-## Security Features
-
-### Implemented
-- Helmet.js for security headers
-- CORS protection
-- Rate limiting
-- JWT token validation
-- File upload validation and scanning
-- Input sanitization (in progress)
-
-### Backend Security Middleware
-- Authentication middleware
-- Role-based authorization
-- File type validation
-- Request rate limiting
+### User Management
+- `GET /api/users/:userId/batches` - Get user's batches (fixed visibility bug)
 
 ## Environment Configuration
 
-### Required Environment Variables
-- `ANTHROPIC_API_KEY` - For Claude AI integration
-- `OPENAI_API_KEY` - For GPT model access (optional)
-- `PERPLEXITY_API_KEY` - For research capabilities (optional)
-- Database configuration (SQLite by default)
+### Backend (.env)
+```
+DB_HOST=13.234.76.120
+DB_PORT=5432
+DB_NAME=mydb
+DB_USER=myuser
+DB_PASSWORD=123123
+ANTHROPIC_API_KEY=your_claude_api_key
+```
 
-### Development Setup
-1. Install Node.js dependencies in both frontend and backend
-2. Configure environment variables (.env files)
-3. Run database migrations with `init-db.js`
-4. Start backend server on port 8000
-5. Start frontend development server on port 3000
+### Frontend (.env)
+```
+REACT_APP_API_URL=http://localhost:8000
+```
 
-## Deployment Architecture
+## Recent Changes & Bug Fixes
 
-### Development
-- Frontend: `npm start` (port 3000)
-- Backend: `npm run dev` (port 8000)
-- Database: SQLite local file
+### Fixed Issues
+1. **Batch Visibility Bug**: Users can now see newly assigned batches correctly
+2. **Quiz Controller Exports**: Fixed missing method exports for batch assignment
+3. **Quiz-Question Associations**: Fixed quiz creation to properly link questions
 
-### Production Deployment
-- **Windows**: Use PowerShell scripts in `deployment_scripts/ps/`
-- **Unix/Linux**: Use shell scripts in `deployment_scripts/sh/`
-- **Main deployment**: Execute `deploy.sh` script
-- **Health monitoring**: Automated health checks and restart triggers
+### UI Cleanup
+1. **Student UI**: Removed "Take Quiz" and "View Progress" buttons from batch displays
+2. **Admin UI**: Removed "Users" button from batch management cards
+3. **Simplified Interface**: Cleaner, more focused user experience
 
-### Production Considerations
-- Database migration to PostgreSQL/MySQL recommended
-- Environment-specific configurations
-- Load balancing and scaling considerations
-- Monitoring and logging setup
+### Code Quality Improvements
+1. **Separation of Concerns**: Broke down large components into smaller, focused ones
+2. **Component Architecture**: Better organized component hierarchy
+3. **Error Handling**: Improved error handling and user feedback
+
+## Development Status
+
+### Recently Completed
+- ✅ **Batch Criteria System**: Complete implementation with dynamic dropdowns
+- ✅ **UI Cleanup**: Removed unnecessary buttons and simplified interface
+- ✅ **Bug Fixes**: Fixed batch visibility and quiz assignment issues
+- ✅ **Component Refactoring**: Improved code organization with SOC principles
+- ✅ **Real-time Validation**: Added criteria validation with immediate feedback
+
+### Current State
+- **Database**: PostgreSQL with 21+ migration files
+- **Frontend**: React 19.1.0 with TypeScript support
+- **Backend**: Express.js with comprehensive API
+- **Testing**: Multiple test files and verification scripts
 
 ## Development Scripts
 
 ### Backend
-- `npm start` - Production server
+- `npm start` - Production server (port 8000)
 - `npm run dev` - Development with nodemon
-- `npm test` - Run tests
+- `npm run migrate` - Run database migrations
 
-### Frontend
-- `npm start` - Development server
+### Frontend  
+- `npm start` - Development server (port 3000)
 - `npm run build` - Production build
 - `npm test` - Run tests
 
-### Utility Scripts
-- **Cross-platform deployment scripts**
-- **Automated restart and health checking**
-- **Port and process management utilities**
-- **Dependency management automation**
+## Notes
 
-## Project Management
+### Missing/Deprecated Elements
+- `.taskmasterconfig` - Not found in current structure
+- TaskMaster AI progress tracking - Not actively maintained
+- SQLite references - Project now uses PostgreSQL
 
-### TaskMaster AI Integration
-- 60 total tasks identified across project lifecycle
-- 37 completed tasks (61.67% completion rate)
-- Automated task generation from project requirements
-- Progress tracking and dependency management
-- AI-powered task analysis and recommendations
+### Current Focus
+- Batch management and criteria system is fully implemented
+- UI has been cleaned up and simplified
+- Bug fixes have been applied and verified
+- Component architecture follows SOC principles
 
-### Development Workflow
-1. Use TaskMaster AI for task planning and tracking
-2. Deploy using appropriate platform scripts
-3. Monitor health using automated checking tools
+---
 
-## Notes on Missing Files
-The current deployment infrastructure uses the organized scripts in `deployment_scripts/` instead.
-
+**Last Updated**: January 2025  
+**Database**: PostgreSQL (Remote)  
+**Status**: Active Development with Recent Major Feature Completion

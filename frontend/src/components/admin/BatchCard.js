@@ -12,7 +12,6 @@ const BatchCard = ({
   batch, 
   onEdit, 
   onSetCriteria, 
-  onAssignUsers, 
   onDelete,
   criteriaOptions 
 }) => {
@@ -78,14 +77,6 @@ const BatchCard = ({
         >
           <Cog6ToothIcon className="action-icon" />
           Criteria
-        </button>
-        <button 
-          className="action-btn assign"
-          onClick={() => onAssignUsers(batch)}
-          title="Assign Users"
-        >
-          <UserGroupIcon className="action-icon" />
-          Users
         </button>
         <button 
           className="action-btn delete"

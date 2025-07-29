@@ -114,11 +114,6 @@ const BatchManagement = () => {
     setShowCriteriaModal(true);
   };
 
-  const handleAssignUsers = (batch) => {
-    // TODO: Implement user assignment modal
-    console.log('Assign users to batch:', batch.id);
-  };
-
   const handleCriteriaSave = (criteria) => {
     // Refresh batches to show updated criteria
     fetchBatches();
@@ -136,7 +131,7 @@ const BatchManagement = () => {
     <div className="batch-management">
       <div className="section-header">
         <h1>Batch Management</h1>
-        <p>Create and manage learning batches, assign students and set quiz criteria</p>
+        <p>Create and manage learning batches and set quiz criteria</p>
       </div>
 
       {/* Controls */}
@@ -197,7 +192,6 @@ const BatchManagement = () => {
               criteriaOptions={criteriaOptions}
               onEdit={openEditModal}
               onSetCriteria={openCriteriaModal}
-              onAssignUsers={handleAssignUsers}
               onDelete={handleDeleteBatch}
             />
           ))

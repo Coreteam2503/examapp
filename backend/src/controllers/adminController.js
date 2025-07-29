@@ -6,7 +6,7 @@ class AdminController {
    * Get all students with their statistics
    * GET /api/admin/students
    */
-  async getStudents(req, res) {
+  static async getStudents(req, res) {
     try {
       const { page = 1, limit = 10, search = '', role = 'student' } = req.query;
       const offset = (page - 1) * limit;
@@ -117,7 +117,7 @@ class AdminController {
    * Get detailed student information
    * GET /api/admin/students/:id
    */
-  async getStudentDetails(req, res) {
+  static async getStudentDetails(req, res) {
     try {
       const { id } = req.params;
 
@@ -154,8 +154,23 @@ class AdminController {
         .select(['id', 'filename', 'file_size', 'file_type', 'upload_date'])
         .orderBy('upload_date', 'desc');
 
+      // Get student's current batches
+      const studentBatches = await db('user_batches')
+        .join('batches', 'user_batches.batch_id', 'batches.id')
+        .where('user_batches.user_id', id)
+        .where('user_batches.is_active', true)
+        .select([
+          'batches.id',
+          'batches.name',
+          'batches.description',
+          'batches.subject',
+          'batches.domain',
+          'user_batches.enrolled_at'
+        ])
+        .orderBy('user_batches.enrolled_at', 'desc');
+
       // Calculate performance metrics
-      const performanceMetrics = await this.calculateStudentPerformance(id);
+      const performanceMetrics = await AdminController.calculateStudentPerformance(id);
 
       res.json({
         success: true,
@@ -170,6 +185,7 @@ class AdminController {
             createdAt: student.created_at,
             updatedAt: student.updated_at
           },
+          studentBatches,
           quizHistory,
           uploadHistory,
           performanceMetrics
@@ -190,7 +206,7 @@ class AdminController {
    * Update student status (activate/deactivate)
    * PUT /api/admin/students/:id/status
    */
-  async updateStudentStatus(req, res) {
+  static async updateStudentStatus(req, res) {
     try {
       const { id } = req.params;
       const { isActive } = req.body;
@@ -236,7 +252,7 @@ class AdminController {
    * Delete student account
    * DELETE /api/admin/students/:id
    */
-  async deleteStudent(req, res) {
+  static async deleteStudent(req, res) {
     try {
       const { id } = req.params;
 
@@ -286,7 +302,7 @@ class AdminController {
    * Get students summary statistics
    * GET /api/admin/students/summary
    */
-  async getStudentsSummary(req, res) {
+  static async getStudentsSummary(req, res) {
     try {
       // Get overall student statistics
       const totalStudents = await db('users').where('role', 'student').count('id as count').first();
@@ -767,7 +783,7 @@ class AdminController {
   /**
    * Calculate detailed performance metrics for a student
    */
-  async calculateStudentPerformance(userId) {
+  static async calculateStudentPerformance(userId) {
     try {
       // Get all attempts for performance calculation
       const attempts = await db('attempts')
@@ -827,4 +843,4 @@ class AdminController {
   }
 }
 
-module.exports = new AdminController();
+module.exports = AdminController;

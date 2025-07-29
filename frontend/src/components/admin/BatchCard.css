@@ -187,16 +187,6 @@
   border-color: #d97706;
 }
 
-.action-btn.assign {
-  color: #059669;
-  border-color: #10b981;
-}
-
-.action-btn.assign:hover {
-  background: #f0fdf4;
-  border-color: #059669;
-}
-
 .action-btn.delete {
   color: #dc2626;
   border-color: #ef4444;

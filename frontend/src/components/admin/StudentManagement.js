@@ -2,9 +2,28 @@ import React, { useState, useEffect } from 'react';
 import { apiService, handleApiError } from '../../services/apiService';
 import { useBatch } from '../../contexts/BatchContext';
 import BatchSelector from '../common/BatchSelector';
+import axios from 'axios';
 import './StudentManagement.css';
 
 const StudentManagement = () => {
+  // Helper function to make authenticated API calls
+  const makeAuthenticatedRequest = (method, url, data = null) => {
+    const token = localStorage.getItem('authToken');
+    const headers = {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    };
+    
+    const config = {
+      method,
+      url: `${process.env.REACT_APP_API_URL || 'http://localhost:8000/api'}${url}`,
+      headers,
+      ...(data && { data })
+    };
+    
+    return axios(config);
+  };
+
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -13,10 +32,13 @@ const StudentManagement = () => {
   const [pagination, setPagination] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
-  const [showBatchAssignModal, setShowBatchAssignModal] = useState(false);
+  const [showBatchManageModal, setShowBatchManageModal] = useState(false);
+  const [studentCurrentBatches, setStudentCurrentBatches] = useState([]);
+  const [availableBatches, setAvailableBatches] = useState([]);
+  const [batchActionLoading, setBatchActionLoading] = useState(false);
   
   // Batch context
-  const { batches, fetchBatches, updateUserBatches } = useBatch();
+  const { batches, fetchBatches } = useBatch();
 
   useEffect(() => {
     fetchStudents();
@@ -82,18 +104,81 @@ const StudentManagement = () => {
     }
   };
 
-  const handleBatchAssignment = async (studentId, selectedBatches) => {
+  const handleBatchManagement = async (student) => {
     try {
-      const batchIds = selectedBatches.map(batch => batch.id);
-      await updateUserBatches(studentId, batchIds, 'assign');
+      setBatchActionLoading(true);
+      setSelectedStudent(student);
       
-      // Refresh student data
-      await fetchStudents();
-      setShowBatchAssignModal(false);
-      setSelectedStudent(null);
+      // Fetch student's current batches
+      const response = await apiService.admin.getStudentDetails(student.id);
+      if (response.data.success) {
+        const currentBatches = response.data.data.studentBatches || [];
+        setStudentCurrentBatches(currentBatches);
+        
+        // Get available batches (all batches minus current ones)
+        const currentBatchIds = currentBatches.map(batch => batch.id);
+        const available = batches.filter(batch => !currentBatchIds.includes(batch.id));
+        setAvailableBatches(available);
+        
+        setShowBatchManageModal(true);
+      }
     } catch (error) {
-      console.error('Error assigning batches:', error);
-      alert(`Failed to assign batches: ${error.message}`);
+      console.error('Error fetching student batch data:', error);
+      alert(`Failed to load batch data: ${error.message}`);
+    } finally {
+      setBatchActionLoading(false);
+    }
+  };
+
+  const handleAddStudentToBatch = async (batchId) => {
+    try {
+      setBatchActionLoading(true);
+      
+      // Use the authenticated request helper
+      const response = await makeAuthenticatedRequest('POST', `/batches/${batchId}/users`, {
+        userId: selectedStudent.id
+      });
+      
+      if (response.data.success) {
+        // Refresh the batch data
+        await handleBatchManagement(selectedStudent);
+        // Refresh students list to update any counts
+        await fetchStudents();
+        console.log('✅ Student successfully added to batch');
+      } else {
+        throw new Error(response.data.message || 'Failed to add student to batch');
+      }
+    } catch (error) {
+      console.error('Error adding student to batch:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Unknown error occurred';
+      alert(`Failed to add student to batch: ${errorMessage}`);
+    } finally {
+      setBatchActionLoading(false);
+    }
+  };
+
+  const handleRemoveStudentFromBatch = async (batchId) => {
+    try {
+      setBatchActionLoading(true);
+      
+      // Use the authenticated request helper
+      const response = await makeAuthenticatedRequest('DELETE', `/batches/${batchId}/users/${selectedStudent.id}`);
+      
+      if (response.data.success) {
+        // Refresh the batch data
+        await handleBatchManagement(selectedStudent);
+        // Refresh students list to update any counts
+        await fetchStudents();
+        console.log('✅ Student successfully removed from batch');
+      } else {
+        throw new Error(response.data.message || 'Failed to remove student from batch');
+      }
+    } catch (error) {
+      console.error('Error removing student from batch:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Unknown error occurred';
+      alert(`Failed to remove student from batch: ${errorMessage}`);
+    } finally {
+      setBatchActionLoading(false);
     }
   };
 
@@ -229,12 +314,10 @@ const StudentManagement = () => {
                           👁️
                         </button>
                         <button 
-                          onClick={() => {
-                            setSelectedStudent(student);
-                            setShowBatchAssignModal(true);
-                          }}
+                          onClick={() => handleBatchManagement(student)}
                           className="batch-btn"
-                          title="Assign to Batches"
+                          title="Manage Student Batches"
+                          disabled={batchActionLoading}
                         >
                           📚
                         </button>
@@ -354,40 +437,103 @@ const StudentManagement = () => {
         </div>
       )}
 
-      {/* Batch Assignment Modal */}
-      {showBatchAssignModal && selectedStudent && (
-        <div className="modal-overlay" onClick={() => setShowBatchAssignModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      {/* Batch Management Modal */}
+      {showBatchManageModal && selectedStudent && (
+        <div className="modal-overlay" onClick={() => setShowBatchManageModal(false)}>
+          <div className="modal-content batch-manage-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Assign Batches to {selectedStudent.email}</h2>
+              <h2>Manage Batches for {selectedStudent.email}</h2>
               <button 
-                onClick={() => setShowBatchAssignModal(false)} 
+                onClick={() => setShowBatchManageModal(false)} 
                 className="close-btn"
               >
                 ✕
               </button>
             </div>
             <div className="modal-body">
-              <div className="batch-assignment-form">
-                <p>Select batches to assign this student to:</p>
-                <BatchSelector
-                  batches={batches}
-                  selectedBatches={[]}
-                  onChange={(selectedBatches) => handleBatchAssignment(selectedStudent.id, selectedBatches)}
-                  mode="multi"
-                  placeholder="Select batches for this student..."
-                  searchable={true}
-                  clearable={true}
-                  showBatchCounts={true}
-                />
-                <div className="assignment-actions">
-                  <button 
-                    onClick={() => setShowBatchAssignModal(false)}
-                    className="cancel-btn"
-                  >
-                    Cancel
-                  </button>
+              {batchActionLoading && (
+                <div className="loading-overlay">
+                  <div className="loading-spinner">Updating...</div>
                 </div>
+              )}
+              
+              {/* Current Batches Section */}
+              <div className="batch-section">
+                <h3>Current Batches ({studentCurrentBatches.length})</h3>
+                {studentCurrentBatches.length > 0 ? (
+                  <div className="current-batches-list">
+                    {studentCurrentBatches.map(batch => (
+                      <div key={batch.id} className="batch-item current-batch">
+                        <div className="batch-info">
+                          <div className="batch-name">{batch.name}</div>
+                          <div className="batch-meta">
+                            <span className="batch-subject">{batch.subject}</span>
+                            <span className="batch-domain">{batch.domain}</span>
+                            <span className="enrolled-date">
+                              Enrolled: {formatDate(batch.enrolled_at)}
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveStudentFromBatch(batch.id)}
+                          className="remove-batch-btn"
+                          disabled={batchActionLoading}
+                          title="Remove student from this batch"
+                        >
+                          ❌ Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="empty-state">
+                    <p>Student is not enrolled in any batches.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Available Batches Section */}
+              <div className="batch-section">
+                <h3>Add to Batches ({availableBatches.length} available)</h3>
+                {availableBatches.length > 0 ? (
+                  <div className="available-batches-list">
+                    {availableBatches.map(batch => (
+                      <div key={batch.id} className="batch-item available-batch">
+                        <div className="batch-info">
+                          <div className="batch-name">{batch.name}</div>
+                          <div className="batch-meta">
+                            <span className="batch-subject">{batch.subject}</span>
+                            <span className="batch-domain">{batch.domain}</span>
+                            {batch.description && (
+                              <span className="batch-description">{batch.description}</span>
+                            )}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleAddStudentToBatch(batch.id)}
+                          className="add-batch-btn"
+                          disabled={batchActionLoading}
+                          title="Add student to this batch"
+                        >
+                          ➕ Add
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="empty-state">
+                    <p>Student is already enrolled in all available batches.</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="modal-actions">
+                <button 
+                  onClick={() => setShowBatchManageModal(false)}
+                  className="close-modal-btn"
+                >
+                  Close
+                </button>
               </div>
             </div>
           </div>
