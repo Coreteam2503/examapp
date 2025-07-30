@@ -101,10 +101,36 @@ const QuizManager = ({ onQuizCompleted }) => {
   const handleQuizSelect = async (quiz) => {
     try {
       setLoading(true);
-      // Get full quiz data with questions
-      const response = await apiService.quizzes.getById(quiz.id);
-      console.log('Quiz detail response:', response.data);
-      setSelectedQuiz(response.data);
+      
+      // Check if this is a criteria-based quiz
+      const isCriteriaBased = quiz.is_criteria_based || (quiz.criteria && Object.keys(quiz.criteria).length > 0);
+      
+      if (isCriteriaBased) {
+        console.log('🎯 Starting criteria-based quiz attempt:', quiz.id);
+        
+        // For criteria-based quizzes, start a new attempt which will generate questions dynamically
+        const attemptResponse = await apiService.quizzes.startAttempt(quiz.id);
+        console.log('✅ Quiz attempt started:', attemptResponse.data);
+        
+        // Set the quiz with dynamically generated questions
+        setSelectedQuiz({
+          ...quiz,
+          questions: attemptResponse.data.questions,
+          attempt_id: attemptResponse.data.attempt_id,
+          is_criteria_based: true
+        });
+      } else {
+        console.log('📋 Loading traditional quiz:', quiz.id);
+        
+        // For traditional quizzes, get full quiz data with fixed questions
+        const response = await apiService.quizzes.getById(quiz.id);
+        console.log('Quiz detail response:', response.data);
+        setSelectedQuiz({
+          ...response.data,
+          is_criteria_based: false
+        });
+      }
+      
       setCurrentView('taking');
       setError(null);
     } catch (err) {
@@ -557,55 +583,90 @@ const QuizManager = ({ onQuizCompleted }) => {
         </div>
       ) : (
         <div className="quiz-grid">
-          {quizzes.map((quiz) => (
-            <div
-              key={quiz.id}
-              className={`quiz-card ${quiz.is_game ? 'game-format' : ''}`}
-              onClick={() => handleQuizSelect(quiz)}
-            >
-              <div className="quiz-card-header">
-                <h3>{quiz.title}</h3>
-                <button
-                  className="delete-btn"
-                  onClick={(e) => handleDeleteQuiz(quiz.id, e)}
-                  title="Delete quiz"
-                >
-                  ×
-                </button>
-              </div>
-              
-              <div className="quiz-card-content">
-                <div className="quiz-info">
-                  <div>
-                    <span className="quiz-questions">
-                      {quiz.total_questions} questions
-                    </span>
-                    <span className="quiz-difficulty">
-                      {quiz.difficulty}
-                    </span>
-                    {quiz.game_format && quiz.game_format !== 'traditional' && (
-                      <span className="quiz-game-format">
-                        🎮 {quiz.game_format.replace('_', ' ').toUpperCase()}
+          {quizzes.map((quiz) => {
+            // Check if this is a criteria-based quiz
+            const isCriteriaBased = quiz.is_criteria_based || (quiz.criteria && Object.keys(quiz.criteria).length > 0);
+            
+            // Generate criteria summary for criteria-based quizzes
+            const getCriteriaSummary = (criteria) => {
+              if (!criteria || Object.keys(criteria).length === 0) {
+                return 'Any available questions';
+              }
+              const parts = [];
+              if (criteria.domain) parts.push(`Domain: ${criteria.domain}`);
+              if (criteria.subject) parts.push(`Subject: ${criteria.subject}`);
+              if (criteria.source) parts.push(`Source: ${criteria.source}`);
+              if (criteria.difficulty_level) parts.push(`Difficulty: ${criteria.difficulty_level}`);
+              return parts.length > 0 ? parts.join(', ') : 'Dynamic selection';
+            };
+            
+            return (
+              <div
+                key={quiz.id}
+                className={`quiz-card ${quiz.is_game ? 'game-format' : ''} ${isCriteriaBased ? 'criteria-based' : ''}`}
+                onClick={() => handleQuizSelect(quiz)}
+              >
+                <div className="quiz-card-header">
+                  <h3>{quiz.title}</h3>
+                  <div className="quiz-type-indicators">
+                    {isCriteriaBased && (
+                      <span className="quiz-type-badge criteria-badge">
+                        🎯 Criteria-Based
                       </span>
                     )}
+                    <button
+                      className="delete-btn"
+                      onClick={(e) => handleDeleteQuiz(quiz.id, e)}
+                      title="Delete quiz"
+                    >
+                      ×
+                    </button>
                   </div>
-                  {quizScores[quiz.id] ? (
-                    <div className="quiz-score-info">
-                      <span className="best-score">
-                        🏆 Best: {quizScores[quiz.id].bestScore}%
-                      </span>
-                      <span className="attempts-count">
-                        📊 {quizScores[quiz.id].attempts} attempt{quizScores[quiz.id].attempts !== 1 ? 's' : ''}
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="quiz-score-info">
-                      <span className="no-attempts">
-                        🎯 No attempts yet
-                      </span>
-                    </div>
-                  )}
                 </div>
+                
+                <div className="quiz-card-content">
+                  <div className="quiz-info">
+                    <div>
+                      {isCriteriaBased ? (
+                        <>
+                          <span className="quiz-questions">
+                            {quiz.question_count || quiz.total_questions} questions (dynamic)
+                          </span>
+                          <div className="quiz-criteria">
+                            {getCriteriaSummary(quiz.criteria)}
+                          </div>
+                        </>
+                      ) : (
+                        <span className="quiz-questions">
+                          {quiz.total_questions} questions (fixed)
+                        </span>
+                      )}
+                      <span className="quiz-difficulty">
+                        {quiz.difficulty}
+                      </span>
+                      {quiz.game_format && quiz.game_format !== 'traditional' && (
+                        <span className="quiz-game-format">
+                          🎮 {quiz.game_format.replace('_', ' ').toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    {quizScores[quiz.id] ? (
+                      <div className="quiz-score-info">
+                        <span className="best-score">
+                          🏆 Best: {quizScores[quiz.id].bestScore}%
+                        </span>
+                        <span className="attempts-count">
+                          📊 {quizScores[quiz.id].attempts} attempt{quizScores[quiz.id].attempts !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="quiz-score-info">
+                        <span className="no-attempts">
+                          🎯 No attempts yet
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 
                 <div className="quiz-meta">
                   <span className="quiz-file">
@@ -623,7 +684,8 @@ const QuizManager = ({ onQuizCompleted }) => {
                 </button>
               </div>
             </div>
-          ))}
+          );
+        })}
         </div>
       )}
     </div>

@@ -19,12 +19,13 @@ class QuizGenerationService {
       ).optional(),
       game_format: Joi.string().valid(
         'traditional', 'hangman', 'knowledge_tower', 'word_ladder', 'memory_grid'
-      ).default('hangman'), // Default to hangman instead of traditional
+      ).default('hangman'),
       num_questions: Joi.number().integer().min(1).max(50).default(10),
+      time_limit: Joi.number().integer().min(1).max(180).default(30),
       randomSeed: Joi.number().optional(),
       excludeQuestionIds: Joi.array().items(Joi.number().integer()).default([]),
-      userId: Joi.number().integer().optional(), // For batch-based filtering
-      batchIds: Joi.array().items(Joi.number().integer()).optional() // Explicit batch filtering
+      userId: Joi.number().integer().optional(),
+      batchIds: Joi.array().items(Joi.number().integer()).optional()
     });
   }
 
@@ -57,9 +58,9 @@ class QuizGenerationService {
     }).returning('id');
     
     const uploadId = Array.isArray(result) ? (result[0]?.id || result[0]) : result?.id || result;
-    
     return uploadId;
   }
+
   validateCriteria(criteria) {
     const { error, value } = this.criteriaSchema.validate(criteria, {
       abortEarly: false,
@@ -70,226 +71,246 @@ class QuizGenerationService {
       throw new QuizGenerationError('Invalid criteria', error.details);
     }
 
-    // Convert deprecated game formats to hangman
-    if (value.game_format === 'traditional' || value.game_format === 'memory_grid') {
-      console.log(`🔄 [QuizGenerationService] Converting deprecated game format '${value.game_format}' to 'hangman'`);
-      value.game_format = 'hangman';
-    }
-
     return value;
   }
 
   /**
-   * Generate a dynamic quiz based on criteria
+   * Generate a criteria-based quiz (stores criteria, not fixed questions)
    */
-  async generateQuiz(criteria, userId) {
-    console.log('🎯 [QuizGenerationService] Starting quiz generation with criteria:', criteria);
+  async generateCriteriaBasedQuiz(criteria, userId) {
+    console.log('🎯 [QuizGenerationService] Starting criteria-based quiz generation:', criteria);
     
     // Validate criteria
     const validatedCriteria = this.validateCriteria(criteria);
     
-    // Handle batch-based filtering for user
-    let batchIds = validatedCriteria.batchIds;
-    if (!batchIds && userId) {
-      const userBatches = await User.getActiveBatches(userId);
-      batchIds = userBatches.map(batch => batch.id);
-      console.log(`🎯 [QuizGenerationService] User ${userId} has access to batches:`, batchIds);
+    // Build criteria object for storage
+    const storedCriteria = {};
+    if (validatedCriteria.domain) storedCriteria.domain = validatedCriteria.domain;
+    if (validatedCriteria.subject) storedCriteria.subject = validatedCriteria.subject;
+    if (validatedCriteria.source) storedCriteria.source = validatedCriteria.source;
+    if (validatedCriteria.difficulty_level) storedCriteria.difficulty_level = validatedCriteria.difficulty_level;
+    
+    console.log('📋 [QuizGenerationService] Criteria to store:', storedCriteria);
+    
+    // Validate that questions exist for these criteria
+    const questionSelector = require('./questionSelector');
+    const availableQuestions = await questionSelector.selectQuestionsForQuiz(
+      storedCriteria,
+      validatedCriteria.num_questions
+    );
+    
+    if (availableQuestions.length === 0) {
+      throw new QuizGenerationError(
+        'No questions available',
+        `No questions found matching the specified criteria: ${JSON.stringify(storedCriteria)}`
+      );
     }
     
-    // Build filter object for question search
-    const filters = this._buildFilters(validatedCriteria);
-    if (batchIds && batchIds.length > 0) {
-      filters.batchIds = batchIds;
-      console.log('🎯 [QuizGenerationService] Applying batch filtering:', batchIds);
-    }
-    console.log('🔍 [QuizGenerationService] Built filters:', filters);
-    
-    // Find matching questions
-    const availableQuestions = await Question.searchWithFilters(filters, {
-      sortBy: 'created_at',
-      sortOrder: 'desc'
-    });
-    
-    console.log(`📊 [QuizGenerationService] Found ${availableQuestions.length} available questions`);
-    
-    // Check if we have enough questions
     if (availableQuestions.length < validatedCriteria.num_questions) {
-      throw new QuizGenerationError(
-        'Insufficient questions',
-        `Only ${availableQuestions.length} questions available, but ${validatedCriteria.num_questions} requested`
-      );
+      console.warn(`⚠️ Only ${availableQuestions.length} questions available, requested ${validatedCriteria.num_questions}`);
     }
-    
-    // Exclude specific questions if requested
-    const filteredQuestions = availableQuestions.filter(
-      q => !validatedCriteria.excludeQuestionIds.includes(q.id)
-    );
-    
-    if (filteredQuestions.length < validatedCriteria.num_questions) {
-      throw new QuizGenerationError(
-        'Insufficient questions after exclusions',
-        `Only ${filteredQuestions.length} questions available after exclusions`
-      );
-    }
-    
-    // Select questions using random selection algorithm
-    const selectedQuestions = this._selectQuestions(
-      filteredQuestions, 
-      validatedCriteria.num_questions,
-      validatedCriteria.randomSeed
-    );
-    
-    console.log(`✅ [QuizGenerationService] Selected ${selectedQuestions.length} questions`);
     
     // Get system upload ID for dynamic quizzes
     const systemUploadId = await this._getSystemUploadId();
     
-    // Create quiz record
+    // Create quiz record with criteria (not fixed questions)
     const quizData = {
-      upload_id: systemUploadId, // Use system upload for dynamic quizzes
+      upload_id: systemUploadId,
+      created_by: userId,
       title: this._generateQuizTitle(validatedCriteria),
       description: this._generateQuizDescription(validatedCriteria),
-      game_format: validatedCriteria.game_format,
-      game_options: this._generateGameOptions(validatedCriteria),
-      created_by: userId,
-      user_id: userId, // Also set user_id for compatibility
+      difficulty: validatedCriteria.difficulty_level?.toLowerCase() || 'medium',
+      time_limit: validatedCriteria.time_limit || 30,
+      game_format: validatedCriteria.game_format || 'traditional',
       is_active: true,
-      total_questions: validatedCriteria.num_questions,
+      
+      // NEW: Store criteria instead of fixed questions
+      criteria: storedCriteria,
+      question_count: Math.min(validatedCriteria.num_questions, availableQuestions.length),
+      
       metadata: JSON.stringify({
         generation_criteria: validatedCriteria,
         generated_at: new Date().toISOString(),
-        question_sources: this._analyzeQuestionSources(selectedQuestions),
-        is_dynamic: true
+        available_questions_count: availableQuestions.length,
+        is_criteria_based: true,
+        question_preview: availableQuestions.slice(0, 3).map(q => ({
+          id: q.id,
+          type: q.type,
+          difficulty: q.difficulty_level,
+          domain: q.domain,
+          subject: q.subject
+        }))
       })
     };
     
+    console.log('💾 [QuizGenerationService] Creating quiz with criteria:', {
+      criteria: storedCriteria,
+      question_count: quizData.question_count,
+      available_questions: availableQuestions.length
+    });
+    
     const quiz = await Quiz.create(quizData);
-    console.log(`🎉 [QuizGenerationService] Created quiz with ID: ${quiz.id}`);
-    
-    console.log('🔍 DEBUG - About to create junction table associations (NOT copying questions)');
-    
-    // Instead of copying questions, create associations in junction table
-    const quizQuestionAssociations = selectedQuestions.map((question, index) => ({
-      quiz_id: quiz.id,
-      question_id: question.id,
-      question_number: index + 1,
-      created_at: new Date(),
-      updated_at: new Date()
-    }));
-    
-    console.log('🔍 DEBUG - Junction table associations:', quizQuestionAssociations);
-    
-    await db('quiz_questions').insert(quizQuestionAssociations);
-    console.log(`📝 [QuizGenerationService] Associated ${selectedQuestions.length} questions with quiz ${quiz.id}`);
-    
-    // Format response for frontend
-    const formattedQuiz = await this._formatQuizForFrontend(quiz, selectedQuestions);
-    
-    return formattedQuiz;
-  }
-
-  /**
-   * Get available options for quiz generation (domains, subjects, sources)
-   */
-  async getAvailableOptions() {
-    console.log('📊 [QuizGenerationService] Getting available options...');
-    
-    const statistics = await Question.getStatistics();
+    console.log(`🎉 [QuizGenerationService] Created criteria-based quiz with ID: ${quiz.id}`);
     
     return {
-      domains: statistics.byDomain.map(d => ({
-        domain: d.domain,
-        count: d.count
-      })),
-      subjects: statistics.bySubject.map(s => ({
-        subject: s.subject,
-        count: s.count
-      })),
-      sources: statistics.bySource.map(s => ({
-        source: s.source,
-        count: s.count
-      })),
-      difficulties: statistics.byDifficulty.map(d => ({
-        difficulty_level: d.difficulty_level,
-        count: d.count
-      })),
-      types: statistics.byType.map(t => ({
-        type: t.type,
-        count: t.count
-      })),
-      gameFormats: [
-        { value: 'traditional', label: 'Traditional Quiz', supported: true },
-        { value: 'hangman', label: 'Hangman Game', supported: true },
-        { value: 'knowledge_tower', label: 'Knowledge Tower', supported: true },
-        { value: 'word_ladder', label: 'Word Ladder', supported: true },
-        { value: 'memory_grid', label: 'Memory Grid', supported: true }
-      ]
+      quiz: {
+        ...quiz,
+        questions_preview: availableQuestions.slice(0, 5),
+        total_available_questions: availableQuestions.length,
+        is_criteria_based: true
+      },
+      metadata: {
+        generation_type: 'criteria_based',
+        criteria: storedCriteria,
+        available_questions: availableQuestions.length,
+        preview_count: Math.min(5, availableQuestions.length)
+      }
     };
   }
 
   /**
-   * Build filters object from criteria
+   * Get available options for quiz generation dropdowns
+   * Returns distinct values with counts from the questions table for UI dropdowns
    */
-  _buildFilters(criteria) {
-    const filters = {};
-    
-    if (criteria.domain) filters.domain = criteria.domain;
-    if (criteria.subject) filters.subject = criteria.subject;
-    if (criteria.source) filters.source = criteria.source;
-    if (criteria.difficulty_level) filters.difficulty_level = criteria.difficulty_level;
-    if (criteria.difficulty) filters.difficulty = criteria.difficulty;
-    if (criteria.type) filters.type = criteria.type;
-    if (criteria.batchIds) filters.batchIds = criteria.batchIds;
-    
-    return filters;
-  }
+  async getAvailableOptions() {
+    try {
+      console.log('📊 [QuizGenerationService] Fetching available generation options...');
+      
+      const [domains, subjects, sources, difficulties, types, gameFormats] = await Promise.all([
+        db('questions')
+          .select('domain')
+          .count('* as count')
+          .whereNotNull('domain')
+          .where('domain', '!=', '')
+          .groupBy('domain')
+          .orderBy('domain'),
+          
+        db('questions')
+          .select('subject')
+          .count('* as count')
+          .whereNotNull('subject')
+          .where('subject', '!=', '')
+          .groupBy('subject')
+          .orderBy('subject'),
+          
+        db('questions')
+          .select('source')
+          .count('* as count')
+          .whereNotNull('source')
+          .where('source', '!=', '')
+          .groupBy('source')
+          .orderBy('source'),
+          
+        db('questions')
+          .select('difficulty_level')
+          .count('* as count')
+          .whereNotNull('difficulty_level')
+          .groupBy('difficulty_level')
+          .orderBy('difficulty_level'),
+          
+        db('questions')
+          .select('type')
+          .count('* as count')
+          .whereNotNull('type')
+          .groupBy('type')
+          .orderBy('type'),
+          
+        // Get game formats from quizzes table (actual usage) or fall back to validation schema
+        db('quizzes')
+          .select('game_format')
+          .count('* as count')
+          .whereNotNull('game_format')
+          .groupBy('game_format')
+          .orderBy('game_format')
+      ]);
 
-  /**
-   * Select questions using fair random selection
-   */
-  _selectQuestions(questions, numQuestions, seed = null) {
-    // Create a copy to avoid modifying the original array
-    const shuffled = [...questions];
-    
-    // Use deterministic shuffle if seed provided, otherwise random
-    if (seed !== null) {
-      this._seededShuffle(shuffled, seed);
-    } else {
-      this._fisherYatesShuffle(shuffled);
+      // If no game formats found in quizzes table, use the ones from our validation schema
+      let gameFormatsResult = gameFormats;
+      if (gameFormats.length === 0) {
+        console.log('🎮 [QuizGenerationService] No game formats found in quizzes, using validation schema defaults');
+        const validGameFormats = this.criteriaSchema.describe().keys.game_format.allow;
+        gameFormatsResult = validGameFormats.map(format => ({
+          game_format: format,
+          count: 0
+        }));
+      }
+
+      const options = {
+        domains: domains.map(d => ({ 
+          domain: d.domain, 
+          count: parseInt(d.count) 
+        })),
+        subjects: subjects.map(s => ({ 
+          subject: s.subject, 
+          count: parseInt(s.count) 
+        })),
+        sources: sources.map(s => ({ 
+          source: s.source, 
+          count: parseInt(s.count) 
+        })),
+        difficulties: difficulties.map(d => ({ 
+          difficulty_level: d.difficulty_level, 
+          count: parseInt(d.count) 
+        })),
+        types: types.map(t => ({ 
+          type: t.type, 
+          count: parseInt(t.count) 
+        })),
+        gameFormats: gameFormatsResult.map(g => ({
+          game_format: g.game_format,
+          count: parseInt(g.count || 0)
+        }))
+      };
+
+      console.log('✅ [QuizGenerationService] Generation options fetched:', {
+        domains: options.domains.length,
+        subjects: options.subjects.length,
+        sources: options.sources.length,
+        difficulties: options.difficulties.length,
+        types: options.types.length,
+        gameFormats: options.gameFormats.length
+      });
+
+      return options;
+    } catch (error) {
+      console.error('❌ [QuizGenerationService] Error fetching generation options:', error);
+      throw new Error('Failed to fetch generation options');
     }
+  }
+
+  /**
+   * Preview questions for given criteria without creating a quiz
+   */
+  async previewQuestionsForCriteria(criteria, limit = 10) {
+    console.log('👁️ [QuizGenerationService] Previewing questions for criteria:', criteria);
     
-    return shuffled.slice(0, numQuestions);
-  }
-
-  /**
-   * Fisher-Yates shuffle algorithm
-   */
-  _fisherYatesShuffle(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]];
-    }
-  }
-
-  /**
-   * Seeded shuffle for reproducible results
-   */
-  _seededShuffle(array, seed) {
-    const rng = this._createSeededRNG(seed);
-    for (let i = array.length - 1; i > 0; i--) {
-      const j = Math.floor(rng() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]];
-    }
-  }
-
-  /**
-   * Create seeded random number generator
-   */
-  _createSeededRNG(seed) {
-    let state = seed;
-    return function() {
-      state = (state * 1664525 + 1013904223) % 4294967296;
-      return state / 4294967296;
+    // Validate criteria
+    const validatedCriteria = this.validateCriteria(criteria);
+    
+    // Build criteria object
+    const storedCriteria = {};
+    if (validatedCriteria.domain) storedCriteria.domain = validatedCriteria.domain;
+    if (validatedCriteria.subject) storedCriteria.subject = validatedCriteria.subject;
+    if (validatedCriteria.source) storedCriteria.source = validatedCriteria.source;
+    if (validatedCriteria.difficulty_level) storedCriteria.difficulty_level = validatedCriteria.difficulty_level;
+    
+    // Get preview questions
+    const questionSelector = require('./questionSelector');
+    const preview = await questionSelector.previewSelection(storedCriteria, limit);
+    
+    return {
+      criteria: storedCriteria,
+      total_matching: preview.totalMatching,
+      sample_questions: preview.sampleQuestions.map(q => ({
+        id: q.id,
+        type: q.type,
+        question_text: q.question_text.substring(0, 100) + '...',
+        difficulty_level: q.difficulty_level,
+        domain: q.domain,
+        subject: q.subject,
+        source: q.source
+      })),
+      has_more: preview.hasMore
     };
   }
 
@@ -330,180 +351,6 @@ class QuizGenerationService {
     }
     
     return parts.join('. ');
-  }
-
-  /**
-   * Generate game-specific options
-   */
-  _generateGameOptions(criteria) {
-    const options = {
-      difficulty: criteria.difficulty_level || 'Medium',
-      timeLimit: null, // Can be added later
-      randomOrder: true
-    };
-    
-    switch (criteria.game_format) {
-      case 'hangman':
-        options.maxAttempts = 6;
-        options.showHints = true;
-        break;
-        
-      case 'knowledge_tower':
-        options.levelsRequired = criteria.num_questions;
-        options.allowSkip = false;
-        break;
-        
-      case 'word_ladder':
-        options.stepLimit = criteria.num_questions * 2;
-        options.showProgress = true;
-        break;
-        
-      case 'memory_grid':
-        options.gridSize = Math.min(6, Math.ceil(Math.sqrt(criteria.num_questions)));
-        options.revealTime = 3000;
-        break;
-    }
-    
-    return JSON.stringify(options);
-  }
-
-  /**
-   * Analyze question sources for metadata
-   */
-  _analyzeQuestionSources(questions) {
-    const sources = {};
-    const domains = {};
-    const difficulties = {};
-    
-    questions.forEach(q => {
-      sources[q.source] = (sources[q.source] || 0) + 1;
-      domains[q.domain] = (domains[q.domain] || 0) + 1;
-      difficulties[q.difficulty_level] = (difficulties[q.difficulty_level] || 0) + 1;
-    });
-    
-    return { sources, domains, difficulties };
-  }
-
-  /**
-   * Format quiz for frontend consumption
-   */
-  async _formatQuizForFrontend(quiz, questions) {
-    const formattedQuestions = questions.map((q, index) => ({
-      id: q.id,
-      question_number: index + 1,
-      type: q.type,
-      question_text: q.question_text,
-      options: q.options ? this._parseOptionsField(q.options) : null,
-      correct_answer: q.correct_answer,
-      explanation: q.explanation,
-      hint: q.hint,
-      difficulty: q.difficulty_level,
-      domain: q.domain,
-      subject: q.subject,
-      weightage: q.weightage
-    }));
-    
-    return {
-      quiz: {
-        id: quiz.id,
-        title: quiz.title,
-        description: quiz.description,
-        game_format: quiz.game_format,
-        game_options: quiz.game_options ? JSON.parse(quiz.game_options) : {},
-        created_at: quiz.created_at,
-        question_count: questions.length
-      },
-      questions: formattedQuestions,
-      metadata: {
-        generated_dynamically: true,
-        generation_timestamp: new Date().toISOString(),
-        criteria_used: this._sanitizeCriteria(quiz.metadata)
-      }
-    };
-  }
-
-  /**
-   * Safely parse options field - handles both JSON and plain text formats
-   */
-  _parseOptionsField(options) {
-    if (!options) return null;
-    
-    // If it's already an object/array, return as is
-    if (typeof options !== 'string') return options;
-    
-    // Try to parse as JSON first (for older questions)
-    try {
-      return JSON.parse(options);
-    } catch (e) {
-      // If JSON parsing fails, return as plain text string (new format)
-      return options;
-    }
-  }
-
-  /**
-   * Sanitize criteria for frontend
-   */
-  _sanitizeCriteria(metadata) {
-    try {
-      const parsed = JSON.parse(metadata || '{}');
-      return parsed.generation_criteria || {};
-    } catch {
-      return {};
-    }
-  }
-
-  /**
-   * Get or create system upload ID for dynamic quizzes
-   */
-  async _getSystemUploadId() {
-    const { db } = require('../config/database');
-    
-    // Check if system upload already exists
-    const existingSystemUpload = await db('uploads')
-      .where('filename', 'dynamic-quiz-system.txt')
-      .first();
-    
-    if (existingSystemUpload) {
-      return existingSystemUpload.id;
-    }
-    
-    // Create system upload if it doesn't exist
-    const result = await db('uploads').insert({
-      user_id: 1, // System user
-      filename: 'dynamic-quiz-system.txt',
-      original_name: 'Dynamic Quiz System',
-      file_path: '/system/dynamic-quiz-placeholder.txt',
-      content: 'System placeholder for dynamically generated quizzes. This upload represents questions generated from the question bank.',
-      file_size: 125,
-      file_type: '.txt',
-      mime_type: 'text/plain',
-      status: 'completed',
-      upload_date: Date.now(),
-      processed_date: Date.now()
-    }).returning('id');
-    
-    const uploadId = Array.isArray(result) ? (result[0]?.id || result[0]) : result?.id || result;
-    
-    return uploadId;
-  }
-
-  /**
-   * Format type label for display
-   */
-  _formatTypeLabel(type) {
-    const labels = {
-      'multiple_choice': 'Multiple Choice',
-      'true_false': 'True/False', 
-      'fill_blank': 'Fill in the Blank',
-      'fill_in_the_blank': 'Fill in the Blank',
-      'matching': 'Matching',
-      'hangman': 'Hangman',
-      'knowledge_tower': 'Knowledge Tower',
-      'word_ladder': 'Word Ladder',
-      'memory_grid': 'Memory Grid'
-    };
-    
-    return labels[type] || type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   }
 }
 

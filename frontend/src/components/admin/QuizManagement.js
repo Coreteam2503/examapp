@@ -7,9 +7,11 @@ import {
   AcademicCapIcon,
   MagnifyingGlassIcon,
   ClockIcon,
-  ChartBarIcon
+  ChartBarIcon,
+  EyeIcon
 } from '@heroicons/react/24/outline';
 import BatchSelector from '../common/BatchSelector';
+import QuizGeneratorForm from './QuizGeneratorForm';
 import './QuizManagement.css';
 
 const QuizManagement = () => {
@@ -22,6 +24,9 @@ const QuizManagement = () => {
   const [selectedQuiz, setSelectedQuiz] = useState(null);
   const [showBatchAssignModal, setShowBatchAssignModal] = useState(false);
   const [assigningBatches, setAssigningBatches] = useState([]);
+  const [showCreateQuizModal, setShowCreateQuizModal] = useState(false);
+  const [showQuizPreview, setShowQuizPreview] = useState(false);
+  const [previewQuiz, setPreviewQuiz] = useState(null);
 
   // Fetch data on component mount
   useEffect(() => {
@@ -151,6 +156,67 @@ const QuizManagement = () => {
     setShowBatchAssignModal(true);
   };
 
+  // NEW: Handler functions for criteria-based quiz management
+  const handleCreateQuiz = (quizData) => {
+    console.log('Quiz created successfully:', quizData);
+    setShowCreateQuizModal(false);
+    fetchQuizzes(); // Refresh the quiz list
+  };
+
+  const handleCancelCreateQuiz = () => {
+    setShowCreateQuizModal(false);
+  };
+
+  const handlePreviewQuiz = async (quiz) => {
+    try {
+      // For criteria-based quizzes, fetch preview questions
+      if (quiz.is_criteria_based || (quiz.criteria && Object.keys(quiz.criteria).length > 0)) {
+        const response = await fetch('/api/quizzes/preview-questions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          },
+          body: JSON.stringify({
+            ...quiz.criteria,
+            limit: 5
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setPreviewQuiz({
+            ...quiz,
+            preview: data.data
+          });
+        } else {
+          setPreviewQuiz({ ...quiz, preview: null });
+        }
+      } else {
+        // For traditional quizzes, just show the quiz info
+        setPreviewQuiz({ ...quiz, preview: null });
+      }
+      
+      setShowQuizPreview(true);
+    } catch (error) {
+      console.error('Error loading quiz preview:', error);
+      setPreviewQuiz({ ...quiz, preview: null });
+      setShowQuizPreview(true);
+    }
+  };
+
+  const getCriteriaSummary = (criteria) => {
+    if (!criteria || Object.keys(criteria).length === 0) {
+      return 'Any available questions';
+    }
+    const parts = [];
+    if (criteria.domain) parts.push(`Domain: ${criteria.domain}`);
+    if (criteria.subject) parts.push(`Subject: ${criteria.subject}`);
+    if (criteria.source) parts.push(`Source: ${criteria.source}`);
+    if (criteria.difficulty_level) parts.push(`Difficulty: ${criteria.difficulty_level}`);
+    return parts.length > 0 ? parts.join(', ') : 'Dynamic selection';
+  };
+
   const filteredQuizzes = quizzes.filter(quiz =>
     quiz.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     quiz.filename?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -195,6 +261,16 @@ const QuizManagement = () => {
 
       {/* Controls */}
       <div className="controls-section">
+        <div className="controls-header">
+          <button
+            onClick={() => setShowCreateQuizModal(true)}
+            className="create-quiz-btn"
+          >
+            <PlusIcon className="icon" />
+            Generate Quiz
+          </button>
+        </div>
+        
         <div className="search-controls">
           <div className="search-input-wrapper">
             <MagnifyingGlassIcon className="search-icon" />
@@ -302,6 +378,15 @@ const QuizManagement = () => {
               )}
 
               <div className="quiz-actions">
+                <button
+                  onClick={() => handlePreviewQuiz(quiz)}
+                  className="action-btn preview-btn"
+                  title="Preview quiz content"
+                >
+                  <EyeIcon className="action-icon" />
+                  {(quiz.is_criteria_based || (quiz.criteria && Object.keys(quiz.criteria).length > 0)) ? 'Preview Questions' : 'View Details'}
+                </button>
+                
                 <button 
                   className="action-btn assign"
                   onClick={() => openBatchAssignModal(quiz)}
@@ -310,6 +395,7 @@ const QuizManagement = () => {
                   <UserGroupIcon className="action-icon" />
                   Assign to Batches
                 </button>
+                
                 <button 
                   className="action-btn delete"
                   onClick={() => deleteQuiz(quiz.id)}
@@ -372,6 +458,132 @@ const QuizManagement = () => {
                 >
                   Assign to {assigningBatches.length} Batch{assigningBatches.length !== 1 ? 'es' : ''}
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quiz Creation Modal */}
+      {showCreateQuizModal && (
+        <div className="modal-overlay" onClick={() => setShowCreateQuizModal(false)}>
+          <div className="modal-content large-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Generate New Quiz</h2>
+              <button onClick={() => setShowCreateQuizModal(false)} className="close-btn">✕</button>
+            </div>
+            
+            <div className="modal-body">
+              <QuizGeneratorForm
+                onSave={handleCreateQuiz}
+                onCancel={handleCancelCreateQuiz}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quiz Preview Modal */}
+      {showQuizPreview && previewQuiz && (
+        <div className="modal-overlay" onClick={() => setShowQuizPreview(false)}>
+          <div className="modal-content large-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Quiz Preview: {previewQuiz.title}</h2>
+              <button onClick={() => setShowQuizPreview(false)} className="close-btn">✕</button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="quiz-preview-content">
+                {/* Quiz Basic Info */}
+                <div className="quiz-preview-info">
+                  <div className="preview-section">
+                    <h3>Quiz Information</h3>
+                    <div className="info-grid">
+                      <div className="info-item">
+                        <span className="label">Type:</span>
+                        <span className="value">
+                          {previewQuiz.is_criteria_based || (previewQuiz.criteria && Object.keys(previewQuiz.criteria).length > 0) 
+                            ? '🎯 Criteria-Based' 
+                            : '📝 Traditional'
+                          }
+                        </span>
+                      </div>
+                      <div className="info-item">
+                        <span className="label">Game Format:</span>
+                        <span className="value">{getGameFormatDisplay(previewQuiz.game_format)}</span>
+                      </div>
+                      <div className="info-item">
+                        <span className="label">Difficulty:</span>
+                        <span className="value">{previewQuiz.difficulty || 'Medium'}</span>
+                      </div>
+                      <div className="info-item">
+                        <span className="label">Questions:</span>
+                        <span className="value">
+                          {previewQuiz.question_count || previewQuiz.total_questions || 0}
+                          {(previewQuiz.is_criteria_based || (previewQuiz.criteria && Object.keys(previewQuiz.criteria).length > 0)) 
+                            ? ' (Dynamic)' 
+                            : ' (Fixed)'
+                          }
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Criteria Information for Criteria-Based Quizzes */}
+                  {(previewQuiz.is_criteria_based || (previewQuiz.criteria && Object.keys(previewQuiz.criteria).length > 0)) && (
+                    <div className="preview-section">
+                      <h3>Selection Criteria</h3>
+                      <div className="criteria-display">
+                        <p>{getCriteriaSummary(previewQuiz.criteria)}</p>
+                        {previewQuiz.preview && (
+                          <p className="available-questions">
+                            {previewQuiz.preview.total_matching} questions match these criteria
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Question Preview for Criteria-Based Quizzes */}
+                {previewQuiz.preview && previewQuiz.preview.sample_questions && (
+                  <div className="preview-section">
+                    <h3>Sample Questions ({previewQuiz.preview.sample_questions.length} of {previewQuiz.preview.total_matching})</h3>
+                    <div className="sample-questions">
+                      {previewQuiz.preview.sample_questions.map((question, index) => (
+                        <div key={question.id} className="sample-question">
+                          <div className="question-header">
+                            <span className="question-number">#{index + 1}</span>
+                            <span className="question-type">{question.type.replace('_', ' ')}</span>
+                            <span className="question-difficulty">{question.difficulty_level}</span>
+                          </div>
+                          <div className="question-text">{question.question_text}</div>
+                          <div className="question-meta">
+                            <span>{question.domain}</span>
+                            {question.subject && <span> • {question.subject}</span>}
+                            {question.source && <span> • {question.source}</span>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {previewQuiz.preview.has_more && (
+                      <p className="preview-note">
+                        And {previewQuiz.preview.total_matching - previewQuiz.preview.sample_questions.length} more questions available...
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Traditional Quiz Info */}
+                {!(previewQuiz.is_criteria_based || (previewQuiz.criteria && Object.keys(previewQuiz.criteria).length > 0)) && (
+                  <div className="preview-section">
+                    <h3>Traditional Quiz</h3>
+                    <p>This quiz has a fixed set of {previewQuiz.total_questions || 0} questions.</p>
+                    {previewQuiz.filename && (
+                      <p>Source file: <strong>{previewQuiz.filename}</strong></p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>

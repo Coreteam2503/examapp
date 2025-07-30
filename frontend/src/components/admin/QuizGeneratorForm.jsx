@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import QuizCriteriaSelector from './QuizCriteriaSelector';
-import BatchSelector from './common/BatchSelector';
-import { quizGenerationService } from '../services/quizGenerationService';
-import BatchService from '../services/batchService';
+import BatchSelector from '../common/BatchSelector';
+import { quizGenerationService } from '../../services/quizGenerationService';
+import BatchService from '../../services/batchService';
 import { 
   PlayIcon, 
   AdjustmentsHorizontalIcon,
@@ -12,7 +12,7 @@ import {
 } from '@heroicons/react/24/outline';
 import './QuizGeneratorForm.css';
 
-const QuizGeneratorForm = () => {
+const QuizGeneratorForm = ({ onSave, onCancel }) => {
   const navigate = useNavigate();
   
   // Form state
@@ -243,10 +243,17 @@ const QuizGeneratorForm = () => {
           questionsUsed: quiz.questionsUsed
         });
         
-        // Navigate to appropriate game component after a short delay
-        setTimeout(() => {
-          navigateToGame(quiz.quiz);
-        }, 2000);
+        // Call onSave callback if provided (modal context)
+        if (onSave) {
+          setTimeout(() => {
+            onSave(quiz.quiz);
+          }, 2000);
+        } else {
+          // Navigate to appropriate game component after a short delay (standalone context)
+          setTimeout(() => {
+            navigateToGame(quiz.quiz);
+          }, 2000);
+        }
         
       } else {
         setGenerationResult({
@@ -297,11 +304,13 @@ const QuizGeneratorForm = () => {
 
   return (
     <div className="quiz-generator-form">
-      {/* Header */}
-      <div className="header-section">
-        <h2>Generate Quiz</h2>
-        <p>Create a custom quiz by selecting your preferences below</p>
-      </div>
+      {/* Header - only show when not in modal context */}
+      {!onSave && (
+        <div className="header-section">
+          <h2>Generate Quiz</h2>
+          <p>Create a custom quiz by selecting your preferences below</p>
+        </div>
+      )}
 
       {/* Main form */}
       <div className="form-card">
@@ -509,6 +518,15 @@ const QuizGeneratorForm = () => {
 
         {/* Generate Button */}
         <div className="button-container">
+          {onCancel && (
+            <button
+              onClick={onCancel}
+              className="cancel-button"
+              type="button"
+            >
+              Cancel
+            </button>
+          )}
           <button
             onClick={handleGenerateQuiz}
             disabled={!isFormValid || loading.generating}

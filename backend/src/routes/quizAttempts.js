@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const QuizAttemptController = require('../controllers/quizAttemptController');
+const QuizController = require('../controllers/quizController');
 const { authenticateToken } = require('../middleware/auth');
 
 // Submit a quiz attempt
@@ -15,8 +16,8 @@ router.get('/statistics', authenticateToken, QuizAttemptController.getUserStatis
 // Get recent quiz attempts for dashboard
 router.get('/recent', authenticateToken, QuizAttemptController.getRecentAttempts);
 
-// Get specific attempt by ID
-router.get('/:id', authenticateToken, QuizAttemptController.getAttempt);
+// Get specific attempt by ID (with dynamic question support)
+router.get('/:id', authenticateToken, QuizController.getQuizAttempt);
 
 // Get detailed results for an attempt
 router.get('/:id/detailed', authenticateToken, QuizAttemptController.getDetailedResults);

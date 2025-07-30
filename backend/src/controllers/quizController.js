@@ -1,5 +1,6 @@
 const PromptService = require('../../services/promptService');
 const { QuizGenerationService, QuizGenerationError } = require('../services/quizGenerationService');
+const questionSelector = require('../services/questionSelector');
 const { db: knex } = require('../config/database');
 const fs = require('fs').promises;
 const path = require('path');
@@ -205,29 +206,47 @@ class QuizController {
   }
 
   /**
-   * Generate dynamic quiz from question bank
+   * Generate dynamic quiz from question bank using criteria (NEW APPROACH)
    * POST /api/quizzes/generate-dynamic
    */
   async generateDynamicQuiz(req, res) {
     try {
-      console.log('🎯 [QuizController] Dynamic quiz generation started');
+      console.log('🎯 [QuizController] Criteria-based quiz generation started');
       console.log('📝 [QuizController] Request body:', req.body);
       
       const userId = req.user.userId;
       
-      // Generate quiz using the service
-      const result = await this.quizGenerationService.generateQuiz(req.body, userId);
+      // Check if this should be criteria-based or traditional
+      const { use_criteria = true } = req.body;
       
-      console.log(`✅ [QuizController] Dynamic quiz generated successfully, ID: ${result.quiz.id}`);
-      
-      res.status(201).json({
-        success: true,
-        message: 'Dynamic quiz generated successfully',
-        data: result
-      });
+      if (use_criteria) {
+        // NEW: Generate criteria-based quiz (stores criteria, not fixed questions)
+        const result = await this.quizGenerationService.generateCriteriaBasedQuiz(req.body, userId);
+        
+        console.log(`✅ [QuizController] Criteria-based quiz generated successfully, ID: ${result.quiz.id}`);
+        
+        res.status(201).json({
+          success: true,
+          message: 'Criteria-based quiz generated successfully',
+          data: result,
+          quiz_type: 'criteria_based'
+        });
+      } else {
+        // LEGACY: Generate traditional quiz with fixed questions
+        const result = await this.quizGenerationService.generateQuiz(req.body, userId);
+        
+        console.log(`✅ [QuizController] Traditional quiz generated successfully, ID: ${result.quiz.id}`);
+        
+        res.status(201).json({
+          success: true,
+          message: 'Traditional quiz generated successfully',
+          data: result,
+          quiz_type: 'traditional'
+        });
+      }
       
     } catch (error) {
-      console.error('❌ [QuizController] Dynamic quiz generation failed:', error);
+      console.error('❌ [QuizController] Quiz generation failed:', error);
       
       if (error instanceof QuizGenerationError) {
         return res.status(400).json({
@@ -240,6 +259,45 @@ class QuizController {
       res.status(500).json({
         success: false,
         message: 'Internal server error during quiz generation',
+        error: error.message
+      });
+    }
+  }
+
+  /**
+   * Preview questions for given criteria without creating a quiz
+   * POST /api/quizzes/preview-questions
+   */
+  async previewQuestions(req, res) {
+    try {
+      console.log('👁️ [QuizController] Question preview requested');
+      console.log('📝 [QuizController] Preview criteria:', req.body);
+      
+      const { limit = 10 } = req.body;
+      
+      const preview = await this.quizGenerationService.previewQuestionsForCriteria(req.body, limit);
+      
+      console.log(`✅ [QuizController] Preview generated: ${preview.total_matching} total, ${preview.sample_questions.length} samples`);
+      
+      res.json({
+        success: true,
+        data: preview
+      });
+      
+    } catch (error) {
+      console.error('❌ [QuizController] Question preview failed:', error);
+      
+      if (error instanceof QuizGenerationError) {
+        return res.status(400).json({
+          success: false,
+          message: error.message,
+          details: error.details
+        });
+      }
+      
+      res.status(500).json({
+        success: false,
+        message: 'Failed to preview questions',
         error: error.message
       });
     }
@@ -501,25 +559,80 @@ class QuizController {
         const userBatchIds = userBatches.map(batch => batch.id);
         
         if (userBatchIds.length > 0) {
-          // Filter quizzes that have questions in user's batches
-          quizzesQuery = quizzesQuery
-            .whereExists(function() {
-              this.select('*')
-                .from('quiz_questions')
-                .join('question_batches', 'quiz_questions.question_id', 'question_batches.question_id')
-                .whereRaw('quiz_questions.quiz_id = quizzes.id')
-                .whereIn('question_batches.batch_id', userBatchIds);
-            })
-            .orderBy('quizzes.created_at', 'desc');
+          // FIXED: Dynamic criteria-based matching for quizzes
+          // Get all criteria-based quizzes and filter by matching batch criteria
+          const batchCriteriaList = await knex('batches')
+            .select('id', 'quiz_criteria')
+            .whereIn('id', userBatchIds)
+            .whereNotNull('quiz_criteria');
+          
+          const matchingQuizIds = [];
+          
+          // Get all active criteria-based quizzes
+          const criteriaQuizzes = await knex('quizzes')
+            .select('id', 'criteria')
+            .where('is_active', true)
+            .whereNotNull('criteria');
+          
+          // Check each quiz against each batch criteria
+          for (const quiz of criteriaQuizzes) {
+            const quizCriteria = typeof quiz.criteria === 'string' ? JSON.parse(quiz.criteria) : quiz.criteria;
             
-          countQuery = countQuery
-            .whereExists(function() {
-              this.select('*')
-                .from('quiz_questions')
-                .join('question_batches', 'quiz_questions.question_id', 'question_batches.question_id')
-                .whereRaw('quiz_questions.quiz_id = quizzes.id')
-                .whereIn('question_batches.batch_id', userBatchIds);
+            for (const batch of batchCriteriaList) {
+              const batchCriteria = typeof batch.quiz_criteria === 'string' ? JSON.parse(batch.quiz_criteria) : batch.quiz_criteria;
+              
+              // Check if quiz matches batch criteria with field name mapping
+              let matches = true;
+              const fieldMapping = {
+                'domains': 'domain',
+                'subjects': 'subject', 
+                'sources': 'source',
+                'difficulty_levels': 'difficulty_level'
+              };
+              
+              for (const [batchKey, batchValue] of Object.entries(batchCriteria)) {
+                if (batchKey === 'min_questions') continue;
+                
+                const quizKey = fieldMapping[batchKey] || batchKey;
+                const quizValue = quizCriteria[quizKey];
+                
+                if (Array.isArray(batchValue)) {
+                  if (batchValue.length > 0 && !batchValue.includes(quizValue)) {
+                    matches = false;
+                    break;
+                  }
+                } else if (batchValue && batchValue !== '' && batchValue !== quizValue) {
+                  matches = false;
+                  break;
+                }
+              }
+              
+              if (matches) {
+                matchingQuizIds.push(quiz.id);
+                break; // Found matching batch, no need to check others
+              }
+            }
+          }
+          
+          if (matchingQuizIds.length > 0) {
+            quizzesQuery = quizzesQuery
+              .whereIn('quizzes.id', matchingQuizIds)
+              .orderBy('quizzes.created_at', 'desc');
+            
+            countQuery = countQuery
+              .whereIn('quizzes.id', matchingQuizIds);
+          } else {
+            // No matching quizzes
+            return res.json({
+              quizzes: [],
+              pagination: {
+                page: parseInt(page),
+                limit: parseInt(limit),
+                total: "0",
+                totalPages: 0
+              }
             });
+          }
         } else {
           // User has no active batches, return empty result
           return res.json({
@@ -539,7 +652,7 @@ class QuizController {
         .offset(offset);
 
       // Get total count for pagination
-      const totalCount = await countQuery.count('id as count').first();
+      const totalCount = await countQuery.count('quizzes.id as count').first();
 
       // Log for debugging
       console.log(`📋 Fetched quizzes for ${userRole} user ${userId}:`, quizzes.map(q => ({
@@ -550,13 +663,24 @@ class QuizController {
       })));
 
       res.json({
-        quizzes: quizzes.map(quiz => ({
-          ...quiz,
-          metadata: safeJsonParse(quiz.metadata, {}),
-          // Ensure game_format is included and properly formatted
-          game_format: quiz.game_format || 'traditional',
-          is_game: quiz.game_format && quiz.game_format !== 'traditional'
-        })),
+        quizzes: quizzes.map(quiz => {
+          const metadata = safeJsonParse(quiz.metadata, {});
+          const isCriteriaBased = !!(quiz.criteria && Object.keys(quiz.criteria).length > 0);
+          
+          return {
+            ...quiz,
+            metadata,
+            // Ensure game_format is included and properly formatted
+            game_format: quiz.game_format || 'traditional',
+            is_game: quiz.game_format && quiz.game_format !== 'traditional',
+            // NEW: Add criteria-based quiz information
+            is_criteria_based: isCriteriaBased,
+            criteria: quiz.criteria || null,
+            question_count: quiz.question_count || quiz.total_questions,
+            // Show criteria summary for admin interface
+            criteria_summary: isCriteriaBased ? this._generateCriteriaSummary(quiz.criteria) : null
+          };
+        }),
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
@@ -670,6 +794,295 @@ class QuizController {
     } catch (error) {
       console.error('Error deleting quiz:', error);
       res.status(500).json({ error: 'Failed to delete quiz' });
+    }
+  }
+
+  /**
+   * Start a quiz attempt with dynamic question selection
+   * POST /api/quizzes/:id/start-attempt
+   */
+  async startQuizAttempt(req, res) {
+    try {
+      const { id: quizId } = req.params;
+      const userId = req.user.userId;
+
+      console.log(`🚀 Starting quiz attempt for Quiz ${quizId}, User ${userId}`);
+
+      // Get quiz information with criteria
+      const quiz = await knex('quizzes')
+        .select(['id', 'title', 'criteria', 'question_count', 'time_limit', 'game_format'])
+        .where('id', quizId)
+        .first();
+
+      if (!quiz) {
+        return res.status(404).json({ error: 'Quiz not found' });
+      }
+
+      console.log(`📋 Quiz info:`, {
+        id: quiz.id,
+        title: quiz.title,
+        hasCriteria: !!quiz.criteria,
+        questionCount: quiz.question_count,
+        gameFormat: quiz.game_format
+      });
+
+      // Check if this is a criteria-based quiz (dynamic) or traditional fixed-questions quiz
+      let selectedQuestions = [];
+      let attemptData = {
+        user_id: userId,
+        quiz_id: quizId,
+        started_at: new Date(),
+        status: 'in_progress'
+      };
+
+      if (quiz.criteria && Object.keys(quiz.criteria).length > 0) {
+        console.log(`🎯 Using dynamic question selection with criteria:`, quiz.criteria);
+        
+        // Check for existing incomplete attempt to avoid duplicate questions
+        const existingAttempt = await knex('quiz_attempts')
+          .where({ user_id: userId, quiz_id: quizId, status: 'in_progress' })
+          .first();
+
+        let excludeIds = [];
+        if (existingAttempt && existingAttempt.selected_questions) {
+          // Handle both string (from DB) and array (already parsed) formats
+          if (typeof existingAttempt.selected_questions === 'string') {
+            excludeIds = JSON.parse(existingAttempt.selected_questions);
+          } else if (Array.isArray(existingAttempt.selected_questions)) {
+            excludeIds = existingAttempt.selected_questions;
+          }
+          console.log(`📝 Found existing attempt, excluding ${excludeIds.length} questions`);
+        }
+
+        // Use QuestionSelector service to get questions based on criteria
+        selectedQuestions = await questionSelector.selectQuestionsForQuiz(
+          quiz.criteria,
+          quiz.question_count,
+          excludeIds
+        );
+
+        if (selectedQuestions.length === 0) {
+          return res.status(400).json({ 
+            error: 'No questions available matching the quiz criteria',
+            criteria: quiz.criteria
+          });
+        }
+
+        // Store selected question IDs in attempt (PostgreSQL JSONB requires JSON string)
+        const questionIds = selectedQuestions.map(q => q.id);
+        console.log('🔍 Question IDs being stored:', questionIds);
+        
+        attemptData.selected_questions = JSON.stringify(questionIds);
+        attemptData.total_questions = selectedQuestions.length;
+
+        console.log(`✅ Selected ${selectedQuestions.length} questions dynamically`);
+
+      } else {
+        console.log(`📚 Using traditional fixed questions from quiz_questions table`);
+        
+        // Traditional quiz: get questions from quiz_questions junction table
+        const fixedQuestions = await knex('quiz_questions')
+          .join('questions', 'quiz_questions.question_id', 'questions.id')
+          .where('quiz_questions.quiz_id', quizId)
+          .select('questions.*', 'quiz_questions.question_number')
+          .orderBy('quiz_questions.question_number');
+
+        if (fixedQuestions.length === 0) {
+          return res.status(400).json({ 
+            error: 'No questions found for this quiz',
+            suggestion: 'This quiz may need to be set up with questions or criteria'
+          });
+        }
+
+        selectedQuestions = fixedQuestions;
+        attemptData.total_questions = selectedQuestions.length;
+        // For traditional quizzes, we don't store selected_questions (they're in quiz_questions table)
+
+        console.log(`✅ Using ${selectedQuestions.length} fixed questions`);
+      }
+
+      // Create the quiz attempt record
+      console.log('🔍 attemptData before insert:', JSON.stringify(attemptData, null, 2));
+      
+      const [attemptId] = await knex('quiz_attempts')
+        .insert(attemptData)
+        .returning('id');
+
+      const finalAttemptId = Array.isArray(attemptId) ? (attemptId[0]?.id || attemptId[0]) : attemptId?.id || attemptId;
+
+      console.log(`📝 Created quiz attempt ${finalAttemptId}`);
+
+      // Validate question uniqueness for the attempt
+      const uniquenessCheck = await questionSelector.validateQuestionUniqueness(
+        selectedQuestions, 
+        finalAttemptId
+      );
+
+      if (!uniquenessCheck.isValid) {
+        console.warn(`⚠️ Question uniqueness validation failed:`, uniquenessCheck);
+      }
+
+      // Return the quiz data with selected questions
+      const response = {
+        attempt_id: finalAttemptId,
+        quiz: {
+          id: quiz.id,
+          title: quiz.title,
+          time_limit: quiz.time_limit,
+          game_format: quiz.game_format,
+          question_count: selectedQuestions.length,
+          is_dynamic: !!(quiz.criteria && Object.keys(quiz.criteria).length > 0)
+        },
+        questions: selectedQuestions.map((question, index) => ({
+          ...question,
+          question_number: index + 1,
+          options: question.options || null,
+          concepts: safeJsonParse(question.concepts, []),
+          correctAnswers: question.correct_answers_data || null,
+          pairs: safeJsonParse(question.pairs, null),
+          items: safeCommaParse(question.items, null),
+          correct_order: question.correct_order || null,
+          correctOrder: safeCommaParse(question.correct_order, null),
+          text: question.formatted_text || question.question_text,
+          // Remove correct_answer from client response for security
+          correct_answer: undefined
+        })),
+        started_at: attemptData.started_at,
+        status: 'in_progress'
+      };
+
+      res.status(201).json(response);
+
+    } catch (error) {
+      console.error('❌ Error starting quiz attempt:', error);
+      res.status(500).json({ 
+        error: 'Failed to start quiz attempt',
+        details: error.message
+      });
+    }
+  }
+
+  /**
+   * Get quiz attempt data (for resuming attempts)
+   * GET /api/quiz-attempts/:attemptId
+   */
+  async getQuizAttempt(req, res) {
+    try {
+      const { attemptId } = req.params;
+      const userId = req.user.userId;
+
+      console.log(`🔍 Getting quiz attempt ${attemptId} for user ${userId}`);
+
+      // Get the attempt data
+      const attempt = await knex('quiz_attempts')
+        .join('quizzes', 'quiz_attempts.quiz_id', 'quizzes.id')
+        .select([
+          'quiz_attempts.*',
+          'quizzes.title',
+          'quizzes.time_limit',
+          'quizzes.game_format',
+          'quizzes.criteria'
+        ])
+        .where('quiz_attempts.id', attemptId)
+        .where('quiz_attempts.user_id', userId)
+        .first();
+
+      if (!attempt) {
+        return res.status(404).json({ error: 'Quiz attempt not found' });
+      }
+
+      let questions = [];
+      let selectedQuestionIds = [];
+
+      // Parse selected_questions if it exists
+      if (attempt.selected_questions) {
+        if (typeof attempt.selected_questions === 'string') {
+          selectedQuestionIds = JSON.parse(attempt.selected_questions);
+        } else if (Array.isArray(attempt.selected_questions)) {
+          selectedQuestionIds = attempt.selected_questions;
+        }
+      }
+
+      if (selectedQuestionIds.length > 0) {
+        console.log(`📋 Loading ${selectedQuestionIds.length} dynamically selected questions`);
+        
+        // Get questions from the stored selection
+        questions = await knex('questions')
+          .whereIn('id', selectedQuestionIds)
+          .select([
+            'id', 'question_text', 'type', 'options', 'explanation', 
+            'difficulty_level', 'domain', 'subject', 'source',
+            'points', 'concepts', 'hint', 'code_snippet', 'formatted_text',
+            'correct_answers_data', 'pairs', 'items', 'correct_order'
+          ]);
+
+        // Sort questions according to the original selection order
+        const questionMap = {};
+        questions.forEach(q => { questionMap[q.id] = q; });
+        questions = selectedQuestionIds.map(id => questionMap[id]).filter(Boolean);
+
+        // Parse JSON string fields for each question
+        console.log('🔄 About to parse JSON fields for', questions.length, 'questions');
+        questions = questions.map(q => this.parseQuestionJSONFields(q));
+
+      } else {
+        console.log(`📚 Loading fixed questions from quiz_questions table`);
+        
+        // Traditional quiz: get from quiz_questions junction table
+        questions = await knex('quiz_questions')
+          .join('questions', 'quiz_questions.question_id', 'questions.id')
+          .where('quiz_questions.quiz_id', attempt.quiz_id)
+          .select('questions.*', 'quiz_questions.question_number')
+          .orderBy('quiz_questions.question_number');
+
+        // Parse JSON string fields for each question
+        console.log('🔄 About to parse JSON fields for', questions.length, 'traditional questions');
+        questions = questions.map(q => this.parseQuestionJSONFields(q));
+      }
+
+      // Get existing answers for this attempt
+      const existingAnswers = await knex('question_answers')
+        .where('attempt_id', attemptId)
+        .select(['question_id', 'user_answer', 'is_correct', 'answered_at']);
+
+      const answersMap = {};
+      existingAnswers.forEach(answer => {
+        answersMap[answer.question_id] = answer;
+      });
+
+      const response = {
+        attempt_id: attemptId,
+        quiz: {
+          id: attempt.quiz_id,
+          title: attempt.title,
+          time_limit: attempt.time_limit,
+          game_format: attempt.game_format,
+          is_dynamic: !!(attempt.criteria && Object.keys(attempt.criteria).length > 0)
+        },
+        questions: questions.map((question, index) => ({
+          ...question,
+          question_number: index + 1,
+          options: question.options || null,
+          concepts: safeJsonParse(question.concepts, []),
+          existing_answer: answersMap[question.id] || null,
+          // Remove correct_answer from client response for security
+          correct_answer: undefined
+        })),
+        started_at: attempt.started_at,
+        completed_at: attempt.completed_at,
+        status: attempt.status,
+        score: attempt.score,
+        percentage: attempt.percentage
+      };
+
+      res.json(response);
+
+    } catch (error) {
+      console.error('❌ Error getting quiz attempt:', error);
+      res.status(500).json({ 
+        error: 'Failed to get quiz attempt',
+        details: error.message
+      });
     }
   }
 
@@ -1004,6 +1417,51 @@ class QuizController {
       });
     }
   }
+
+  /**
+   * Helper method to generate a human-readable criteria summary
+   */
+  _generateCriteriaSummary(criteria) {
+    if (!criteria || Object.keys(criteria).length === 0) {
+      return 'Any available questions';
+    }
+    
+    const parts = [];
+    if (criteria.domain) parts.push(`Domain: ${criteria.domain}`);
+    if (criteria.subject) parts.push(`Subject: ${criteria.subject}`);
+    if (criteria.source) parts.push(`Source: ${criteria.source}`);
+    if (criteria.difficulty_level) parts.push(`Difficulty: ${criteria.difficulty_level}`);
+    
+    return parts.length > 0 ? parts.join(', ') : 'Dynamic selection';
+  }
+
+  /**
+   * Parse JSON string fields in question objects
+   */
+  parseQuestionJSONFields(question) {
+    const parsed = { ...question };
+    console.log(`🔍 Parsing question ${question.id} (${question.type})`);
+    
+    // Parse JSON string fields that may be stored as strings
+    const jsonFields = ['pairs', 'items', 'correct_order', 'options', 'concepts'];
+    
+    jsonFields.forEach(field => {
+      if (parsed[field] && typeof parsed[field] === 'string') {
+        console.log(`  📝 Parsing ${field}: ${parsed[field].substring(0, 100)}...`);
+        try {
+          parsed[field] = JSON.parse(parsed[field]);
+          console.log(`  ✅ Successfully parsed ${field}`);
+        } catch (e) {
+          console.warn(`  ❌ Failed to parse ${field} for question ${question.id}:`, parsed[field]);
+          parsed[field] = null;
+        }
+      } else {
+        console.log(`  ⏭️ Skipping ${field} (${typeof parsed[field]}): ${parsed[field]}`);
+      }
+    });
+    
+    return parsed;
+  }
 }
 
 const quizController = new QuizController();
@@ -1012,9 +1470,12 @@ module.exports = {
   generateQuiz: (req, res) => quizController.generateQuiz(req, res),
   generateEnhancedQuiz: (req, res) => quizController.generateEnhancedQuiz(req, res),
   generateDynamicQuiz: (req, res) => quizController.generateDynamicQuiz(req, res),
+  previewQuestions: (req, res) => quizController.previewQuestions(req, res),
   getGenerationOptions: (req, res) => quizController.getGenerationOptions(req, res),
   getUserQuizzes: (req, res) => quizController.getUserQuizzes(req, res),
   getQuizById: (req, res) => quizController.getQuizById(req, res),
+  startQuizAttempt: (req, res) => quizController.startQuizAttempt(req, res),
+  getQuizAttempt: (req, res) => quizController.getQuizAttempt(req, res),
   deleteQuiz: (req, res) => quizController.deleteQuiz(req, res),
   getUserBatches: (req, res) => quizController.getUserBatches(req, res),
   assignQuizToBatches: (req, res) => quizController.assignQuizToBatches(req, res),

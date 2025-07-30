@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useAuth, useAuthDispatch, authActions } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import QuizManager from './quiz/QuizManager';
-import QuizGeneratorForm from './QuizGeneratorForm.jsx';
 import './Dashboard.css';
 
 // Import new dashboard components
@@ -155,14 +154,6 @@ const Dashboard = () => {
           >
             Your Quizzes
           </button>
-          {user?.role === 'admin' && (
-            <button 
-              className={`nav-btn ${activeTab === 'generate' ? 'active' : ''}`}
-              onClick={() => { setActiveTab('generate'); setMobileMenuOpen(false); }}
-            >
-              Generate Quiz
-            </button>
-          )}
           {user?.role === 'student' && (
             <button 
               className={`nav-btn ${activeTab === 'batches' ? 'active' : ''}`}
@@ -187,16 +178,6 @@ const Dashboard = () => {
                 <p>Take quizzes based on your uploaded content and track your progress.</p>
               </div>
               <QuizManager onQuizCompleted={handleQuizCompleted} />
-            </div>
-          )}
-
-          {activeTab === 'generate' && user?.role === 'admin' && (
-            <div className="tab-content">
-              <div className="tab-header">
-                <h2>Generate Custom Quiz</h2>
-                <p>Create a personalized quiz from the question bank with your preferred criteria.</p>
-              </div>
-              <QuizGeneratorForm />
             </div>
           )}
 

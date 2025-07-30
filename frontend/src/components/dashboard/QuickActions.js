@@ -14,14 +14,6 @@ const QuickActions = ({
       action: () => setActiveTab('quizzes'),
       color: '#2ecc71',
       enabled: true
-    },
-    {
-      icon: '🎯',
-      title: 'Generate Quiz',
-      description: 'Create custom quiz',
-      action: () => setActiveTab('generate'),
-      color: '#3498db',
-      enabled: true
     }
   ];
 

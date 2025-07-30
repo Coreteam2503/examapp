@@ -233,16 +233,19 @@ const extractMCQOptions = (question) => {
  * @returns {Array} - Array of {left, right} pair objects
  */
 const extractMatchingPairs = (question) => {
-  if (question.pairs && Array.isArray(question.pairs)) {
+  // Parse pairs field if it's a string
+  const pairs = parseJSONField(question.pairs);
+  
+  if (pairs && Array.isArray(pairs)) {
     // Handle array of objects with key/value format: [{key: "item", value: "description"}]
-    if (question.pairs.length > 0 && question.pairs[0] && typeof question.pairs[0] === 'object' && question.pairs[0].key && question.pairs[0].value) {
-      return question.pairs.map(pair => ({
+    if (pairs.length > 0 && pairs[0] && typeof pairs[0] === 'object' && pairs[0].key && pairs[0].value) {
+      return pairs.map(pair => ({
         left: pair.key,
         right: pair.value
       }));
     }
     // Handle array of objects with left/right format: [{left: "item", right: "description"}]
-    return question.pairs;
+    return pairs;
   }
 
   // Convert pattern_data to matching pairs

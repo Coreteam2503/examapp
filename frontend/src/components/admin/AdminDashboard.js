@@ -48,11 +48,7 @@ const AdminDashboard = () => {
       case 'analytics':
         return <SystemAnalytics />;
       case 'quizzes':
-        return <div className="admin-section">
-          <h2>Quiz Management</h2>
-          <p>Quiz management is temporarily disabled for maintenance.</p>
-        </div>;
-        // return <QuizManagement />;
+        return <QuizManagement />;
       case 'questions':
         return <QuestionBankManagement />;
       case 'roles':
