@@ -95,7 +95,7 @@ app.use('/api/ai', require('./routes/ai')); // Rate limiting applied to specific
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
-    message: 'Server is running',
+    message: 'Server is running now',
     timestamp: new Date().toISOString()
   });
 });

@@ -96,7 +96,7 @@ const RecentQuizzes = ({
           <span className="empty-icon">📝</span>
           <h4>No quizzes yet</h4>
           <p>Generate your first quiz to get started!</p>
-          <button className="cta-btn" onClick={() => onTakeQuiz && onTakeQuiz()}>
+          <button className="cta-btn" >
             Get Started
           </button>
         </div>

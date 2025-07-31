@@ -1,6 +1,3 @@
-You are excellen veteran UI developer who follows are the proper standars of writing code and design principals.
-You are helping me with improving he current student UI experience. 
-
 # Student UI Theming Guide
 
 ## Overview
