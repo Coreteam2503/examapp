@@ -694,16 +694,14 @@
   align-items: start;
 }
 
-/* Single Large Ladder with Climbing Animation */
-.single-ladder {
-  position: sticky;
-  top: 20px;
+/* Compact Ladder Styles */
+.compact-ladder {
   background: white;
   border-radius: 15px;
-  padding: 25px;
+  padding: 15px; /* Reduced from 25px */
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   text-align: center;
-  min-height: 450px;
+  min-height: 250px; /* Much smaller than 450px */
   width: 100%;
 }
 
@@ -711,20 +709,84 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 15px; /* Reduced from 20px */
   position: relative;
 }
 
-.ladder-rung {
+.ladder-step {
   display: flex;
   align-items: center;
-  margin: 10px 0;
+  justify-content: center;
+  width: 40px; /* Compact size */
+  height: 30px; /* Compact size */
+  margin: 3px 0; /* Reduced spacing */
+  border-radius: 8px;
+  background: #f8f9fa;
+  border: 2px solid #dee2e6;
   position: relative;
-  transition: all 0.5s ease;
+  transition: all 0.3s ease;
 }
 
-.ladder-rung.climbed {
-  transform: scale(1.05);
+.ladder-step.climbed {
+  background: #28a745;
+  border-color: #1e7e34;
+  color: white;
+}
+
+.ladder-step.current {
+  background: #007bff;
+  border-color: #0056b3;
+  color: white;
+  box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+}
+
+.step-num {
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.character {
+  position: absolute;
+  right: -25px;
+  font-size: 16px;
+}
+
+.ladder-base {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 25px;
+  margin: 5px 0;
+  border-radius: 12px;
+  background: #6c757d;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  position: relative;
+}
+
+/* Compact stats below ladder */
+.ladder-stats-compact {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.compact-stat {
+  background: rgba(102, 126, 234, 0.1);
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-weight: 500;
+  color: #667eea;
+  white-space: nowrap;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .step-number {

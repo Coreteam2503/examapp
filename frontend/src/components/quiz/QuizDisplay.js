@@ -15,7 +15,6 @@ import {
 import HangmanGame from '../games/HangmanGame';
 import KnowledgeTowerGame from '../games/KnowledgeTowerGame';
 import WordLadderGame from '../games/WordLadderGame';
-import MemoryGridGame from '../games/MemoryGridGame';
 
 const QuizDisplay = ({ quiz, onQuizComplete, onAnswerChange }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -26,6 +25,16 @@ const QuizDisplay = ({ quiz, onQuizComplete, onAnswerChange }) => {
   // Check if this is a game format
   const isGameFormat = quiz?.game_format && quiz.game_format !== 'traditional';
   const gameFormat = quiz?.game_format;
+
+  // Full-screen mode for games
+  useEffect(() => {
+    if (isGameFormat) {
+      document.body.classList.add('game-fullscreen-mode');
+      return () => {
+        document.body.classList.remove('game-fullscreen-mode');
+      };
+    }
+  }, [isGameFormat]);
 
   const currentQuestion = quiz?.questions?.[currentQuestionIndex];
   const totalQuestions = quiz?.questions?.length || 0;
@@ -207,9 +216,22 @@ const QuizDisplay = ({ quiz, onQuizComplete, onAnswerChange }) => {
     };
 
     const handleGameComplete = (gameResults) => {
+      console.log('🎮 QuizDisplay handleGameComplete called with:', gameResults);
+      console.log('🎮 onQuizComplete available:', !!onQuizComplete);
+      
       if (onQuizComplete) {
         // Transform game results into format expected by backend
         const transformedData = transformGameResultsToQuizFormat(gameResults, gameFormat, quiz);
+        
+        console.log('🎮 Calling onQuizComplete with transformed data:', {
+          answers: transformedData.answers,
+          timeElapsed: gameResults.timeElapsed || 0,
+          totalQuestions: transformedData.totalQuestions,
+          answeredQuestions: transformedData.answeredQuestions,
+          gameResults,
+          isGameFormat: true,
+          gameFormat: gameFormat
+        });
         
         onQuizComplete({
           answers: transformedData.answers,
@@ -220,6 +242,10 @@ const QuizDisplay = ({ quiz, onQuizComplete, onAnswerChange }) => {
           isGameFormat: true,
           gameFormat: gameFormat
         });
+        
+        console.log('🎮 onQuizComplete called successfully');
+      } else {
+        console.error('🎮 onQuizComplete is not available!');
       }
     };
 
@@ -249,14 +275,6 @@ const QuizDisplay = ({ quiz, onQuizComplete, onAnswerChange }) => {
       case 'word_ladder':
         return (
           <WordLadderGame 
-            gameData={gameData}
-            onGameComplete={handleGameComplete}
-            onAnswerChange={handleGameAnswerChange}
-          />
-        );
-      case 'memory_grid':
-        return (
-          <MemoryGridGame 
             gameData={gameData}
             onGameComplete={handleGameComplete}
             onAnswerChange={handleGameAnswerChange}

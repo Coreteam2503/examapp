@@ -126,21 +126,40 @@
   text-align: center;
 }
 
-.lives-display span {
-  display: block;
-  margin-bottom: 10px;
-  font-weight: bold;
-}
-
 .lives-hearts {
   display: flex;
   justify-content: center;
   gap: 5px;
+  margin-bottom: 10px; /* Space for stats below */
 }
 
 .heart {
   font-size: 24px;
   transition: all 0.3s ease;
+}
+
+/* Compact stats below hangman */
+.hangman-stats-compact {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.hangman-stats-compact .compact-stat {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-weight: 500;
+  color: white;
+  white-space: nowrap;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(5px);
 }
 
 .heart.lost {

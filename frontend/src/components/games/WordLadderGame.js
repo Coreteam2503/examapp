@@ -309,15 +309,31 @@ const WordLadderGame = ({ gameData, onGameComplete, onAnswerChange }) => {
   }, [showCongratulations]);
 
   const handleExitGame = () => {
+    console.log('🪜 Word Ladder Exit Game button clicked - showing confirmation modal');
     setShowExitConfirmation(true);
   };
 
   const confirmExitGame = () => {
+    console.log('🪜 Word Ladder confirmExitGame called');
+    
     const finalResults = [...answeredQuestions];
     const correctAnswers = finalResults.filter(r => r.isCorrect).length;
     const finalScore = finalResults.length > 0 ? Math.round((correctAnswers / finalResults.length) * 100) : 0;
 
+    console.log('🪜 Word Ladder exit data:', {
+      finalResults,
+      correctAnswers,
+      finalScore,
+      status: 'exited',
+      onGameComplete: !!onGameComplete
+    });
+
+    // Close the exit confirmation modal first
+    setShowExitConfirmation(false);
+    console.log('🪜 Word Ladder modal closed');
+
     if (onGameComplete) {
+      console.log('🪜 Word Ladder calling onGameComplete with exited status');
       onGameComplete({
         results: finalResults,
         totalQuestions: totalQuestions,
@@ -327,9 +343,13 @@ const WordLadderGame = ({ gameData, onGameComplete, onAnswerChange }) => {
         completed: false,
         score: finalScore,
         status: 'exited',
+        gameFormat: 'word_ladder', // ADD this so QuizManager knows it's a word ladder game
         ladderSteps: ladderSteps,
         reachedTop: false
       });
+      console.log('🪜 Word Ladder onGameComplete called successfully');
+    } else {
+      console.error('🪜 Word Ladder: onGameComplete is not available!');
     }
   };
 
@@ -370,44 +390,37 @@ const WordLadderGame = ({ gameData, onGameComplete, onAnswerChange }) => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Render ladder visual based on current steps
+  // Render compact ladder visual
   const renderLadder = () => {
     return (
-      <div className="single-ladder">
+      <div className="compact-ladder">
         <div className="ladder-container">
-          {/* Ladder steps from top to bottom */}
+          {/* Compact ladder steps */}
           {Array.from({ length: totalQuestions }, (_, index) => {
             const stepNumber = totalQuestions - index;
             const isClimbed = ladderSteps >= stepNumber;
             const hasCharacter = ladderSteps === stepNumber;
             
             return (
-              <div key={stepNumber} className={`ladder-rung ${isClimbed ? 'climbed' : ''}`}>
-                <div className="step-number">{stepNumber}</div>
-                <div className="ladder-rail">═════════</div>
-                {hasCharacter && (
-                  <div className="climbing-character">
-                    {avatarCharacter}
-                  </div>
-                )}
+              <div key={stepNumber} className={`ladder-step ${isClimbed ? 'climbed' : ''} ${hasCharacter ? 'current' : ''}`}>
+                <span className="step-num">{stepNumber}</span>
+                {hasCharacter && <span className="character">👤</span>}
               </div>
             );
           })}
           
-          {/* Character at bottom when no steps climbed */}
-          {ladderSteps === 0 && (
-            <div className="character-at-bottom">
-              <div className="character-avatar">
-                {avatarCharacter}
-              </div>
-              <div className="character-status">Ready to climb!</div>
-            </div>
-          )}
+          {/* Base level */}
+          <div className="ladder-base">
+            {ladderSteps === 0 && <span className="character">👤</span>}
+            <span className="base-label">Start</span>
+          </div>
         </div>
         
-        <div className="ladder-info">
-          <div className="ladder-title">Climbing Progress</div>
-          <div className="progress-text">Step {ladderSteps} of {totalQuestions}</div>
+        {/* Compact stats below ladder */}
+        <div className="ladder-stats-compact">
+          <span className="compact-stat">Q{currentQuestionIndex + 1}/{totalQuestions}</span>
+          <span className="compact-stat">🪜{ladderSteps}</span>
+          <span className="compact-stat">{formatTime(timeElapsed)}</span>
         </div>
       </div>
     );
@@ -579,12 +592,6 @@ const WordLadderGame = ({ gameData, onGameComplete, onAnswerChange }) => {
       <div className="game-header">
         <div className="game-info">
           <h2>🪜 Programming Ladder</h2>
-          <div className="game-stats">
-            <span className="question-progress">Question {currentQuestionIndex + 1} of {totalQuestions}</span>
-            <span className="time">Time: {formatTime(timeElapsed)}</span>
-            <span className="correct-answers">Steps: {ladderSteps}</span>
-            <span className="correct-answers">Correct: {answeredQuestions.filter(r => r.isCorrect).length}</span>
-          </div>
         </div>
         
         <div className="game-actions">
@@ -605,14 +612,6 @@ const WordLadderGame = ({ gameData, onGameComplete, onAnswerChange }) => {
 
         {/* Question Section */}
         <div className="question-section">
-          <div className="question-header">
-            <h3>Answer correctly to climb the ladder!</h3>
-            <p className="question-instruction">
-              ✅ Correct answer = Climb one step<br/>
-              ❌ Wrong answer = Stay at current level
-            </p>
-          </div>
-          
           {/* Universal Question Component */}
           {currentQuestion && (
             <QuestionWrapper

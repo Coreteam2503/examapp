@@ -143,6 +143,9 @@ const QuizManager = ({ onQuizCompleted }) => {
   };
 
   const handleQuizComplete = async (results) => {
+    console.log('🎯 handleQuizComplete called with full results:', results);
+    console.log('🎯 Key fields - isGameFormat:', results.isGameFormat, 'status:', results.status, 'gameFormat:', results.gameFormat);
+    
     try {
       setLoading(true);
       
@@ -235,9 +238,15 @@ const QuizManager = ({ onQuizCompleted }) => {
           isGameFormat: true
         });
         
-        // IMPORTANT: For Memory Grid and Word Ladder games, DON'T switch to results view
-        // Let the games display their own results screens
-        if (results.gameFormat === 'memory_grid' || results.gameFormat === 'word_ladder') {
+        // IMPORTANT: Check if game was exited vs completed
+        if (results.status === 'exited') {
+          console.log(`🚪 Game was exited - returning to quiz list`);
+          console.log('🚪 Exit details:', { gameFormat: results.gameFormat, status: results.status });
+          setCurrentView('list');
+          setSelectedQuiz(null);
+          setQuizResults(null);
+          console.log('🚪 Successfully set view to list and cleared quiz data');
+        } else if (results.gameFormat === 'memory_grid' || results.gameFormat === 'word_ladder') {
           console.log(`🎮 ${results.gameFormat} completed - staying in game view to show game results`);
           // Don't change currentView, let the game show its own results
           // The game will handle displaying its own results screen

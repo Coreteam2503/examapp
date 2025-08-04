@@ -187,15 +187,6 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
 
     return (
       <div className="question-section">
-        <div className="question-header">
-          <h3>Level {currentLevel}: {currentLevelQuestion.level_theme || 'General Knowledge'}</h3>
-          <div className="question-difficulty">
-            Difficulty: <span className={`difficulty-${currentLevelQuestion.difficulty}`}>
-              {currentLevelQuestion.difficulty || 'medium'}
-            </span>
-          </div>
-        </div>
-        
         {/* Universal Question Component with Result Modal */}
         <QuestionWrapper
           question={currentLevelQuestion}
@@ -236,21 +227,6 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
           );
         })}
       </div>
-      
-      <div className="tower-stats">
-        <div className="stat-item">
-          <span className="stat-value">{currentLevel}</span>
-          <span className="stat-label">Current Level</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-value">{Object.values(answeredQuestions).filter(r => r.isCorrect).length}</span>
-          <span className="stat-label">Levels Climbed</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-value">{formatTime(timeElapsed)}</span>
-          <span className="stat-label">Time</span>
-        </div>
-      </div>
     </div>
   );
 
@@ -272,6 +248,12 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
       <div className="game-content">
         <div className="tower-section">
           {renderTower()}
+          {/* Small, compact stats below tower */}
+          <div className="tower-stats-compact">
+            <span className="compact-stat">L{currentLevel}/{totalLevels}</span>
+            <span className="compact-stat">✓{Object.values(answeredQuestions).filter(r => r.isCorrect).length}</span>
+            <span className="compact-stat">{formatTime(timeElapsed)}</span>
+          </div>
         </div>
 
         <div className="question-area">
@@ -287,7 +269,26 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
               <p>Are you sure you want to exit? Your progress will be lost.</p>
               <div className="modal-actions">
                 <button onClick={() => setShowExitConfirmation(false)}>Cancel</button>
-                <button onClick={() => window.history.back()}>Exit</button>
+                <button onClick={() => {
+                  // Close modal first
+                  setShowExitConfirmation(false);
+                  
+                  // Call onGameComplete to properly exit and return to quiz list
+                  if (onGameComplete) {
+                    onGameComplete({
+                      results: gameResults,
+                      totalQuestions: totalLevels,
+                      totalAnswered: gameResults.length,
+                      correctAnswers: gameResults.filter(r => r.isCorrect).length,
+                      timeElapsed: timeElapsed,
+                      completed: false,
+                      score: gameResults.length > 0 ? Math.round((gameResults.filter(r => r.isCorrect).length / gameResults.length) * 100) : 0,
+                      status: 'exited',
+                      levelReached: currentLevel,
+                      gameType: 'tower'
+                    });
+                  }
+                }}>Exit</button>
               </div>
             </div>
           </div>

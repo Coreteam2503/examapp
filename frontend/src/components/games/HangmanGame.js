@@ -303,6 +303,9 @@ const HangmanGame = ({ gameData, onGameComplete, onAnswerChange }) => {
     const correctAnswers = finalResults.filter(r => r.isCorrect).length;
     const finalScore = finalResults.length > 0 ? Math.round((correctAnswers / finalResults.length) * 100) : 0;
 
+    // Close the exit confirmation modal first
+    setShowExitConfirmation(false);
+
     if (onGameComplete) {
       onGameComplete({
         results: finalResults,
@@ -441,12 +444,6 @@ const HangmanGame = ({ gameData, onGameComplete, onAnswerChange }) => {
       <div className="game-header">
         <div className="game-info">
           <h2>🎯 Hangman Game</h2>
-          <div className="game-stats">
-            <span className="question-progress">Question {currentQuestionIndex + 1} of {totalQuestions}</span>
-            <span className="time">Time: {formatTime(timeElapsed)}</span>
-            <span className="wrong-answers">Wrong: {wrongAnswers}/{maxWrongAnswers}</span>
-            <span className="correct-answers">Correct: {gameResults.filter(r => r.isCorrect).length}</span>
-          </div>
         </div>
         
         <div className="game-actions">
@@ -466,7 +463,6 @@ const HangmanGame = ({ gameData, onGameComplete, onAnswerChange }) => {
         <div className="hangman-section">
           {renderHangman()}
           <div className="lives-display">
-            <span>Lives remaining: {maxWrongAnswers - wrongAnswers}</span>
             <div className="lives-hearts">
               {Array.from({ length: maxWrongAnswers }, (_, i) => (
                 <span key={i} className={`heart ${i < wrongAnswers ? 'lost' : 'remaining'}`}>
@@ -475,18 +471,17 @@ const HangmanGame = ({ gameData, onGameComplete, onAnswerChange }) => {
               ))}
             </div>
           </div>
+          
+          {/* Compact stats below hangman */}
+          <div className="hangman-stats-compact">
+            <span className="compact-stat">Q{currentQuestionIndex + 1}/{totalQuestions}</span>
+            <span className="compact-stat">❤️{maxWrongAnswers - wrongAnswers}</span>
+            <span className="compact-stat">{formatTime(timeElapsed)}</span>
+          </div>
         </div>
 
         {/* Question Section */}
         <div className="question-section">
-          <div className="question-header">
-            <h3>Answer correctly to save the hangman!</h3>
-            <p className="question-instruction">
-              ✅ Correct answer = Hangman stays safe, next question<br/>
-              ❌ Wrong answer = Hangman moves closer to gallows
-            </p>
-          </div>
-          
           {/* Universal Question Component */}
           <QuestionWrapper
             question={currentQuestion}

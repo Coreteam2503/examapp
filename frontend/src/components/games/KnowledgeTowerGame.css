@@ -290,19 +290,19 @@
   }
 }
 
-/* Game Content */
+/* Game Content - More compact layout */
 .game-content {
   display: grid;
-  grid-template-columns: 300px 1fr;
-  gap: 40px;
+  grid-template-columns: 200px 1fr; /* Reduced from 300px */
+  gap: 30px; /* Reduced from 40px */
   margin-bottom: 30px;
   align-items: start;
-  justify-content: center; /* Center the entire grid */
-  max-width: 1000px; /* Limit max width for better centering */
-  margin: 0 auto 30px auto; /* Center horizontally */
+  justify-content: center;
+  max-width: 1000px;
+  margin: 0 auto 30px auto;
 }
 
-/* Tower Section */
+/* Tower Section - More compact */
 .tower-section {
   /* Removed sticky positioning to prevent modal overlap issues */
 }
@@ -312,7 +312,7 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  height: 500px;
+  height: 350px; /* Reduced from 500px for more space */
 }
 
 .tower {
@@ -323,12 +323,12 @@
 }
 
 .tower-level {
-  width: 80px;
-  height: 60px;
+  width: 50px; /* Reduced from 80px - more icon-like */
+  height: 35px; /* Reduced from 60px - more icon-like */
   background: linear-gradient(145deg, #e0e0e0, #c0c0c0);
   border: 2px solid #999;
-  border-radius: 8px;
-  margin-bottom: 5px;
+  border-radius: 6px; /* Slightly smaller radius */
+  margin-bottom: 3px; /* Reduced spacing */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -338,6 +338,7 @@
   position: relative;
   color: #333;
   font-weight: bold;
+  font-size: 11px; /* Smaller text for icon-like appearance */
 }
 
 .tower-level:hover {
@@ -409,16 +410,42 @@
 }
 
 .tower-base {
-  width: 120px;
-  height: 40px;
+  width: 80px; /* Reduced from 120px */
+  height: 30px; /* Reduced from 40px */
   background: linear-gradient(145deg, #8D6E63, #5D4037);
-  border-radius: 8px;
+  border-radius: 6px; /* Slightly smaller */
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-weight: bold;
+  font-size: 12px; /* Smaller text */
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Compact stats below tower */
+.tower-stats-compact {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 15px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.compact-stat {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px 10px; /* More horizontal, less vertical padding */
+  border-radius: 12px;
+  font-weight: 500;
+  backdrop-filter: blur(5px);
+  color: white;
+  white-space: nowrap; /* Prevent text wrapping */
+  min-width: fit-content; /* Don't stretch unnecessarily */
+  height: 20px; /* Fixed height to prevent stretching */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .tower-progress {
@@ -445,34 +472,6 @@
   border-radius: 15px;
   padding: 30px;
   backdrop-filter: blur(10px);
-}
-
-.question-header {
-  margin-bottom: 25px;
-  text-align: center;
-}
-
-.question-header h3 {
-  margin: 0 0 10px 0;
-  font-size: 1.8em;
-  color: #4CAF50;
-}
-
-.question-difficulty {
-  font-size: 14px;
-  opacity: 0.8;
-}
-
-.difficulty-easy {
-  color: #4CAF50;
-}
-
-.difficulty-medium {
-  color: #FF9800;
-}
-
-.difficulty-hard {
-  color: #f44336;
 }
 
 .question-content {
@@ -870,48 +869,60 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
-    align-items: center; /* Center content on mobile */
-    max-width: 100%; /* Full width on mobile */
+    align-items: center;
+    max-width: 100%;
   }
   
   .tower-section {
-    order: 1; /* Tower goes to top on mobile, like hangman */
+    order: 1;
     margin-bottom: 20px;
-    width: 100%; /* Full width for tower section */
+    width: 100%;
     display: flex;
-    justify-content: center; /* Center tower within its section */
+    flex-direction: column; /* Stack tower and stats vertically */
+    align-items: center;
+    justify-content: flex-start; /* Align to top, reduce spacing */
   }
   
   .question-area {
-    order: 2; /* Questions go below on mobile */
-    width: 100%; /* Full width for question area */
+    order: 2;
+    width: 100%;
   }
   
   .tower-container {
-    height: 300px;
+    height: 200px; /* Reduced height to save space */
+    margin-bottom: 0; /* Remove bottom margin */
   }
   
   .tower-level {
-    width: 60px;
-    height: 45px;
+    width: 40px; /* Smaller on mobile */
+    height: 28px;
+    font-size: 10px;
   }
   
   .tower-base {
-    width: 100px;
-    height: 30px;
-    font-size: 12px;
+    width: 60px; /* Smaller base */
+    height: 20px;
+    font-size: 10px;
+  }
+  
+  /* Compact stats positioned right after tower */
+  .tower-stats-compact {
+    margin-top: 8px; /* Reduced from 15px */
+    margin-bottom: 0; /* Remove bottom margin */
   }
 }
 
 @media (max-width: 768px) {
   .knowledge-tower-game {
-    padding: 15px;
+    padding: 12px; /* Reduced from 15px */
   }
   
   .game-header {
     flex-direction: column;
     align-items: center;
     text-align: center;
+    padding: 15px; /* Reduced from default */
+    margin-bottom: 20px; /* Reduced from 30px */
   }
   
   .game-actions {
@@ -934,9 +945,14 @@
   }
   
   .game-stats {
-    gap: 15px;
+    gap: 10px; /* Reduced from 15px */
     flex-direction: column;
     align-items: center;
+  }
+  
+  .game-stats span {
+    padding: 6px 12px; /* Reduced padding */
+    font-size: 0.9rem; /* Smaller text */
   }
   
   .options-container {
@@ -944,7 +960,12 @@
   }
   
   .game-header h2 {
-    font-size: 2em;
+    font-size: 1.8em; /* Reduced from 2em */
+    margin-bottom: 10px; /* Reduced from 15px */
+  }
+  
+  .question-area {
+    padding: 20px; /* Reduced from 30px */
   }
   
   .question-text {
@@ -971,34 +992,62 @@
 }
 
 @media (max-width: 480px) {
+  .tower-section {
+    margin-bottom: 15px; /* Reduced spacing */
+  }
+  
   .tower-container {
-    height: 250px;
+    height: 160px; /* Even more compact for small screens */
+    margin-bottom: 0;
   }
   
   .tower-level {
-    width: 50px;
-    height: 35px;
-    font-size: 12px;
+    width: 35px; /* Even smaller */
+    height: 24px;
+    font-size: 9px;
+    margin-bottom: 2px; /* Tighter spacing between levels */
   }
   
   .level-number {
-    font-size: 12px;
+    font-size: 9px;
   }
   
   .level-status {
-    font-size: 10px;
+    font-size: 7px;
+  }
+  
+  .tower-base {
+    width: 50px; /* Smaller base on mobile */
+    height: 18px;
+    font-size: 9px;
+  }
+  
+  /* Mobile compact stats - minimal spacing */
+  .tower-stats-compact {
+    gap: 6px;
+    margin-top: 6px; /* Minimal gap from tower */
+    margin-bottom: 0;
+    flex-wrap: wrap;
+  }
+  
+  .compact-stat {
+    padding: 2px 6px; /* Smaller padding */
+    font-size: 9px;
+    border-radius: 8px;
+    height: 14px; /* Smaller height */
+    min-width: 25px;
   }
   
   .question-area {
-    padding: 20px;
+    padding: 12px; /* Reduced padding */
   }
   
   .option {
-    padding: 12px 15px;
+    padding: 8px 10px; /* Reduced padding */
   }
   
   .option-text {
-    font-size: 14px;
+    font-size: 13px; /* Slightly smaller text */
   }
 }
 

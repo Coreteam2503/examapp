@@ -20,6 +20,28 @@ html, body {
   flex-direction: column;
 }
 
+/* Full-screen game mode - proper implementation */
+.game-fullscreen-mode .dashboard-header,
+.game-fullscreen-mode .dashboard-nav {
+  display: none !important;
+}
+
+.game-fullscreen-mode .main-content {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.game-fullscreen-mode .tab-content {
+  padding: 0 !important;
+}
+
+/* Ensure game headers retain their styling in full-screen */
+.game-fullscreen-mode .game-header {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+
 .App {
   height: 100vh;
   width: 100vw;
