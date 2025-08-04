@@ -2,17 +2,16 @@ import React from 'react';
 import './QuickActions.css';
 
 const QuickActions = ({ 
-  setActiveTab, 
-  user, 
-  selectedBatches = []
+  onNavigateToQuizzes,
+  user
 }) => {
   const quickActions = [
     {
       icon: '🧠',
-      title: 'Take Random Quiz',
-      description: 'Test your knowledge',
-      action: () => setActiveTab('quizzes'),
-      color: '#2ecc71',
+      title: 'Take Quiz',
+      description: 'Start a new quiz',
+      action: () => onNavigateToQuizzes && onNavigateToQuizzes(),
+      color: '#667eea',
       enabled: true
     }
   ];

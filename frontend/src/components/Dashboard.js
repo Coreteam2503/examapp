@@ -112,24 +112,26 @@ const Dashboard = () => {
           </div>
           <div className="user-info">
             <span>Welcome, {user?.email}</span>
-            <span className="role-badge">{user?.role}</span>
             {user?.role === 'admin' && (
-              <button 
-                onClick={() => navigate('/admin')} 
-                className="admin-btn"
-                style={{
-                  backgroundColor: '#e74c3c',
-                  color: 'white',
-                  border: 'none',
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  marginRight: '10px',
-                  fontSize: '14px'
-                }}
-              >
-                Admin
-              </button>
+              <>
+                <span className="role-badge">{user?.role}</span>
+                <button 
+                  onClick={() => navigate('/admin')} 
+                  className="admin-btn"
+                  style={{
+                    backgroundColor: '#e74c3c',
+                    color: 'white',
+                    border: 'none',
+                    padding: '8px 16px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    marginRight: '10px',
+                    fontSize: '14px'
+                  }}
+                >
+                  Admin
+                </button>
+              </>
             )}
             <button onClick={handleLogout} className="logout-btn">
               Logout
@@ -152,7 +154,7 @@ const Dashboard = () => {
             className={`nav-btn ${activeTab === 'quizzes' ? 'active' : ''}`}
             onClick={() => { setActiveTab('quizzes'); setMobileMenuOpen(false); }}
           >
-            Your Quizzes
+            My Quizzes
           </button>
           {user?.role === 'student' && (
             <button 
@@ -168,15 +170,17 @@ const Dashboard = () => {
       <main className="dashboard-main">
         <div className="dashboard-content">
           {activeTab === 'dashboard' && user?.role === 'student' && (
-            <StudentDashboard />
+            <div className="tab-content">
+              <div className="tab-header">
+                <h2>Dashboard</h2>
+                <p>Track your learning progress and get quick access to your activities.</p>
+              </div>
+              <StudentDashboard />
+            </div>
           )}
 
           {activeTab === 'quizzes' && (
             <div className="tab-content">
-              <div className="tab-header">
-                <h2>Your Quizzes</h2>
-                <p>Take quizzes based on your uploaded content and track your progress.</p>
-              </div>
               <QuizManager onQuizCompleted={handleQuizCompleted} />
             </div>
           )}
@@ -184,7 +188,7 @@ const Dashboard = () => {
           {activeTab === 'batches' && user?.role === 'student' && (
             <div className="tab-content">
               <div className="tab-header">
-                <h2>My Learning Batches</h2>
+                <h2>My Batches</h2>
                 <p>View and manage your assigned learning batches and track your progress.</p>
               </div>
               <StudentBatchDisplay />

@@ -57,7 +57,7 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .role-badge {
@@ -423,7 +423,9 @@
   }
   
   .header-content {
-    text-align: center;
+    text-align: left;
+    flex-wrap: nowrap;
+    justify-content: space-between;
   }
   
   .header-content h1 {
@@ -433,13 +435,57 @@
   .dashboard-nav {
     position: fixed;
     top: 80px;
-    left: -200px;
+    left: -100%;
+    width: 250px;
+    height: calc(100vh - 80px);
+    background: white;
+    border-right: 1px solid #dee2e6;
+    border-bottom: none;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
     transition: left 0.3s ease;
     z-index: 1000;
+    padding: 1rem 0;
   }
   
   .dashboard-nav.mobile-open {
     left: 0;
+  }
+  
+  .nav-content {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0 !important;
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+  
+  .nav-btn {
+    padding: 1rem 1.5rem !important;
+    font-size: 0.9rem !important;
+    border-radius: 0 !important;
+    text-align: left !important;
+    justify-content: flex-start !important;
+    border-bottom: 1px solid #f8f9fa !important;
+    background: transparent !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-top: none !important;
+    min-width: auto !important;
+    margin: 0 !important;
+    display: block !important;
+    width: 100% !important;
+  }
+  
+  .nav-btn:hover {
+    background: #f8f9fa;
+  }
+  
+  .nav-btn.active {
+    background: #667eea;
+    color: white;
+    border-bottom-color: transparent;
   }
   
   .dashboard-main {
@@ -448,11 +494,6 @@
   
   .dashboard-content {
     padding: 0 1rem;
-  }
-  
-  .nav-btn {
-    padding: 0.75rem;
-    font-size: 0.9rem;
   }
   
   .welcome-content h2, .tab-header h2 {

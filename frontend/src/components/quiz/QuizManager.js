@@ -316,23 +316,6 @@ const QuizManager = ({ onQuizCompleted }) => {
     }
   };
 
-  const handleDeleteQuiz = async (quizId, event) => {
-    event.stopPropagation();
-    
-    if (!window.confirm('Are you sure you want to delete this quiz?')) {
-      return;
-    }
-
-    try {
-      await apiService.quizzes.delete(quizId);
-      await loadQuizzes(); // Refresh the list
-    } catch (err) {
-      console.error('Error deleting quiz:', err);
-      const errorResponse = handleApiError(err);
-      setError(errorResponse.message);
-    }
-  };
-
   const goBackToList = () => {
     setCurrentView('list');
     setSelectedQuiz(null);
@@ -553,7 +536,7 @@ const QuizManager = ({ onQuizCompleted }) => {
   return (
     <div className="quiz-manager-container">
       <div className="quiz-list-header">
-        <h1>Your Quizzes</h1>
+        <h1>My Quizzes</h1>
         <div className="header-actions">
           <p>Select a quiz to start practicing</p>
           <button 
@@ -572,14 +555,8 @@ const QuizManager = ({ onQuizCompleted }) => {
       {quizzes.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon">📝</div>
-          <h3>No quizzes yet</h3>
-          <p>Generate your first quiz to get started!</p>
-          <button 
-            onClick={() => window.dispatchEvent(new CustomEvent('navigateToGenerate'))} 
-            className="upload-btn"
-          >
-            Generate Quiz
-          </button>
+          <h3>No quizzes available</h3>
+          <p>There are currently no quizzes assigned to you. Please check back later or contact your administrator.</p>
         </div>
       ) : (
         <div className="quiz-grid">
@@ -614,13 +591,6 @@ const QuizManager = ({ onQuizCompleted }) => {
                         🎯 Criteria-Based
                       </span>
                     )}
-                    <button
-                      className="delete-btn"
-                      onClick={(e) => handleDeleteQuiz(quiz.id, e)}
-                      title="Delete quiz"
-                    >
-                      ×
-                    </button>
                   </div>
                 </div>
                 
