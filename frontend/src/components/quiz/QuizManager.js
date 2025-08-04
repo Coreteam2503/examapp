@@ -585,75 +585,37 @@ const QuizManager = ({ onQuizCompleted }) => {
               >
                 <div className="quiz-card-header">
                   <h3>{quiz.title}</h3>
-                  <div className="quiz-type-indicators">
-                    {isCriteriaBased && (
-                      <span className="quiz-type-badge criteria-badge">
-                        🎯 Criteria-Based
-                      </span>
-                    )}
-                  </div>
+                </div>
+                
+                <div className="quiz-badges">
+                  <span className="quiz-difficulty-badge">
+                    {quiz.difficulty || 'Medium'}
+                  </span>
+                  {quiz.game_format && quiz.game_format !== 'traditional' && (
+                    <span className="quiz-game-format-badge">
+                      {quiz.game_format === 'hangman' ? '🎯 HANGMAN' :
+                       quiz.game_format === 'knowledge_tower' ? '🏗️ KNOWLEDGE TOWER' :
+                       quiz.game_format === 'memory_grid' ? '🧩 MEMORY GRID' :
+                       quiz.game_format === 'word_ladder' ? '🪜 WORD LADDER' :
+                       '🎮 ' + quiz.game_format.replace('_', ' ').toUpperCase()}
+                    </span>
+                  )}
                 </div>
                 
                 <div className="quiz-card-content">
-                  <div className="quiz-info">
-                    <div>
-                      {isCriteriaBased ? (
-                        <>
-                          <span className="quiz-questions">
-                            {quiz.question_count || quiz.total_questions} questions (dynamic)
-                          </span>
-                          <div className="quiz-criteria">
-                            {getCriteriaSummary(quiz.criteria)}
-                          </div>
-                        </>
-                      ) : (
-                        <span className="quiz-questions">
-                          {quiz.total_questions} questions (fixed)
-                        </span>
-                      )}
-                      <span className="quiz-difficulty">
-                        {quiz.difficulty}
-                      </span>
-                      {quiz.game_format && quiz.game_format !== 'traditional' && (
-                        <span className="quiz-game-format">
-                          🎮 {quiz.game_format.replace('_', ' ').toUpperCase()}
-                        </span>
-                      )}
-                    </div>
-                    {quizScores[quiz.id] ? (
-                      <div className="quiz-score-info">
-                        <span className="best-score">
-                          🏆 Best: {quizScores[quiz.id].bestScore}%
-                        </span>
-                        <span className="attempts-count">
-                          📊 {quizScores[quiz.id].attempts} attempt{quizScores[quiz.id].attempts !== 1 ? 's' : ''}
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="quiz-score-info">
-                        <span className="no-attempts">
-                          🎯 No attempts yet
-                        </span>
-                      </div>
-                    )}
+                  <div className="quiz-stats">
+                    <span className="quiz-questions">
+                      {quiz.question_count || quiz.total_questions} QUESTIONS
+                    </span>
                   </div>
-                
-                <div className="quiz-meta">
-                  <span className="quiz-file">
-                    📁 {quiz.filename}
-                  </span>
-                  <span className="quiz-date">
-                    {formatDate(quiz.created_at)}
-                  </span>
+                </div>
+              
+                <div className="quiz-card-footer">
+                  <button className="start-quiz-btn">
+                    PLAY GAME →
+                  </button>
                 </div>
               </div>
-              
-              <div className="quiz-card-footer">
-                <button className="start-quiz-btn">
-                  {quiz.is_game ? 'Play Game →' : 'Start Quiz →'}
-                </button>
-              </div>
-            </div>
           );
         })}
         </div>
