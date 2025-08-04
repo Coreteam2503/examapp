@@ -8,7 +8,7 @@ import './Dashboard.css';
 import ProgressTracker from './dashboard/ProgressTracker';
 import RecentQuizzes from './dashboard/RecentQuizzes';
 import PerformanceStats from './dashboard/PerformanceStats';
-import QuickActions from './dashboard/QuickActions';
+// import QuickActions from './dashboard/QuickActions';
 import StudentBatchDisplay from './dashboard/StudentBatchDisplay';
 import StudentDashboard from './dashboard/StudentDashboard';
 

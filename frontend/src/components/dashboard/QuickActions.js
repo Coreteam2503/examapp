@@ -36,10 +36,6 @@ const QuickActions = ({
 
   return (
     <div className="quick-actions">
-      <div className="section-header">
-        <h3>Quick Actions</h3>
-        <span className="section-subtitle">Jump to what you need</span>
-      </div>
       
       <div className="actions-grid">
         {quickActions.map((action, index) => (

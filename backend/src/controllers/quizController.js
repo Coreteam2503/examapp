@@ -838,27 +838,12 @@ class QuizController {
       if (quiz.criteria && Object.keys(quiz.criteria).length > 0) {
         console.log(`🎯 Using dynamic question selection with criteria:`, quiz.criteria);
         
-        // Check for existing incomplete attempt to avoid duplicate questions
-        const existingAttempt = await knex('quiz_attempts')
-          .where({ user_id: userId, quiz_id: quizId, status: 'in_progress' })
-          .first();
-
-        let excludeIds = [];
-        if (existingAttempt && existingAttempt.selected_questions) {
-          // Handle both string (from DB) and array (already parsed) formats
-          if (typeof existingAttempt.selected_questions === 'string') {
-            excludeIds = JSON.parse(existingAttempt.selected_questions);
-          } else if (Array.isArray(existingAttempt.selected_questions)) {
-            excludeIds = existingAttempt.selected_questions;
-          }
-          console.log(`📝 Found existing attempt, excluding ${excludeIds.length} questions`);
-        }
-
-        // Use QuestionSelector service to get questions based on criteria
+        // Generate fresh set of unique questions for each attempt
+        // No need to check existing attempts - each attempt should be independent
         selectedQuestions = await questionSelector.selectQuestionsForQuiz(
           quiz.criteria,
           quiz.question_count,
-          excludeIds
+          [] // No excludeIds - generate fresh questions each time
         );
 
         if (selectedQuestions.length === 0) {
@@ -910,17 +895,7 @@ class QuizController {
 
       const finalAttemptId = Array.isArray(attemptId) ? (attemptId[0]?.id || attemptId[0]) : attemptId?.id || attemptId;
 
-      console.log(`📝 Created quiz attempt ${finalAttemptId}`);
-
-      // Validate question uniqueness for the attempt
-      const uniquenessCheck = await questionSelector.validateQuestionUniqueness(
-        selectedQuestions, 
-        finalAttemptId
-      );
-
-      if (!uniquenessCheck.isValid) {
-        console.warn(`⚠️ Question uniqueness validation failed:`, uniquenessCheck);
-      }
+      console.log(`📝 Created quiz attempt ${finalAttemptId} with ${selectedQuestions.length} fresh questions`);
 
       // Return the quiz data with selected questions
       const response = {
