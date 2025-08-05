@@ -919,8 +919,7 @@ class QuizController {
           correct_order: question.correct_order || null,
           correctOrder: safeCommaParse(question.correct_order, null),
           text: question.formatted_text || question.question_text,
-          // Remove correct_answer from client response for security
-          correct_answer: undefined
+          correct_answer: question.correct_answer
         })),
         started_at: attemptData.started_at,
         status: 'in_progress'

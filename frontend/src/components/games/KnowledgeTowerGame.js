@@ -76,7 +76,27 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
 
   // Simplified answer checking logic
   const checkAnswer = (userAnswer, question) => {
-    const correctAnswer = question.correct_answer;
+    let correctAnswer = question.correct_answer;
+    
+    // Handle questions where correct_answer is empty but answer is in other fields
+    if (!correctAnswer || correctAnswer === '') {
+      switch (question.type) {
+        case 'matching':
+          // Build expected answer from pairs
+          if (question.pairs) {
+            correctAnswer = {};
+            question.pairs.forEach(pair => {
+              correctAnswer[pair.key] = pair.value;
+            });
+          }
+          break;
+        case 'drag_drop_order':
+        case 'ordering':
+          // Use correct_order field
+          correctAnswer = question.correct_order;
+          break;
+      }
+    }
     
     // Handle different question types
     switch (question.type) {
@@ -95,6 +115,20 @@ const KnowledgeTowerGame = ({ gameData, onGameComplete, onAnswerChange }) => {
       case 'matching':
         // For matching, compare the match objects
         if (typeof userAnswer === 'object' && typeof correctAnswer === 'object') {
+          return JSON.stringify(userAnswer) === JSON.stringify(correctAnswer);
+        }
+        return userAnswer === correctAnswer;
+        
+      case 'drag_drop_order':
+      case 'ordering':
+        // For ordering, compare arrays or comma-separated strings
+        if (Array.isArray(userAnswer) && typeof correctAnswer === 'string') {
+          return userAnswer.join(',') === correctAnswer;
+        }
+        if (typeof userAnswer === 'string' && typeof correctAnswer === 'string') {
+          return userAnswer === correctAnswer;
+        }
+        if (Array.isArray(userAnswer) && Array.isArray(correctAnswer)) {
           return JSON.stringify(userAnswer) === JSON.stringify(correctAnswer);
         }
         return userAnswer === correctAnswer;
